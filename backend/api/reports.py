@@ -6,6 +6,7 @@ Handles report retrieval and export (markdown, PDF).
 
 from flask import Blueprint, request, jsonify, send_file
 from core.session import session_manager
+from datetime import datetime
 import io
 
 reports_bp = Blueprint('reports', __name__)
@@ -55,23 +56,39 @@ def export_pdf(session_id: str):
     if not session.report_state:
         return jsonify({'error': 'No report generated yet'}), 404
 
-    # TODO: Integrate PDF generation
-    # from report_generator import generate_pdf
-    # pdf_bytes = generate_pdf(session.report_state)
+    try:
+        # Generate PDF using fpdf2
+        from core.pdf_generator import PDFGenerator
 
-    # For now, return markdown as text
-    markdown = session.report_state.to_markdown()
+        generator = PDFGenerator()
+        pdf_bytes = generator.generate_report(session.report_state, session.ticker)
 
-    # Create a file-like object
-    pdf_io = io.BytesIO(markdown.encode('utf-8'))
-    pdf_io.seek(0)
+        # Create a file-like object
+        pdf_io = io.BytesIO(pdf_bytes)
+        pdf_io.seek(0)
 
-    return send_file(
-        pdf_io,
-        mimetype='text/plain',  # TODO: Change to 'application/pdf' when PDF gen is implemented
-        as_attachment=True,
-        download_name=f'{session.ticker}_analysis.txt'
-    )
+        # Return actual PDF
+        return send_file(
+            pdf_io,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'{session.ticker}_analysis_{datetime.now().strftime("%Y%m%d")}.pdf'
+        )
+
+    except Exception as e:
+        # Graceful fallback to markdown if PDF generation fails
+        print(f"PDF generation failed: {e}")
+
+        markdown = session.report_state.to_markdown()
+        markdown_io = io.BytesIO(markdown.encode('utf-8'))
+        markdown_io.seek(0)
+
+        return send_file(
+            markdown_io,
+            mimetype='text/markdown',
+            as_attachment=True,
+            download_name=f'{session.ticker}_analysis.md'
+        )
 
 
 @reports_bp.route('/<session_id>/sections', methods=['GET'])

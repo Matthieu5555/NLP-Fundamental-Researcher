@@ -17,6 +17,7 @@ load_dotenv()
 from api.analysis import analysis_bp
 from api.chat import chat_bp
 from api.reports import reports_bp
+from api.sessions import sessions_bp
 
 def create_app():
     """
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
+    app.register_blueprint(sessions_bp, url_prefix='/api/sessions')
 
     # Health check endpoint
     @app.route('/')

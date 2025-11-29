@@ -57,13 +57,6 @@ def stream_chat():
         try:
             logger.info(f"Chat request for session {session_id}, ticker {session.ticker}, message: {message[:100]}")
 
-            # Build context from conversation history and report
-            recent_history = session.get_recent_history(5)
-            conversation_context = "\n".join([
-                f"{msg.role}: {msg.content}"
-                for msg in recent_history[:-1]  # Exclude current message
-            ])
-
             # Get report summary for context
             report_summary = ""
             if session.report_state:
@@ -72,23 +65,38 @@ def stream_chat():
                     # Include first 200 chars of each section
                     report_summary += f"\n{section.title}:\n{section.content[:200]}...\n"
 
-            # Build prompt
+            # Build system prompt
             system_prompt = f"""You are a financial analyst assistant analyzing {session.ticker}.
 Answer questions based on the analysis report and your knowledge.
 Be concise, factual, and cite specific numbers when possible.
 
 Recent analysis:
-{report_summary}
+{report_summary}"""
 
-Previous conversation:
-{conversation_context}"""
+            # Use ContextManager to build optimized context window
+            from core.context_manager import ContextManager
+
+            model = session.metadata.get('model', 'default')
+            context_mgr = ContextManager(model=model)
+            context = context_mgr.build_context(session, message, system_prompt)
+
+            logger.info(f"Context built: {context['total_tokens']} tokens, compressed: {context['was_compressed']}")
+
+            # Build conversation context from managed messages
+            conversation_context = "\n".join([
+                f"{msg['role']}: {msg['content']}"
+                for msg in context['messages']
+            ])
+
+            # Update system prompt with conversation context
+            full_system_prompt = f"{system_prompt}\n\nPrevious conversation:\n{conversation_context}"
 
             logger.info("Calling LLM...")
 
             # Get LLM response
             response_text = get_llm_response(
                 prompt=message,
-                system_prompt=system_prompt,
+                system_prompt=full_system_prompt,
                 temperature=0.7
             )
 
@@ -107,7 +115,9 @@ Previous conversation:
             # Add assistant response to conversation history
             session.add_message('assistant', response_text, metadata={
                 'token_count': len(response_text.split()),
-                'model': 'openrouter'
+                'model': 'openrouter',
+                'context_compressed': context['was_compressed'],
+                'context_tokens': context['total_tokens']
             })
 
             # Update report based on conversation
@@ -116,6 +126,9 @@ Previous conversation:
                 response_text,
                 session
             )
+
+            # Save session to disk after each conversation turn
+            session_manager.update_session(session_id)
 
             if report_updated:
                 logger.info("Report updated from conversation")
