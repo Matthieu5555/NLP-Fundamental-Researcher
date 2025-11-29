@@ -1,47 +1,41 @@
-# George - Your Financial Researcher
+# George Financial Analyst v2.0
 
-AI-powered stock analysis using multiple specialized agents for comprehensive investment research.
+A conversational AI-powered financial analysis platform. One-page interface for stock analysis with multi-agent AI and interactive chat.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+# 1. Setup
 uv sync
+cd frontend && npm install && cd ..
 
-# Set your API key
-echo "OPENROUTER_API_KEY=your_key_here" > .env
+# 2. Configure
+cp backend/.env.example backend/.env
+# Edit backend/.env and add OPENROUTER_API_KEY
 
-# Run the app
-uv run python -m streamlit run src_george_researcher/app.py
+# 3. Run (two terminals)
+# Terminal 1: PORT=5001 uv run python app.py  
+# Terminal 2: cd frontend && npm run dev
+
+# Or use: ./start.sh
 ```
+
+Open http://localhost:5173
 
 ## Features
 
-- **Fundamental Analysis Agent**: Evaluates valuation, profitability, growth, and financial health
-- **Technical Analysis Agent**: Analyzes price trends, momentum indicators, and key levels
-- **Bull Case Agent**: Argues the investment case with growth catalysts and competitive advantages
-- **Bear Case Agent**: Presents risks, valuation concerns, and competitive threats
-- **Moat Analysis Agent**: Warren Buffett-style competitive advantage evaluation
-- **SWOT Specialist Agent**: Traditional strategic analysis of strengths, weaknesses, opportunities, and threats
-- **George's Overall Recommendation**: Synthesizes all analysis into a final BUY/HOLD/SELL decision
+- Multi-agent analysis (fundamentals, technicals, bull/bear, moat, SWOT)
+- Real-time streaming AI responses
+- Conversational Q&A with belief tracking
+- Dynamic report generation
+- One-page scrollable interface
 
-## Data Sources
+## Documentation
 
-All market data comes from Yahoo Finance (free, no API key needed):
-- Real-time stock prices and fundamentals
-- Historical price data for technical analysis
-- Company profiles and financial statements
+- [QUICKSTART.md](QUICKSTART.md) - Detailed setup
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System design
+- [SETUP_COMPLETE.md](SETUP_COMPLETE.md) - What's integrated
 
-## Configuration
+Built with React, Flask, OpenRouter, yfinance, NetworkX, and FAISS.
 
-Create a `.env` file:
-
-```
-OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=anthropic/claude-3-haiku  # default
-```
-
-## Requirements
-
-- Python 3.11+
-- OpenRouter API key (for LLM analysis)
+MIT License - See full README in QUICKSTART.md
