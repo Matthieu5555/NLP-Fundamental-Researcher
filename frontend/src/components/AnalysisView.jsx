@@ -124,21 +124,30 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
     return section ? { [activeTab]: section } : {}
   }
 
-  const downloadReport = async (format = 'markdown') => {
+  const downloadReport = async () => {
     try {
-      const url = `${API_URL}/api/reports/${sessionId}?format=${format}`
-      const response = await fetch(url)
-      const content = await response.text()
+      // Call PDF export endpoint
+      const response = await fetch(`${API_URL}/api/reports/${sessionId}/export/pdf`, {
+        method: 'POST'
+      })
 
-      const blob = new Blob([content], { type: 'text/markdown' })
+      if (!response.ok) {
+        throw new Error('PDF export failed')
+      }
+
+      // Get the blob
+      const blob = await response.blob()
+
+      // Create download link
       const downloadUrl = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = downloadUrl
-      a.download = `${ticker}_analysis.md`
+      a.download = `${ticker}_analysis_${new Date().toISOString().split('T')[0]}.pdf`
       a.click()
       window.URL.revokeObjectURL(downloadUrl)
     } catch (err) {
       console.error('Download error:', err)
+      alert('PDF download failed. Please try again.')
     }
   }
 
@@ -155,10 +164,10 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
           </div>
           {!analysisRunning && !sectionsLoading && Object.keys(sections).length > 0 && (
             <button
-              onClick={() => downloadReport('markdown')}
+              onClick={downloadReport}
               className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg shadow-md hover:shadow-lg transition-all"
             >
-              DOWNLOAD FINAL REPORT
+              DOWNLOAD PDF REPORT
             </button>
           )}
         </div>
