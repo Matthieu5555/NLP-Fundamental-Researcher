@@ -9,6 +9,8 @@ function ChatInterface({ sessionId, ticker, onReportUpdated }) {
   const [streaming, setStreaming] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState('')
   const [reportUpdateNotice, setReportUpdateNotice] = useState(false)
+  const [searchStatus, setSearchStatus] = useState('')
+  const [currentSources, setCurrentSources] = useState([])
   const chatEndRef = useRef(null)
 
   useEffect(() => {
@@ -37,15 +39,35 @@ function ChatInterface({ sessionId, ticker, onReportUpdated }) {
       eventSource.onmessage = (event) => {
         if (event.data === '[DONE]') {
           eventSource.close()
-          setMessages(prev => [...prev, { role: 'assistant', content: fullResponse }])
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: fullResponse,
+            sources: currentSources
+          }])
           setStreamingMessage('')
           setStreaming(false)
+          setSearchStatus('')
+          setCurrentSources([])
           return
         }
 
-        // Check for report update event
+        // Check for JSON events (status, sources, report update)
         try {
           const eventData = JSON.parse(event.data)
+
+          // Handle search status
+          if (eventData.status) {
+            setSearchStatus(eventData.status)
+            return
+          }
+
+          // Handle sources
+          if (eventData.sources) {
+            setCurrentSources(eventData.sources)
+            return
+          }
+
+          // Handle report update event
           if (eventData.event === 'report_updated') {
             setReportUpdateNotice(true)
             if (onReportUpdated) {
@@ -128,18 +150,48 @@ function ChatInterface({ sessionId, ticker, onReportUpdated }) {
             key={idx}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div
-              className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md ${
-                message.role === 'user'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                  : 'bg-white border-2 border-slate-200 text-slate-800'
-              }`}
-            >
-              {message.role === 'user' ? (
-                <p className="text-sm leading-relaxed">{message.content}</p>
-              ) : (
-                <div className="prose prose-sm prose-slate max-w-none">
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+            <div className={`max-w-[85%] ${message.role === 'assistant' ? 'space-y-2' : ''}`}>
+              <div
+                className={`rounded-2xl px-5 py-3 shadow-md ${
+                  message.role === 'user'
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                    : 'bg-white border-2 border-slate-200 text-slate-800'
+                }`}
+              >
+                {message.role === 'user' ? (
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                ) : (
+                  <div className="prose prose-sm prose-slate max-w-none">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+
+              {/* Display sources for assistant messages */}
+              {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                  <p className="text-xs font-semibold text-slate-600 mb-2">Sources:</p>
+                  <div className="space-y-1">
+                    {message.sources.map((source, srcIdx) => (
+                      <div key={srcIdx} className="flex items-start gap-2">
+                        <svg className="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                        </svg>
+                        <a
+                          href={source.url.startsWith('http') ? source.url : `https://${source.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex-1"
+                        >
+                          {source.title}
+                          {source.date && source.date !== 'recent' && (
+                            <span className="text-slate-500 ml-1">({source.date})</span>
+                          )}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -159,11 +211,21 @@ function ChatInterface({ sessionId, ticker, onReportUpdated }) {
         {streaming && !streamingMessage && (
           <div className="flex justify-start">
             <div className="rounded-2xl px-5 py-3 bg-white border-2 border-slate-200 shadow-md">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-              </div>
+              {searchStatus ? (
+                <p className="text-sm text-blue-600 flex items-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {searchStatus}
+                </p>
+              ) : (
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+              )}
             </div>
           </div>
         )}

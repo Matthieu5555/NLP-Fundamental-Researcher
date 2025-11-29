@@ -2,6 +2,7 @@ import { useState } from 'react'
 import StockPicker from './components/StockPicker'
 import AnalysisView from './components/AnalysisView'
 import ChatInterface from './components/ChatInterface'
+import SessionBrowser from './components/SessionBrowser'
 import './index.css'
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
   const [ticker, setTicker] = useState(null)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [reportVersion, setReportVersion] = useState(0)
+  const [showSessionBrowser, setShowSessionBrowser] = useState(false)
 
   const handleAnalysisStart = (newSessionId, newTicker) => {
     setSessionId(newSessionId)
@@ -31,6 +33,14 @@ function App() {
     setReportVersion(prev => prev + 1)
   }
 
+  const handleResumeSession = (sessionData) => {
+    setSessionId(sessionData.session_id)
+    setTicker(sessionData.ticker)
+    setAnalysisComplete(true) // Assume resumed sessions have completed analysis
+    setReportVersion(prev => prev + 1) // Trigger report refresh
+    setShowSessionBrowser(false)
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
@@ -46,14 +56,24 @@ function App() {
               </p>
             )}
           </div>
-          {sessionId && (
-            <button
-              onClick={handleReset}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              New Analysis
-            </button>
-          )}
+          <div className="flex gap-3">
+            {!sessionId && (
+              <button
+                onClick={() => setShowSessionBrowser(true)}
+                className="px-5 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border-2 border-slate-300 hover:border-slate-400 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                Resume Analysis
+              </button>
+            )}
+            {sessionId && (
+              <button
+                onClick={handleReset}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                New Analysis
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -95,6 +115,14 @@ function App() {
           WARNING: This analysis should not be considered as financial advice
         </p>
       </footer>
+
+      {/* Session Browser Modal */}
+      {showSessionBrowser && (
+        <SessionBrowser
+          onResumeSession={handleResumeSession}
+          onClose={() => setShowSessionBrowser(false)}
+        />
+      )}
     </div>
   )
 }
