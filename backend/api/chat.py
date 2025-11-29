@@ -57,6 +57,11 @@ def stream_chat():
         try:
             logger.info(f"Chat request for session {session_id}, ticker {session.ticker}, message: {message[:100]}")
 
+            # Indicate if search is being performed
+            def send_status(status_msg):
+                """Helper to send status updates."""
+                yield f"data: {json.dumps({'status': status_msg})}\n\n"
+
             # Get report summary for context
             report_summary = ""
             if session.report_state:
@@ -65,13 +70,26 @@ def stream_chat():
                     # Include first 200 chars of each section
                     report_summary += f"\n{section.title}:\n{section.content[:200]}...\n"
 
-            # Build system prompt
+            # Retrieve additional context via RAG
+            from core.rag_engine import RAGEngine
+
+            rag_engine = RAGEngine()
+            rag_context = rag_engine.retrieve_context(
+                query=message,
+                ticker=session.ticker,
+                company_name=session.metadata.get('company_name', session.ticker)
+            )
+            additional_context = rag_engine.format_context_for_llm(rag_context)
+
+            # Build system prompt with RAG context
             system_prompt = f"""You are a financial analyst assistant analyzing {session.ticker}.
 Answer questions based on the analysis report and your knowledge.
 Be concise, factual, and cite specific numbers when possible.
 
 Recent analysis:
-{report_summary}"""
+{report_summary}
+
+{additional_context}"""
 
             # Use ContextManager to build optimized context window
             from core.context_manager import ContextManager
@@ -81,6 +99,10 @@ Recent analysis:
             context = context_mgr.build_context(session, message, system_prompt)
 
             logger.info(f"Context built: {context['total_tokens']} tokens, compressed: {context['was_compressed']}")
+
+            # Send search status if RAG search was performed
+            if rag_context["search_performed"]:
+                yield f"data: {json.dumps({'status': 'Searching recent data...'})}\n\n"
 
             # Build conversation context from managed messages
             conversation_context = "\n".join([
@@ -112,12 +134,17 @@ Recent analysis:
 
             yield "data: [DONE]\n\n"
 
+            # Get source citations for UI
+            citations = rag_engine.get_source_citations(rag_context)
+
             # Add assistant response to conversation history
             session.add_message('assistant', response_text, metadata={
                 'token_count': len(response_text.split()),
                 'model': 'openrouter',
                 'context_compressed': context['was_compressed'],
-                'context_tokens': context['total_tokens']
+                'context_tokens': context['total_tokens'],
+                'sources': citations,
+                'rag_search_performed': rag_context['search_performed']
             })
 
             # Update report based on conversation
@@ -134,6 +161,10 @@ Recent analysis:
                 logger.info("Report updated from conversation")
                 # Send event to frontend to refresh report
                 yield f"data: {json.dumps({'event': 'report_updated'})}\n\n"
+
+            # Send sources to frontend
+            if citations:
+                yield f"data: {json.dumps({'sources': citations})}\n\n"
 
             logger.info("Chat response completed successfully")
 
