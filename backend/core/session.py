@@ -209,7 +209,7 @@ class SessionManager:
                     "confidence": section.confidence,
                     "version": section.version
                 }
-                for section_id, section in (session.report_state.sections.items() if session.report_state else {}).items()
+                for section_id, section in (session.report_state.sections.items() if session.report_state else [])
             ],
             "belief_graph": session.belief_graph.to_dict() if hasattr(session.belief_graph, 'to_dict') else {}
         }

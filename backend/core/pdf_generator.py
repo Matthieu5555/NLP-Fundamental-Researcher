@@ -40,8 +40,8 @@ class PDFGenerator:
         self._add_sections(pdf, report_state.sections)
         self._add_disclaimer(pdf)
 
-        # Return PDF as bytes
-        return pdf.output(dest='S').encode('latin-1')
+        # Return PDF as bytes (output returns bytearray in dest='S' mode)
+        return bytes(pdf.output(dest='S'))
 
     def _add_cover_page(self, pdf: FPDF, ticker: str, created_at: datetime):
         """Add professional cover page."""
@@ -183,7 +183,7 @@ class PDFGenerator:
                     if line.strip().startswith('-') or line.strip().startswith('*'):
                         bullet_text = line.strip()[1:].strip()
                         pdf.cell(10, 6, '', 0, 0)  # Indent
-                        pdf.multi_cell(0, 6, f'• {bullet_text}')
+                        pdf.multi_cell(0, 6, f'- {bullet_text}')
                 pdf.ln(2)
             else:
                 # Regular paragraph
@@ -199,7 +199,7 @@ class PDFGenerator:
 
             for source in section.sources:
                 pdf.cell(10, 5, '', 0, 0)  # Indent
-                pdf.multi_cell(0, 5, f'• {source}')
+                pdf.multi_cell(0, 5, f'- {source}')
 
     def _add_disclaimer(self, pdf: FPDF):
         """Add disclaimer page."""
@@ -217,12 +217,12 @@ The information contained in this report is based on publicly available data and
 
 Key Points:
 
-• This is not financial, investment, or trading advice
-• Always conduct your own research and due diligence
-• Consult with qualified financial advisors before making investment decisions
-• Past performance does not guarantee future results
-• All investments carry risk, including potential loss of principal
-• Market conditions can change rapidly
+- This is not financial, investment, or trading advice
+- Always conduct your own research and due diligence
+- Consult with qualified financial advisors before making investment decisions
+- Past performance does not guarantee future results
+- All investments carry risk, including potential loss of principal
+- Market conditions can change rapidly
 
 The AI analysis includes multiple perspectives (fundamental, technical, bull case, bear case, etc.) to provide a comprehensive view. However, these perspectives may conflict and should be evaluated in the context of your own investment goals and risk tolerance.
 
@@ -232,15 +232,9 @@ By using this report, you acknowledge that all investment decisions are your own
 
         paragraphs = disclaimer_text.split('\n\n')
         for para in paragraphs:
-            if para.strip().startswith('•'):
-                # Bullet point
-                lines = para.split('\n')
-                for line in lines:
-                    pdf.multi_cell(0, 5, line.strip())
-                pdf.ln(2)
-            else:
-                pdf.multi_cell(0, 5, para.strip())
-                pdf.ln(3)
+            # Just render all paragraphs directly
+            pdf.multi_cell(0, 5, para.strip())
+            pdf.ln(3)
 
         # Footer
         pdf.ln(10)
