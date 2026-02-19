@@ -20,7 +20,7 @@ class Config:
     openrouter_model: str
     alpha_vantage_key: Optional[str]
     eodhd_key: Optional[str]
-    tavily_key: Optional[str]
+    google_api_key: Optional[str]
     data_dir: Path
     embeddings_dir: Path
     chunk_size: int
@@ -35,7 +35,7 @@ def load_config() -> Config:
         openrouter_model=os.getenv("OPENROUTER_MODEL", "anthropic/claude-3-haiku"),
         alpha_vantage_key=os.getenv("ALPHA_VANTAGE_API_KEY"),
         eodhd_key=os.getenv("EODHD_API_KEY"),
-        tavily_key=os.getenv("TAVILY_API_KEY"),
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
         data_dir=Path(os.getenv("DATA_DIR", "./data")),
         embeddings_dir=Path(os.getenv("EMBEDDINGS_DIR", "./embeddings")),
         chunk_size=int(os.getenv("CHUNK_SIZE", "1000")),

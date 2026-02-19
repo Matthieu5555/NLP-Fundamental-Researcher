@@ -1,13 +1,13 @@
 """
 Quick API test script.
 
-Run this after starting the Flask server to verify endpoints work.
+Run this after starting the FastAPI server to verify endpoints work.
 """
 
 import requests
 import time
 
-API_URL = "http://localhost:5000"
+API_URL = "http://localhost:5001"
 
 
 def test_health():
@@ -36,7 +36,7 @@ def test_create_session():
 
 def test_session_status(session_id):
     """Test getting session status."""
-    print(f"\n3. Getting session status...")
+    print("\n3. Getting session status...")
     response = requests.get(f"{API_URL}/api/analysis/{session_id}/status")
     print(f"   Status: {response.status_code}")
     data = response.json()
@@ -47,7 +47,7 @@ def test_session_status(session_id):
 
 def test_run_analysis(session_id):
     """Test running analysis (SSE stream)."""
-    print(f"\n4. Running analysis (SSE stream)...")
+    print("\n4. Running analysis (SSE stream)...")
     print("   Streaming progress:")
 
     response = requests.post(
@@ -66,7 +66,7 @@ def test_run_analysis(session_id):
 
 def test_get_sections(session_id):
     """Test getting report sections."""
-    print(f"\n5. Getting report sections...")
+    print("\n5. Getting report sections...")
     response = requests.get(f"{API_URL}/api/reports/{session_id}/sections")
     print(f"   Status: {response.status_code}")
     data = response.json()
@@ -76,7 +76,7 @@ def test_get_sections(session_id):
 
 def test_chat_stream(session_id):
     """Test chat streaming."""
-    print(f"\n6. Testing chat stream...")
+    print("\n6. Testing chat stream...")
     print("   Sending: 'What is the P/E ratio?'")
 
     url = f"{API_URL}/api/chat/stream"
@@ -102,7 +102,7 @@ def test_chat_stream(session_id):
 
 def test_get_history(session_id):
     """Test getting conversation history."""
-    print(f"\n7. Getting conversation history...")
+    print("\n7. Getting conversation history...")
     response = requests.get(f"{API_URL}/api/chat/{session_id}/history")
     print(f"   Status: {response.status_code}")
     data = response.json()
@@ -113,7 +113,7 @@ def test_get_history(session_id):
 
 def test_get_beliefs(session_id):
     """Test getting beliefs."""
-    print(f"\n8. Getting beliefs...")
+    print("\n8. Getting beliefs...")
     response = requests.get(f"{API_URL}/api/chat/{session_id}/beliefs")
     print(f"   Status: {response.status_code}")
     data = response.json()
@@ -123,7 +123,7 @@ def test_get_beliefs(session_id):
 
 def test_list_sessions():
     """Test listing all sessions."""
-    print(f"\n9. Listing all sessions...")
+    print("\n9. Listing all sessions...")
     response = requests.get(f"{API_URL}/api/analysis/sessions")
     print(f"   Status: {response.status_code}")
     data = response.json()
@@ -133,7 +133,7 @@ def test_list_sessions():
 def run_all_tests():
     """Run all API tests."""
     print("=" * 60)
-    print("George Financial Analyst - API Test Suite")
+    print("Constant - Your Intern - API Test Suite")
     print("=" * 60)
 
     try:
@@ -168,8 +168,8 @@ def run_all_tests():
         print(f"\nTEST FAILED: {e}")
     except requests.exceptions.ConnectionError:
         print("\nERROR: Could not connect to API.")
-        print("Make sure the Flask server is running:")
-        print("  cd backend && python app.py")
+        print("Make sure the FastAPI server is running:")
+        print("  ./start.sh  # or: uv run uvicorn backend.main:app --port 5001")
     except Exception as e:
         print(f"\nUNEXPECTED ERROR: {e}")
         import traceback

@@ -8,22 +8,33 @@ Tracks user beliefs, facts, and relationships between them.
 import networkx as nx
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional, Dict, Tuple
+from typing import List, Dict
 from enum import Enum
 
 class NodeType(Enum):
-    """Types of nodes in the belief graph."""
-    ENTITY = "entity"  # Stock, metric, company
-    BELIEF = "belief"  # User belief
-    FACT = "fact"      # Verified fact
+    """
+    Types of nodes in the belief graph.
+
+    The graph tracks entities (stocks, companies), user beliefs about them,
+    and verified facts from external sources.
+    """
+    ENTITY = "entity"  # Stock ticker, metric name, company name
+    BELIEF = "belief"  # User-stated or LLM-inferred belief about an entity
+    FACT = "fact"      # Externally verified fact (from API, news, filings)
+
 
 class EdgeType(Enum):
-    """Types of edges in the belief graph."""
-    HAS_METRIC = "has_metric"
-    BELIEVES = "believes"
-    SUPPORTS = "supports"
-    CONTRADICTS = "contradicts"
-    CITED_BY = "cited_by"
+    """
+    Types of edges (relationships) in the belief graph.
+
+    Edges connect nodes to represent relationships like ownership,
+    support, contradiction, and citation references.
+    """
+    HAS_METRIC = "has_metric"    # Entity -> Metric (e.g., AAPL -> P/E ratio)
+    BELIEVES = "believes"        # User -> Belief relationship
+    SUPPORTS = "supports"        # Fact -> Belief (evidence supporting a belief)
+    CONTRADICTS = "contradicts"  # Belief -> Belief (conflicting statements)
+    CITED_BY = "cited_by"        # Source -> Section (citation reference)
 
 @dataclass
 class Belief:
@@ -66,6 +77,17 @@ class BeliefGraph:
 
     Uses NetworkX for graph operations like finding contradictions,
     tracking relationships, and managing belief evolution.
+
+    Complexity Analysis:
+        - add_belief/add_fact: O(1) node insertion
+        - link_contradiction/link_support: O(1) edge insertion
+        - find_contradictions: O(n) where n = number of belief nodes
+        - get_all_beliefs: O(n) full scan of all nodes
+        - to_dict/from_dict: O(n + e) where e = number of edges
+
+    The graph is stored in-memory using NetworkX DiGraph. For large-scale
+    applications with thousands of beliefs, consider migrating to a
+    proper graph database (Neo4j, etc.).
     """
 
     def __init__(self):
@@ -244,3 +266,74 @@ class BeliefGraph:
             'total_nodes': self.graph.number_of_nodes(),
             'total_edges': self.graph.number_of_edges()
         }
+
+    def to_dict(self) -> Dict:
+        """
+        Serialize the belief graph to a dictionary.
+
+        Preserves full graph structure including nodes, edges, and counters.
+        Used for session persistence.
+
+        Returns:
+            Dict: Serialized graph data
+        """
+        nodes = []
+        for node_id, node_data in self.graph.nodes(data=True):
+            nodes.append({
+                'id': node_id,
+                'type': node_data.get('type'),
+                'data': node_data.get('data', {})
+            })
+
+        edges = []
+        for source, target, edge_data in self.graph.edges(data=True):
+            edges.append({
+                'source': source,
+                'target': target,
+                'type': edge_data.get('type')
+            })
+
+        return {
+            'nodes': nodes,
+            'edges': edges,
+            'belief_counter': self._belief_counter,
+            'fact_counter': self._fact_counter
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'BeliefGraph':
+        """
+        Reconstruct a belief graph from serialized dictionary.
+
+        Args:
+            data: Dictionary from to_dict()
+
+        Returns:
+            BeliefGraph: Reconstructed graph with all nodes and edges
+        """
+        graph = cls()
+
+        if not data:
+            return graph
+
+        # Restore counters
+        graph._belief_counter = data.get('belief_counter', 0)
+        graph._fact_counter = data.get('fact_counter', 0)
+
+        # Restore nodes
+        for node in data.get('nodes', []):
+            graph.graph.add_node(
+                node['id'],
+                type=node.get('type'),
+                data=node.get('data', {})
+            )
+
+        # Restore edges
+        for edge in data.get('edges', []):
+            graph.graph.add_edge(
+                edge['source'],
+                edge['target'],
+                type=edge.get('type')
+            )
+
+        return graph

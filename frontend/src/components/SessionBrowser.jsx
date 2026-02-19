@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+import api from '../utils/api'
 
 function SessionBrowser({ onResumeSession, onClose }) {
   const [sessions, setSessions] = useState([])
@@ -15,18 +14,16 @@ function SessionBrowser({ onResumeSession, onClose }) {
   const fetchSessions = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/api/sessions/`)
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
-      setSessions(data.sessions || [])
+      const response = await api.get('/api/sessions/')
+      setSessions(response.data.sessions || [])
       setError(null)
     } catch (err) {
       console.error('Failed to fetch sessions:', err)
-      setError('Failed to load sessions. Please try again.')
+      if (err.response?.status === 401) {
+        setError('Please log in to view your sessions.')
+      } else {
+        setError('Failed to load sessions. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -34,16 +31,8 @@ function SessionBrowser({ onResumeSession, onClose }) {
 
   const handleResume = async (sessionId) => {
     try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}/resume`, {
-        method: 'POST'
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const sessionData = await response.json()
-      onResumeSession(sessionData)
+      const response = await api.post(`/api/sessions/${sessionId}/resume`)
+      onResumeSession(response.data)
       onClose()
     } catch (err) {
       console.error('Failed to resume session:', err)
@@ -59,14 +48,7 @@ function SessionBrowser({ onResumeSession, onClose }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
+      await api.delete(`/api/sessions/${sessionId}`)
       // Remove from list
       setSessions(prev => prev.filter(s => s.session_id !== sessionId))
     } catch (err) {
@@ -107,7 +89,7 @@ function SessionBrowser({ onResumeSession, onClose }) {
             placeholder="Search by ticker..."
             value={searchTicker}
             onChange={(e) => setSearchTicker(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C87A23] focus:border-transparent"
           />
         </div>
 
@@ -115,14 +97,14 @@ function SessionBrowser({ onResumeSession, onClose }) {
         <div className="flex-grow overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#C87A23' }}></div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
               <p className="text-red-600 mb-4">{error}</p>
               <button
                 onClick={fetchSessions}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 text-white rounded-lg transition-colors" style={{ backgroundColor: '#C87A23' }}
               >
                 Retry
               </button>
@@ -142,12 +124,12 @@ function SessionBrowser({ onResumeSession, onClose }) {
                 <div
                   key={session.session_id}
                   onClick={() => handleResume(session.session_id)}
-                  className="bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg p-4 cursor-pointer transition-all duration-200 group"
+                  className="bg-slate-50 border border-slate-200 rounded-lg p-4 cursor-pointer transition-all duration-200 group hover:bg-[#FEF3E2] hover:border-[#E8C4A0]"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-grow">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-bold text-blue-600 group-hover:text-blue-700">
+                        <h3 className="text-lg font-bold" style={{ color: '#C87A23' }}>
                           {session.ticker}
                         </h3>
                         <span className="text-xs text-slate-500">

@@ -2,17 +2,59 @@
 RAG Engine for Smart Data Access.
 
 Provides unified interface for:
-- Tavily web search (breaking news)
+- Gemini Search Grounding (breaking news via Google Search)
 - SEC filing semantic search (FAISS)
-- Query classification (keyword-based routing)
+- Query classification (LLM-based with keyword fallback)
+
+Query Classification:
+Uses Claude 3 Haiku for fast, cheap classification (50 tokens max).
+Falls back to keyword matching if LLM unavailable or fails.
+
+Classifications determine which data sources to search:
+- "web_search": Breaking news, recent events, earnings announcements
+- "sec_filings": Financial statements, risk factors, 10-K/10-Q content
+- Both can be true for comprehensive queries
+
+Data Flow:
+1. classify_query_with_llm() or _keyword_classify() → search flags
+2. _search_news() → Gemini Search Grounding → formatted news list
+3. _search_filings() → SEC FAISS search → formatted filing chunks
+4. format_context_for_llm() → context block for chat system prompt
+
+Caching:
+SEC filing data is cached in-memory per RAGEngine instance.
+No expiration - cleared when instance is destroyed.
 """
 
 import logging
 import os
+import sys
+import json
 from typing import Dict, List, Optional
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Ensure project root is in path for src_george_researcher imports
+# This is also done in main.py at startup, but we need it for direct imports
+_project_root = Path(__file__).parent.parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+# Haiku model for cheap classification
+HAIKU_MODEL = "anthropic/claude-3-haiku"
+
+# Classification prompt
+SEARCH_CLASSIFICATION_PROMPT = """You are a query classifier for a financial analysis chatbot.
+
+The user is analyzing {ticker}. They asked: "{query}"
+
+Determine what data sources are needed:
+1. web_search: Does this need current news, recent announcements, or external data? (e.g., "what's happening with 5G in Europe", "any recent news", "current market sentiment")
+2. sec_filings: Does this need SEC filing data like 10-K, financial statements, risk factors? (e.g., "what are their revenues", "debt levels", "risk factors")
+
+Respond ONLY with valid JSON, no other text:
+{{"web_search": true/false, "sec_filings": true/false}}"""
 
 
 class RAGEngine:
@@ -20,7 +62,11 @@ class RAGEngine:
     Unified RAG engine for smart data retrieval.
 
     Uses keyword-based query classification to decide which data sources to search.
-    Integrates Tavily (web search) and SEC filings (FAISS semantic search).
+    Integrates Gemini Search Grounding (Google Search) and SEC filings (FAISS semantic search).
+
+    Relevance Thresholds:
+    - SEC filings: min_relevance=0.3 (filters out low-quality FAISS matches)
+    - News: No threshold (Gemini already ranks by relevance)
     """
 
     # Keywords that trigger specific searches
@@ -35,10 +81,16 @@ class RAGEngine:
         'liabilities', 'debt', 'competition', 'business model', 'strategy'
     ]
 
+    # Minimum relevance thresholds (0-1, higher = stricter)
+    MIN_SEC_RELEVANCE = 0.3  # Filter out weak semantic matches
+    MIN_NEWS_RELEVANCE = 0.0  # Gemini handles its own ranking
+
     def __init__(self):
         """Initialize RAG engine."""
-        self.tavily_api_key = os.getenv('TAVILY_API_KEY')
-        self.tavily_enabled = bool(self.tavily_api_key)
+        self.google_api_key = os.getenv('GOOGLE_API_KEY')
+        self.openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
+        self.search_enabled = bool(self.google_api_key)
+        self.llm_classification_enabled = bool(self.openrouter_api_key)
 
         # Cache for SEC filings (in-memory for session)
         self.sec_filing_cache = {}
@@ -48,11 +100,60 @@ class RAGEngine:
         self.embeddings_dir = self.data_dir / "embeddings"
         self.embeddings_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"RAGEngine initialized. Tavily: {self.tavily_enabled}")
+        logger.info(f"RAGEngine initialized. Gemini Search: {self.search_enabled}, LLM Classification: {self.llm_classification_enabled}")
 
-    def should_search(self, query: str) -> Dict[str, bool]:
+    def classify_query_with_llm(self, query: str, ticker: str) -> Dict[str, bool]:
         """
-        Determine which searches to run based on query keywords.
+        Use Haiku to classify if query needs external research.
+
+        Args:
+            query: User query string
+            ticker: Stock ticker being analyzed
+
+        Returns:
+            Dict with 'web_search' and 'sec_filings' boolean flags
+        """
+        if not self.openrouter_api_key:
+            logger.warning("No OpenRouter API key, falling back to keyword classification")
+            return self._keyword_classify(query)
+
+        try:
+            from src_george_researcher.llm import call_llm
+
+            prompt = SEARCH_CLASSIFICATION_PROMPT.format(ticker=ticker, query=query)
+
+            response = call_llm(
+                api_key=self.openrouter_api_key,
+                model=HAIKU_MODEL,
+                system_prompt="You are a query classifier. Respond only with JSON.",
+                user_prompt=prompt,
+                temperature=0.0,
+                max_tokens=50
+            )
+
+            if not response.success:
+                logger.warning(f"LLM classification failed: {response.error}, falling back to keywords")
+                return self._keyword_classify(query)
+
+            # Parse JSON response
+            result = json.loads(response.content.strip())
+            logger.info(f"LLM classified query: web_search={result.get('web_search')}, sec_filings={result.get('sec_filings')}")
+
+            return {
+                "news": result.get("web_search", False),
+                "filings": result.get("sec_filings", False)
+            }
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse LLM classification response: {e}")
+            return self._keyword_classify(query)
+        except Exception as e:
+            logger.error(f"LLM classification error: {e}")
+            return self._keyword_classify(query)
+
+    def _keyword_classify(self, query: str) -> Dict[str, bool]:
+        """
+        Fallback keyword-based classification.
 
         Args:
             query: User query string
@@ -61,11 +162,28 @@ class RAGEngine:
             Dict with 'news' and 'filings' boolean flags
         """
         query_lower = query.lower()
-
         return {
             "news": any(kw in query_lower for kw in self.NEWS_KEYWORDS),
             "filings": any(kw in query_lower for kw in self.FILING_KEYWORDS)
         }
+
+    def should_search(self, query: str, ticker: str = None, use_llm: bool = True) -> Dict[str, bool]:
+        """
+        Determine which searches to run.
+
+        Uses LLM classification by default, falls back to keywords.
+
+        Args:
+            query: User query string
+            ticker: Stock ticker (required for LLM classification)
+            use_llm: Whether to use LLM classification (default True)
+
+        Returns:
+            Dict with 'news' and 'filings' boolean flags
+        """
+        if use_llm and ticker and self.llm_classification_enabled:
+            return self.classify_query_with_llm(query, ticker)
+        return self._keyword_classify(query)
 
     def retrieve_context(
         self,
@@ -89,7 +207,7 @@ class RAGEngine:
                 - search_performed: Boolean indicating if any search was done
                 - errors: List of error messages (if any)
         """
-        search_flags = self.should_search(query)
+        search_flags = self.should_search(query, ticker=ticker)
         context = {
             "sources": [],
             "search_performed": False,
@@ -100,8 +218,8 @@ class RAGEngine:
             company_name = ticker
 
         # Search news if relevant
-        if search_flags["news"] and self.tavily_enabled:
-            news_results, news_error = self._search_news(ticker, company_name, max_results)
+        if search_flags["news"] and self.search_enabled:
+            news_results, news_error = self._search_news(ticker, company_name, query, max_results)
             if news_results:
                 context["sources"].extend(news_results)
                 context["search_performed"] = True
@@ -119,33 +237,38 @@ class RAGEngine:
 
         return context
 
+    # Minimum confidence for Gemini sources
+    MIN_GEMINI_CONFIDENCE = 0.5
+
     def _search_news(
         self,
         ticker: str,
         company_name: str,
+        query: str,
         max_results: int = 5
     ) -> tuple[List[Dict], Optional[str]]:
         """
-        Search recent news via Tavily.
+        Search recent news via Gemini Search Grounding (Google Search).
+
+        Args:
+            ticker: Stock ticker
+            company_name: Full company name
+            query: Analyst's specific question (passed to Gemini for relevance)
+            max_results: Maximum results to return
 
         Returns:
             Tuple of (list of news dicts, error message or None)
         """
         try:
-            # Import here to avoid circular dependency
-            import sys
-            from pathlib import Path
-            src_path = Path(__file__).parent.parent.parent / "src_george_researcher"
-            if str(src_path) not in sys.path:
-                sys.path.insert(0, str(src_path))
+            from src_george_researcher.data_fetchers.gemini_search import search_with_gemini
 
-            from data_fetchers.web_search import search_breaking_news
-
-            results, error = search_breaking_news(
+            results, error = search_with_gemini(
                 symbol=ticker,
                 company_name=company_name,
-                api_key=self.tavily_api_key,
-                max_results=max_results
+                api_key=self.google_api_key,
+                query=query,  # Pass analyst's question for targeted search
+                max_results=max_results,
+                min_confidence=self.MIN_GEMINI_CONFIDENCE
             )
 
             if error:
@@ -154,7 +277,7 @@ class RAGEngine:
             if not results:
                 return ([], None)
 
-            # Format results
+            # Format results with confidence scores
             formatted = []
             for result in results.results:
                 formatted.append({
@@ -162,9 +285,10 @@ class RAGEngine:
                     "title": result.title,
                     "content": result.content,
                     "url": result.url,
-                    "score": result.score
+                    "score": result.score  # Now actual confidence, not position-based
                 })
 
+            logger.info(f"News search returned {len(formatted)} sources (min_confidence={self.MIN_GEMINI_CONFIDENCE})")
             return (formatted, None)
 
         except Exception as e:
@@ -197,23 +321,18 @@ class RAGEngine:
             if not filing_data:
                 return ([], "No SEC filing data available")
 
-            # Search the filing
-            import sys
-            from pathlib import Path
-            src_path = Path(__file__).parent.parent.parent / "src_george_researcher"
-            if str(src_path) not in sys.path:
-                sys.path.insert(0, str(src_path))
-
-            from data_fetchers.sec_filings import search_sec_filing
+            # Search the filing with relevance threshold
+            from src_george_researcher.data_fetchers.sec_filings import search_sec_filing
 
             chunks = search_sec_filing(
                 filing=filing_data,
                 query=query,
                 embeddings_dir=self.embeddings_dir,
-                k=max_results
+                k=max_results,
+                min_relevance=self.MIN_SEC_RELEVANCE
             )
 
-            # Format results
+            # Format results with relevance score
             formatted = []
             for chunk in chunks:
                 formatted.append({
@@ -221,30 +340,35 @@ class RAGEngine:
                     "content": chunk.text[:600],  # Truncate to 600 chars
                     "section": chunk.section,
                     "filing_date": chunk.filing_date,
-                    "source": chunk.source
+                    "source": chunk.source,
+                    "relevance_score": chunk.relevance_score
                 })
 
+            logger.info(f"SEC search returned {len(chunks)} chunks above threshold {self.MIN_SEC_RELEVANCE}")
             return (formatted, None)
 
         except Exception as e:
             logger.error(f"SEC filing search failed: {e}")
             return ([], str(e))
 
-    def _fetch_sec_filing(self, ticker: str):
+    def _fetch_sec_filing(self, ticker: str) -> tuple[Optional[object], Optional[str]]:
         """
         Fetch SEC 10-K filing for a ticker.
 
+        Uses SEC Edgar API via sec_filings module to download and parse
+        the most recent 10-K filing. Results are cached in self.sec_filing_cache
+        to avoid repeated API calls.
+
+        Args:
+            ticker: Stock ticker symbol (e.g., 'AAPL')
+
         Returns:
-            Tuple of (SECFilingData or None, error message or None)
+            tuple: (filing_data, error_message)
+                - On success: (SECFilingData object, None)
+                - On failure: (None, error description string)
         """
         try:
-            import sys
-            from pathlib import Path
-            src_path = Path(__file__).parent.parent.parent / "src_george_researcher"
-            if str(src_path) not in sys.path:
-                sys.path.insert(0, str(src_path))
-
-            from data_fetchers.sec_filings import fetch_sec_filing
+            from src_george_researcher.data_fetchers.sec_filings import fetch_sec_filing
 
             filing_data, error = fetch_sec_filing(
                 symbol=ticker,

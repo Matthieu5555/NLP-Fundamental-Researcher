@@ -11,18 +11,96 @@ from enum import Enum
 
 
 class SectionType(Enum):
-    """Standard report section types."""
-    EXECUTIVE_SUMMARY = "executive_summary"
-    FUNDAMENTALS = "fundamentals"
-    TECHNICALS = "technicals"
-    BULL_CASE = "bull_case"
-    BEAR_CASE = "bear_case"
-    MOAT_ANALYSIS = "moat_analysis"
-    SWOT = "swot"
-    SENTIMENT = "sentiment"
-    RISKS = "risks"
-    RECOMMENDATION = "recommendation"
-    CUSTOM = "custom"
+    """
+    Standard report section types for financial analysis.
+
+    Each section type corresponds to a specific aspect of stock analysis.
+    The enum values are used as identifiers in serialization and routing.
+    """
+    EXECUTIVE_SUMMARY = "executive_summary"  # High-level overview and key findings
+    FUNDAMENTALS = "fundamentals"            # Valuation metrics and financial data (P/E, P/B, etc.)
+    TECHNICALS = "technicals"                # Price action and technical indicators (RSI, MACD, etc.)
+    BULL_CASE = "bull_case"                  # Positive investment thesis and catalysts
+    BEAR_CASE = "bear_case"                  # Negative thesis, risks, and potential downsides
+    MOAT_ANALYSIS = "moat_analysis"          # Competitive advantages assessment (brand, network effects, etc.)
+    STRATEGY = "strategy"                    # SWOT + Future Outlook strategic analysis
+    FINANCIAL_STATEMENTS = "financial_statements"  # Income, balance sheet, cash flow (US companies only)
+    SENTIMENT = "sentiment"                  # Market and news sentiment analysis
+    RISKS = "risks"                          # Key risk factors and mitigation strategies
+    RECOMMENDATION = "recommendation"        # Final investment recommendation (buy/hold/sell)
+    SOURCES = "sources"                      # Bibliography and citation references
+    CUSTOM = "custom"                        # User-defined custom section type
+
+
+@dataclass
+class Source:
+    """Structured source reference for citations."""
+    id: int                     # Citation number [1], [2], etc.
+    title: str                  # "Apple Q3 Earnings Report"
+    url: str                    # https://...
+    source_type: str            # "news" | "filing" | "api" | "search"
+    date: str                   # "2024-12-01" or "N/A"
+    snippet: Optional[str] = None  # Brief excerpt
+
+    def to_dict(self) -> Dict:
+        return {
+            'id': self.id,
+            'title': self.title,
+            'url': self.url,
+            'source_type': self.source_type,
+            'date': self.date,
+            'snippet': self.snippet
+        }
+
+
+@dataclass
+class AnalystSource:
+    """Analyst belief as a citable source [A1], [A2], etc."""
+    id: str                     # "A1", "A2", etc.
+    belief_content: str         # The belief statement
+    insight_type: str           # "confirmed_fact", "risk_identified", etc.
+    section: str                # Target section
+    timestamp: datetime = field(default_factory=datetime.now)
+
+    def to_dict(self) -> Dict:
+        return {
+            'id': self.id,
+            'belief_content': self.belief_content,
+            'insight_type': self.insight_type,
+            'section': self.section,
+            'timestamp': self.timestamp.isoformat()
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'AnalystSource':
+        """Deserialize from dictionary."""
+        return cls(
+            id=data['id'],
+            belief_content=data['belief_content'],
+            insight_type=data['insight_type'],
+            section=data['section'],
+            timestamp=datetime.fromisoformat(data['timestamp']) if data.get('timestamp') else datetime.now()
+        )
+
+    def to_citation_text(self) -> str:
+        """Format for PDF sources section."""
+        # Clean up the belief content for citation
+        content = self.belief_content
+        # Remove "The analyst believes" prefix if present
+        prefixes_to_remove = [
+            "The analyst believes that ",
+            "The analyst believes ",
+            "The analyst confirmed that ",
+            "The analyst confirmed ",
+        ]
+        for prefix in prefixes_to_remove:
+            if content.lower().startswith(prefix.lower()):
+                content = content[len(prefix):]
+                break
+        # Ensure first letter is lowercase for "It is our belief that..."
+        if content and content[0].isupper():
+            content = content[0].lower() + content[1:]
+        return f"It is our belief that {content}"
 
 
 @dataclass
@@ -31,39 +109,73 @@ class Section:
     title: str
     content: str  # markdown format
     section_type: SectionType
-    sources: List[str] = field(default_factory=list)
+    sources: List = field(default_factory=list)  # List[Source] or List[str] for backwards compat
     last_updated: datetime = field(default_factory=datetime.now)
     confidence: float = 0.7  # LLM confidence in this section
     version: int = 1
 
-    def update(self, new_content: str, sources: List[str] = None):
-        """Update section content."""
+    def update(self, new_content: str, sources: List = None):
+        """Update section content. Deduplicates sources by URL."""
         self.content = new_content
         if sources:
-            self.sources.extend(sources)
+            # Build set of existing URLs for deduplication
+            existing_urls = set()
+            for existing in self.sources:
+                if hasattr(existing, 'url'):
+                    existing_urls.add(existing.url.lower().strip())
+                elif isinstance(existing, str):
+                    existing_urls.add(existing.lower().strip())
+
+            # Only add sources that don't already exist
+            for src in sources:
+                if hasattr(src, 'url'):
+                    url_key = src.url.lower().strip()
+                elif isinstance(src, str):
+                    url_key = src.lower().strip()
+                else:
+                    url_key = str(src).lower().strip()
+
+                if url_key not in existing_urls:
+                    self.sources.append(src)
+                    existing_urls.add(url_key)
         self.last_updated = datetime.now()
         self.version += 1
 
     def to_markdown(self) -> str:
-        """Export section as markdown."""
+        """
+        Export section as markdown.
+
+        This is a pure function - no side effects, only reads data.
+        """
         md = f"## {self.title}\n\n"
         md += self.content + "\n\n"
 
         if self.sources:
             md += "**Sources:**\n"
             for source in self.sources:
-                md += f"- {source}\n"
+                if isinstance(source, Source):
+                    md += f"- [{source.id}] {source.title} - {source.url}\n"
+                else:
+                    md += f"- {source}\n"
             md += "\n"
 
         return md
 
     def to_dict(self) -> Dict:
         """Serialize section to dictionary."""
+        # Handle both Source objects and plain strings
+        serialized_sources = []
+        for source in self.sources:
+            if isinstance(source, Source):
+                serialized_sources.append(source.to_dict())
+            else:
+                serialized_sources.append(source)
+
         return {
             'title': self.title,
             'content': self.content,
             'section_type': self.section_type.value,
-            'sources': self.sources,
+            'sources': serialized_sources,
             'last_updated': self.last_updated.isoformat(),
             'confidence': self.confidence,
             'version': self.version
@@ -83,6 +195,7 @@ class ReportState:
     version: int = 1
     created_at: datetime = field(default_factory=datetime.now)
     last_updated: datetime = field(default_factory=datetime.now)
+    excluded_source_ids: List[int] = field(default_factory=list)  # Sources analyst has excluded
 
     def add_section(
         self,
@@ -122,17 +235,80 @@ class ReportState:
         new_content: str,
         sources: List[str] = None
     ):
-        """Update an existing section."""
+        """Update an existing section, or create it if it doesn't exist."""
         if section_id in self.sections:
             self.sections[section_id].update(new_content, sources)
             self.last_updated = datetime.now()
             self.version += 1
         else:
-            raise KeyError(f"Section {section_id} not found")
+            # Create the section with a default title based on section_id
+            section_titles = {
+                "recommendation": "Investment Recommendation",
+                "fundamentals": "Fundamentals Analysis",
+                "technicals": "Technical Analysis",
+                "bull_case": "Bull Case",
+                "bear_case": "Bear Case",
+                "moat": "Competitive Moat",
+                "strategy": "Strategy Analysis",
+                "insider_activity": "Insider Activity",
+                "executive_summary": "Executive Summary",
+                "full_report": "Full Analysis Report",
+            }
+            section_types = {
+                "recommendation": SectionType.RECOMMENDATION,
+                "fundamentals": SectionType.FUNDAMENTALS,
+                "technicals": SectionType.TECHNICALS,
+                "bull_case": SectionType.BULL_CASE,
+                "bear_case": SectionType.BEAR_CASE,
+                "moat": SectionType.MOAT_ANALYSIS,
+                "strategy": SectionType.STRATEGY,
+                "insider_activity": SectionType.CUSTOM,
+                "executive_summary": SectionType.EXECUTIVE_SUMMARY,
+                "full_report": SectionType.CUSTOM,
+            }
+            title = section_titles.get(section_id, section_id.replace("_", " ").title())
+            section_type = section_types.get(section_id, SectionType.CUSTOM)
+            self.add_section(section_id, title, new_content, section_type, sources)
 
     def get_section(self, section_id: str) -> Optional[Section]:
         """Get a section by ID."""
         return self.sections.get(section_id)
+
+    def add_source(
+        self,
+        title: str,
+        url: str,
+        source_type: str = "unknown",
+        date: str = "N/A",
+        snippet: Optional[str] = None
+    ):
+        """Add a source to the sources section."""
+        # Create sources section if it doesn't exist
+        if "sources" not in self.sections:
+            self.add_section(
+                "sources",
+                "Sources",
+                "",
+                SectionType.SOURCES
+            )
+
+        # Generate source ID
+        source_id = len(self.sections.get("sources", Section(title="", content="", section_type=SectionType.SOURCES)).sources) + 1
+
+        # Create source object
+        source = Source(
+            id=source_id,
+            title=title,
+            url=url,
+            source_type=source_type,
+            date=date,
+            snippet=snippet
+        )
+
+        # Add to sources section
+        if "sources" in self.sections:
+            self.sections["sources"].sources.append(source)
+            self.last_updated = datetime.now()
 
     def remove_section(self, section_id: str):
         """Remove a section from the report."""
@@ -170,9 +346,10 @@ class ReportState:
             SectionType.BULL_CASE,
             SectionType.BEAR_CASE,
             SectionType.MOAT_ANALYSIS,
-            SectionType.SWOT,
+            SectionType.STRATEGY,
             SectionType.RISKS,
-            SectionType.RECOMMENDATION
+            SectionType.RECOMMENDATION,
+            SectionType.SOURCES
         ]
 
         # Add sections in standard order
@@ -195,7 +372,7 @@ class ReportState:
         md += "*This analysis is generated by AI and should not be considered as financial advice. "
         md += "Always conduct your own research and consult with qualified financial advisors "
         md += "before making investment decisions.*\n\n"
-        md += f"Generated with George Financial Analyst v2.0\n"
+        md += "Generated with Constant - Your Intern v2.0\n"
 
         return md
 
@@ -227,7 +404,8 @@ class ReportState:
             'metadata': self.metadata,
             'version': self.version,
             'created_at': self.created_at.isoformat(),
-            'last_updated': self.last_updated.isoformat()
+            'last_updated': self.last_updated.isoformat(),
+            'excluded_source_ids': self.excluded_source_ids
         }
 
     def get_stats(self) -> Dict:

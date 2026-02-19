@@ -1,0 +1,34 @@
+{
+  "firms": {
+    "constance": {
+      "firm_id": "constance",
+      "name": "Constance Associes",
+      "primary_color": "#C87A23",
+      "tool_branding": "Research Platform"
+    },
+    "default": {
+      "firm_id": "default",
+      "name": "Research Firm",
+      "primary_color": "#2563EB",
+      "tool_branding": "George Research"
+    }
+  },
+  "analysts": {
+    "default": {
+      "analyst_id": "default",
+      "first_name": "Research",
+      "last_name": "Team",
+      "email": "research@constance.com",
+      "sector": "Multi-Sector",
+      "firm_id": "constance"
+    },
+    "ryan_lim": {
+      "analyst_id": "ryan_lim",
+      "first_name": "Ryan",
+      "last_name": "Lim",
+      "email": "ryan.lim@constance.com",
+      "sector": "Technology",
+      "firm_id": "constance"
+    }
+  }
+}

@@ -1,0 +1,233 @@
+/**
+ * George Researcher Theme System
+ *
+ * All brand colors are defined here. To rebrand:
+ * 1. Change the color values in :root (light mode)
+ * 2. Change the color values in html.dark (dark mode)
+ * 3. That's it - the entire app will update
+ *
+ * Color naming convention:
+ * - brand-*: Primary brand colors (amber/orange family)
+ * - surface-*: Background colors
+ * - text-*: Text colors
+ * - accent-*: Semantic accent colors (success, danger, etc.)
+ */
+
+:root {
+  /* ========================================
+   * BRAND COLORS (Orange/Amber family)
+   * Change these to rebrand the app
+   * ======================================== */
+
+  /* Primary brand - buttons, links, highlights */
+  --brand-primary: #C87A23;
+  --brand-primary-dark: #B06A1A;
+  --brand-primary-light: #E8A040;
+
+  /* Brand gradients */
+  --brand-gradient-from: #C87A23;
+  --brand-gradient-to: #B06A1A;
+
+  /* Brand surfaces (light backgrounds with brand tint) */
+  --brand-surface: #FEF3E2;
+  --brand-surface-dark: #FDE8D0;
+  --brand-border: #E8C4A0;
+
+  /* Dark brand (for headers, dark sections) */
+  --brand-dark: #302011;
+  --brand-dark-light: #4A3520;
+
+  /* ========================================
+   * SURFACE COLORS (Backgrounds)
+   * ======================================== */
+
+  --surface-primary: #ffffff;
+  --surface-secondary: #f8fafc;
+  --surface-tertiary: #f1f5f9;
+  --surface-elevated: #ffffff;
+
+  /* Card backgrounds */
+  --surface-card: #F8FAFC;
+  --surface-card-hover: #f1f5f9;
+
+  /* ========================================
+   * TEXT COLORS
+   * ======================================== */
+
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --text-on-brand: #ffffff;
+  --text-on-brand-surface: #C87A23;
+
+  /* ========================================
+   * BORDER COLORS
+   * ======================================== */
+
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-dark: #94a3b8;
+
+  /* ========================================
+   * SEMANTIC ACCENT COLORS
+   * ======================================== */
+
+  /* Success (green) */
+  --accent-success: #22c55e;
+  --accent-success-light: #dcfce7;
+  --accent-success-dark: #16a34a;
+
+  /* Danger (red) */
+  --accent-danger: #ef4444;
+  --accent-danger-light: #fee2e2;
+  --accent-danger-dark: #dc2626;
+
+  /* Warning (amber) */
+  --accent-warning: #f59e0b;
+  --accent-warning-light: #fef3c7;
+  --accent-warning-dark: #d97706;
+
+  /* Info (blue) */
+  --accent-info: #3b82f6;
+  --accent-info-light: #dbeafe;
+  --accent-info-dark: #2563eb;
+
+  /* ========================================
+   * CHART COLORS
+   * ======================================== */
+
+  --chart-background: #ffffff;
+  --chart-grid: #e2e8f0;
+  --chart-text: #1e293b;
+  --chart-bullish: #22c55e;
+  --chart-bearish: #ef4444;
+
+  /* ========================================
+   * PRIORITY BADGES
+   * ======================================== */
+
+  --badge-high-bg: #fee2e2;
+  --badge-high-text: #dc2626;
+  --badge-medium-bg: #fef3c7;
+  --badge-medium-text: #d97706;
+  --badge-low-bg: #e2e8f0;
+  --badge-low-text: #475569;
+}
+
+/* ==========================================
+ * DARK MODE
+ * ========================================== */
+
+html.dark {
+  /* Brand colors - slightly brighter for dark mode */
+  --brand-primary: #F5A623;
+  --brand-primary-dark: #E8941A;
+  --brand-primary-light: #FFB84D;
+
+  --brand-gradient-from: #F5A623;
+  --brand-gradient-to: #E8941A;
+
+  /* Brand surfaces (dark versions) */
+  --brand-surface: #3D2814;
+  --brand-surface-dark: #2D1E0E;
+  --brand-border: #5C4A2A;
+
+  /* Dark brand */
+  --brand-dark: #1a1208;
+  --brand-dark-light: #302011;
+
+  /* Surfaces */
+  --surface-primary: #0f172a;
+  --surface-secondary: #1e293b;
+  --surface-tertiary: #334155;
+  --surface-elevated: #1e293b;
+
+  --surface-card: #1e293b;
+  --surface-card-hover: #334155;
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-muted: #64748b;
+  --text-on-brand: #ffffff;
+  --text-on-brand-surface: #F5A623;
+
+  /* Borders */
+  --border-light: #334155;
+  --border-medium: #475569;
+  --border-dark: #64748b;
+
+  /* Semantic accents (slightly muted for dark) */
+  --accent-success: #22c55e;
+  --accent-success-light: rgba(34, 197, 94, 0.2);
+  --accent-success-dark: #16a34a;
+
+  --accent-danger: #ef4444;
+  --accent-danger-light: rgba(239, 68, 68, 0.2);
+  --accent-danger-dark: #dc2626;
+
+  --accent-warning: #f59e0b;
+  --accent-warning-light: rgba(245, 158, 11, 0.2);
+  --accent-warning-dark: #d97706;
+
+  --accent-info: #3b82f6;
+  --accent-info-light: rgba(59, 130, 246, 0.2);
+  --accent-info-dark: #2563eb;
+
+  /* Charts */
+  --chart-background: #1e293b;
+  --chart-grid: #334155;
+  --chart-text: #e2e8f0;
+  --chart-bullish: #22c55e;
+  --chart-bearish: #ef4444;
+
+  /* Priority badges */
+  --badge-high-bg: rgba(239, 68, 68, 0.2);
+  --badge-high-text: #f87171;
+  --badge-medium-bg: rgba(245, 158, 11, 0.2);
+  --badge-medium-text: #fbbf24;
+  --badge-low-bg: rgba(100, 116, 139, 0.3);
+  --badge-low-text: #94a3b8;
+}
+
+/* ==========================================
+ * UTILITY CLASSES
+ * ========================================== */
+
+/* Brand gradient background */
+.bg-brand-gradient {
+  background: linear-gradient(to right, var(--brand-gradient-from), var(--brand-gradient-to));
+}
+
+/* Brand surface (light amber background) */
+.bg-brand-surface {
+  background-color: var(--brand-surface);
+}
+
+/* Card section background */
+.bg-surface-card {
+  background-color: var(--surface-card);
+}
+
+/* Text on brand */
+.text-brand {
+  color: var(--brand-primary);
+}
+
+/* Priority badges */
+.badge-high {
+  background-color: var(--badge-high-bg);
+  color: var(--badge-high-text);
+}
+
+.badge-medium {
+  background-color: var(--badge-medium-bg);
+  color: var(--badge-medium-text);
+}
+
+.badge-low {
+  background-color: var(--badge-low-bg);
+  color: var(--badge-low-text);
+}

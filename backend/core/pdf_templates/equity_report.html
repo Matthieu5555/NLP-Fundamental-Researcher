@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ company_name }} ({{ ticker }}) - Equity Research</title>
+    <style>
+        /* ===== PAGE SETUP ===== */
+        @page {
+            size: A4;
+            margin: 1.5cm 1.5cm 2cm 1.5cm;
+
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 8pt;
+                color: #666;
+            }
+
+            @bottom-left {
+                content: "{{ firm_name }}";
+                font-size: 8pt;
+                color: #666;
+            }
+
+            @bottom-right {
+                content: "See disclosures at end of report";
+                font-size: 7pt;
+                color: #888;
+            }
+        }
+
+        @page :first {
+            margin-top: 0;
+            @bottom-center { content: none; }
+            @bottom-left { content: none; }
+            @bottom-right { content: none; }
+        }
+
+        /* ===== BASE TYPOGRAPHY ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.45;
+            color: #1a1a1a;
+        }
+
+        h1 { font-size: 18pt; font-weight: 700; margin-bottom: 8px; }
+        h2 { font-size: 13pt; font-weight: 700; margin: 16px 0 8px 0; color: {{ primary_color }}; }
+        h3 { font-size: 11pt; font-weight: 700; margin: 12px 0 6px 0; }
+
+        p { margin-bottom: 8px; text-align: justify; }
+
+        ul, ol { margin-left: 16px; margin-bottom: 8px; }
+        li { margin-bottom: 4px; }
+
+        /* ===== FIRST PAGE - COVER ===== */
+        .cover-page {
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+
+        /* Header Bar with Rating */
+        .header-bar {
+            background: {{ primary_color }};
+            color: white;
+            padding: 16px 24px;
+            margin: 0 -1.5cm 16px -1.5cm;
+            width: calc(100% + 3cm);
+            overflow: hidden;
+        }
+
+        .header-left {
+            float: left;
+            width: 75%;
+        }
+
+        .header-right {
+            float: right;
+            text-align: center;
+            width: 20%;
+            padding-top: 8px;
+        }
+
+        .header-bar .company-name {
+            font-size: 22pt;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .header-bar .ticker-info {
+            font-size: 10pt;
+            opacity: 0.9;
+        }
+
+        .header-bar .report-type {
+            font-size: 9pt;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* Rating in Header */
+        .header-rating {
+            display: inline-block;
+            background: white;
+            color: {{ rating_color }};
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .header-rating .rating-label {
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .header-rating .rating-value {
+            font-size: 16pt;
+            font-weight: 700;
+        }
+
+        /* Main Layout Container - using floats for WeasyPrint */
+        .main-layout {
+            overflow: hidden;
+        }
+
+        .main-layout::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            float: left;
+            width: 27%;
+            font-size: 8.5pt;
+            border-right: 1px solid #ddd;
+            padding-right: 14px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 12px;
+        }
+
+        .sidebar-section h4 {
+            font-size: 9pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            border-bottom: 1px solid {{ primary_color }};
+            padding-bottom: 3px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px dotted #e0e0e0;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: #555;
+        }
+
+        .data-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .positive { color: #16a34a; }
+        .negative { color: #dc2626; }
+
+        /* Analyst Box */
+        .analyst-box {
+            background: #f8f9fa;
+            padding: 10px;
+            font-size: 8pt;
+            margin-bottom: 12px;
+        }
+
+        .analyst-box .analyst-name {
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        /* Price Chart in Sidebar */
+        .sidebar-chart {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .sidebar-chart img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .sidebar-chart .chart-label {
+            font-size: 7pt;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            float: right;
+            width: 70%;
+            padding-left: 14px;
+        }
+
+        .main-content h2:first-child {
+            margin-top: 0;
+        }
+
+        /* Catchy Title */
+        .report-headline {
+            font-size: 14pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        /* Key Highlights Box */
+        .highlights-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-left: 4px solid {{ primary_color }};
+            padding: 12px 14px;
+            margin: 12px 0;
+        }
+
+        .highlights-box h3 {
+            color: {{ primary_color }};
+            margin-top: 0;
+            font-size: 10pt;
+        }
+
+        .highlights-box ul {
+            margin-bottom: 0;
+        }
+
+        /* ===== SUBSEQUENT PAGES ===== */
+        .section-page {
+            page-break-before: always;
+            clear: both;
+            width: 100%;
+        }
+
+        .analysis-content {
+            width: 100%;
+            clear: both;
+        }
+
+        .section-header {
+            color: {{ primary_color }};
+            border-bottom: 2px solid {{ primary_color }};
+            padding-bottom: 6px;
+            margin-bottom: 16px;
+        }
+
+        /* Two-column text for Investment Analysis */
+        .two-column-text {
+            column-count: 2;
+            column-gap: 20px;
+            column-fill: auto;
+            text-align: justify;
+        }
+
+        .two-column-text p,
+        .two-column-text h3,
+        .two-column-text h4 {
+            break-inside: avoid;
+            orphans: 3;
+            widows: 3;
+        }
+
+        /* Bull/Bear Case */
+        .case-section {
+            padding: 12px 14px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .case-section.bull {
+            background: linear-gradient(to right, #dcfce7, #fff);
+            border-left: 4px solid #16a34a;
+        }
+
+        .case-section.bear {
+            background: linear-gradient(to right, #fee2e2, #fff);
+            border-left: 4px solid #dc2626;
+        }
+
+        .case-section h3 {
+            margin-top: 0;
+        }
+
+        .case-section.bull h3 { color: #16a34a; }
+        .case-section.bear h3 { color: #dc2626; }
+
+        /* Sources Section */
+        .sources-section {
+            font-size: 8pt;
+            color: #555;
+        }
+
+        .source-item {
+            margin-bottom: 4px;
+            padding-left: 20px;
+            text-indent: -20px;
+        }
+
+        .source-id {
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        /* Appendix Sections */
+        .appendix-header {
+            background: #f5f5f5;
+            padding: 8px 12px;
+            margin: 16px 0 12px 0;
+            font-size: 11pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            border-left: 4px solid {{ primary_color }};
+        }
+
+        /* SWOT Grid */
+        .swot-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .swot-box {
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .swot-box.strengths { background: #dcfce7; border-left: 4px solid #16a34a; }
+        .swot-box.weaknesses { background: #fee2e2; border-left: 4px solid #dc2626; }
+        .swot-box.opportunities { background: #dbeafe; border-left: 4px solid #2563eb; }
+        .swot-box.threats { background: #fef3c7; border-left: 4px solid #d97706; }
+
+        .swot-box h4 {
+            font-size: 10pt;
+            margin-bottom: 6px;
+        }
+
+        .swot-box ul {
+            font-size: 8.5pt;
+            margin: 0;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Disclaimer Page */
+        .disclaimer-page {
+            page-break-before: always;
+            font-size: 8.5pt;
+            color: #444;
+        }
+
+        .disclaimer-page h2 {
+            color: #333;
+        }
+
+        .disclaimer-box {
+            background: #f5f5f5;
+            padding: 16px;
+            border: 1px solid #ddd;
+            margin: 16px 0;
+        }
+
+        .attribution {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .attribution .analyst-name {
+            font-size: 12pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        .attribution .firm-logo {
+            margin-top: 20px;
+            font-size: 14pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== PAGE 1: COVER PAGE ===== -->
+<div class="cover-page">
+    <!-- Header Bar with Rating -->
+    <div class="header-bar">
+        <div class="header-left">
+            <div class="company-name">{{ company_name }}</div>
+            <div class="ticker-info">{{ ticker }} | {{ exchange }} | {{ sector }}</div>
+            <div class="report-type">Equity Research Report | {{ report_date }}</div>
+        </div>
+        <div class="header-right">
+            <div class="header-rating">
+                <div class="rating-label">Our Rating</div>
+                <div class="rating-value">{{ rating }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Two-Column Layout -->
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- 5-Year Price Chart (at top) -->
+            {% if sidebar_chart %}
+            <div class="sidebar-chart" style="margin-bottom: 12px;">
+                <h4 style="font-size: 9pt; color: {{ primary_color }}; border-bottom: 1px solid {{ primary_color }}; padding-bottom: 3px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">5-Year Chart</h4>
+                <img src="data:image/png;base64,{{ sidebar_chart }}" alt="5-Year Price Chart">
+            </div>
+            {% endif %}
+
+            <!-- Analyst Info -->
+            <div class="analyst-box">
+                <div class="analyst-name">{{ analyst_name }}</div>
+                <div>{{ analyst_email }}</div>
+                <div>{{ analyst_sector }}</div>
+            </div>
+
+            <!-- Key Data -->
+            <div class="sidebar-section">
+                <h4>Key Data</h4>
+                {% for item in key_data %}
+                <div class="data-row">
+                    <span class="data-label">{{ item.label }}</span>
+                    <span class="data-value">{{ item.value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Returns -->
+            {% if returns %}
+            <div class="sidebar-section">
+                <h4>Period Returns</h4>
+                {% for item in returns %}
+                <div class="data-row">
+                    <span class="data-label">{{ item.period }}</span>
+                    <span class="data-value {{ 'positive' if item.value and item.value >= 0 else 'negative' }}">
+                        {{ item.display }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Key Statistics -->
+            {% if statistics %}
+            <div class="sidebar-section">
+                <h4>Valuation</h4>
+                {% for item in statistics %}
+                <div class="data-row">
+                    <span class="data-label">{{ item.label }}</span>
+                    <span class="data-value">{{ item.value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Catchy Headline -->
+            {% if report_headline %}
+            <div class="report-headline">{{ report_headline }}</div>
+            {% endif %}
+
+            {% if highlights %}
+            <div class="highlights-box">
+                <h3>Key Highlights</h3>
+                <ul>
+                    {% for highlight in highlights %}
+                    <li>{{ highlight | safe }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Investment Analysis starts on page 1 -->
+            <h2>Investment Analysis</h2>
+            <div class="analysis-intro">
+                {{ thesis_content | safe }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PAGE 2+: INVESTMENT ANALYSIS CONTINUED ===== -->
+{% if full_analysis %}
+<div class="section-page">
+    <h1 class="section-header">Investment Analysis (continued)</h1>
+    <div class="analysis-content two-column-text">
+        {{ full_analysis | safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== BULL/BEAR CASE ===== -->
+{% if bull_case or bear_case %}
+<div class="section-page">
+    <h1 class="section-header">Investment Cases</h1>
+
+    {% if bull_case %}
+    <div class="case-section bull">
+        <h3>Bull Case</h3>
+        {{ bull_case | safe }}
+    </div>
+    {% endif %}
+
+    {% if bear_case %}
+    <div class="case-section bear">
+        <h3>Bear Case</h3>
+        {{ bear_case | safe }}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== FINANCIAL STATEMENTS (US Companies Only) ===== -->
+{% if financial_statements and financial_statements.is_available %}
+<div class="section-page">
+    <h1 class="section-header">Financial Statements</h1>
+
+    <!-- Key Findings/Highlights -->
+    {% if financial_statements.highlights %}
+    <div style="margin-bottom: 20px;">
+        <h3>Key Findings</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            {% for h in financial_statements.highlights[:6] %}
+            <div style="padding: 10px; border-radius: 4px; border-left: 3px solid {% if h.type == 'positive' %}#16a34a{% elif h.type == 'negative' %}#dc2626{% else %}#d97706{% endif %}; background: {% if h.type == 'positive' %}#dcfce7{% elif h.type == 'negative' %}#fee2e2{% else %}#fef3c7{% endif %};">
+                <strong style="font-size: 9pt;">{{ h.title }}</strong>
+                <p style="font-size: 8pt; margin: 4px 0 0 0;">{{ h.description }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Income Statement Table -->
+    {% if financial_statements.income_statements %}
+    <h3>Income Statement (in millions)</h3>
+    <table class="financials-table" style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 16px;">
+        <thead>
+            <tr style="background: #f5f5f5;">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid #ddd;">Metric</th>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid #ddd;">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Revenue</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.revenue %}${{ "%.1f"|format(stmt.revenue / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #fafafa;">
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Net Income</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.net_income %}${{ "%.1f"|format(stmt.net_income / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">EPS</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.eps %}${{ "%.2f"|format(stmt.eps) }}{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #e0f2fe;">
+                <td style="padding: 5px; border-bottom: 1px solid #ddd; font-weight: 600;">Gross Margin</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd; color: #0369a1; font-weight: 600;">{% if stmt.gross_margin %}{{ "%.1f"|format(stmt.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #e0f2fe;">
+                <td style="padding: 5px; font-weight: 600;">Net Margin</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; color: #0369a1; font-weight: 600;">{% if stmt.net_margin %}{{ "%.1f"|format(stmt.net_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Balance Sheet Table -->
+    {% if financial_statements.balance_sheets %}
+    <h3>Balance Sheet (in millions)</h3>
+    <table class="financials-table" style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 16px;">
+        <thead>
+            <tr style="background: #f5f5f5;">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid #ddd;">Metric</th>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid #ddd;">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Total Assets</td>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.total_assets %}${{ "%.1f"|format(stmt.total_assets / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #fafafa;">
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Total Equity</td>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.total_equity %}${{ "%.1f"|format(stmt.total_equity / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Cash</td>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.cash %}${{ "%.1f"|format(stmt.cash / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #fafafa;">
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Total Debt</td>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.total_debt %}${{ "%.1f"|format(stmt.total_debt / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #dcfce7;">
+                <td style="padding: 5px; font-weight: 600;">Debt/Equity</td>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <td style="text-align: right; padding: 5px; color: #16a34a; font-weight: 600;">{% if stmt.debt_to_equity %}{{ "%.2f"|format(stmt.debt_to_equity) }}x{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Cash Flow Table -->
+    {% if financial_statements.cash_flows %}
+    <h3>Cash Flow Statement (in millions)</h3>
+    <table class="financials-table" style="width: 100%; border-collapse: collapse; font-size: 8.5pt;">
+        <thead>
+            <tr style="background: #f5f5f5;">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid #ddd;">Metric</th>
+                {% for stmt in financial_statements.cash_flows[:5] %}
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid #ddd;">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Operating CF</td>
+                {% for stmt in financial_statements.cash_flows[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.operating_cf %}${{ "%.1f"|format(stmt.operating_cf / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #fafafa;">
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">Free Cash Flow</td>
+                {% for stmt in financial_statements.cash_flows[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.free_cash_flow %}${{ "%.1f"|format(stmt.free_cash_flow / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: #f3e8ff;">
+                <td style="padding: 5px; font-weight: 600;">FCF Margin</td>
+                {% for stmt in financial_statements.cash_flows[:5] %}
+                <td style="text-align: right; padding: 5px; color: #7c3aed; font-weight: 600;">{% if stmt.fcf_margin %}{{ "%.1f"|format(stmt.fcf_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== SOURCES & REFERENCES ===== -->
+<div class="section-page sources-section">
+    <h1 class="section-header">Sources & References</h1>
+
+    {% if research_sources %}
+    <h3>Research Sources</h3>
+    {% for source in research_sources %}
+    <div class="source-item">
+        <span class="source-id">[{{ source.id }}]</span> {{ source.title }}
+        {% if source.url %} - <em>{{ source.url }}</em>{% endif %}
+        {% if source.date %} ({{ source.date }}){% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if analyst_sources %}
+    <h3 style="margin-top: 16px;">Analyst Notes</h3>
+    {% for source in analyst_sources %}
+    <div class="source-item">
+        <span class="source-id">[{{ source.id }}]</span> {{ source.content }}
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<!-- ===== APPENDIX ===== -->
+<div class="section-page">
+    <h1 class="section-header">Appendix</h1>
+
+    <!-- Strategy Analysis (SWOT + Future Outlook) -->
+    {% if swot %}
+    <div class="appendix-header">Strategy Analysis</div>
+    <div class="swot-grid">
+        <div class="swot-box strengths">
+            <h4>Strengths</h4>
+            {{ swot.strengths | safe }}
+        </div>
+        <div class="swot-box weaknesses">
+            <h4>Weaknesses</h4>
+            {{ swot.weaknesses | safe }}
+        </div>
+        <div class="swot-box opportunities">
+            <h4>Opportunities</h4>
+            {{ swot.opportunities | safe }}
+        </div>
+        <div class="swot-box threats">
+            <h4>Threats</h4>
+            {{ swot.threats | safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Moat Analysis -->
+    {% if moat_analysis %}
+    <div class="appendix-header">Competitive Moat</div>
+    {{ moat_analysis | safe }}
+    {% endif %}
+</div>
+
+<!-- ===== APPENDIX CONTINUED: FUNDAMENTALS ===== -->
+{% if fundamentals %}
+<div class="section-page">
+    <h1 class="section-header">Appendix: Fundamental Analysis</h1>
+    {{ fundamentals | safe }}
+</div>
+{% endif %}
+
+<!-- ===== APPENDIX: TECHNICAL ANALYSIS ===== -->
+{% if technicals %}
+<div class="section-page">
+    <h1 class="section-header">Appendix: Technical Analysis</h1>
+
+    {% if technical_chart %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ technical_chart }}" alt="Technical Chart">
+    </div>
+    {% endif %}
+
+    {{ technicals | safe }}
+</div>
+{% endif %}
+
+<!-- ===== DISCLAIMER ===== -->
+<div class="disclaimer-page">
+    <h1 class="section-header">Important Disclosures</h1>
+
+    <div class="disclaimer-box">
+        <p><strong>This analysis is generated by AI and should not be considered financial advice.</strong></p>
+        <p>The information contained in this report is based on publicly available data and sources believed to be reliable. However, we make no representation or warranty as to its accuracy or completeness.</p>
+    </div>
+
+    <h3>Key Disclosures</h3>
+    <ul>
+        <li>This report is for informational purposes only and does not constitute financial, investment, or trading advice</li>
+        <li>Always conduct your own research before making investment decisions</li>
+        <li>Consult with qualified financial advisors before investing</li>
+        <li>Past performance does not guarantee future results</li>
+        <li>All investments carry risk, including the potential loss of principal</li>
+    </ul>
+
+    <p style="margin-top: 16px;">By using this report, you acknowledge that all investment decisions are your own responsibility. The authors and publishers of this report accept no liability for any loss or damage arising from the use of this information.</p>
+
+    <div class="attribution">
+        <div class="analyst-name">{{ analyst_name }}</div>
+        <div>{{ analyst_sector }}</div>
+        <div>{{ analyst_email }}</div>
+
+        <div class="firm-logo">{{ firm_name }}</div>
+        <div style="font-size: 9pt; color: #666; margin-top: 4px;">{{ tool_branding }}</div>
+        <div style="font-size: 8pt; color: #888; margin-top: 12px;">Generated: {{ generation_time }}</div>
+    </div>
+</div>
+
+</body>
+</html>

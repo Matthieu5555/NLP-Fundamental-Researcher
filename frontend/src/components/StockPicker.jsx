@@ -1,12 +1,19 @@
-import { useState } from 'react'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+import { useState, useEffect } from 'react'
+import api from '../utils/api'
 
 function StockPicker({ onAnalysisStart, disabled }) {
   const [ticker, setTicker] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Reset loading state when component becomes enabled again (after New Analysis)
+  useEffect(() => {
+    if (!disabled) {
+      setLoading(false)
+      setTicker('')
+      setError(null)
+    }
+  }, [disabled])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,11 +27,11 @@ function StockPicker({ onAnalysisStart, disabled }) {
     setError(null)
 
     try {
-      const response = await axios.post(`${API_URL}/api/analysis/start`, {
+      const response = await api.post('/api/analysis/start', {
         ticker: ticker.toUpperCase(),
         options: {
           include_moat: true,
-          include_swot: true,
+          include_strategy: true,
           debate_rounds: 2
         }
       })
@@ -67,13 +74,13 @@ function StockPicker({ onAnalysisStart, disabled }) {
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
               disabled={disabled || loading}
               placeholder="e.g., AAPL, MSFT, GOOGL"
-              className="flex-1 px-5 py-4 text-lg border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:cursor-not-allowed transition-all"
+              className="flex-1 px-5 py-4 text-lg border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C87A23] focus:border-[#C87A23] disabled:bg-slate-100 disabled:cursor-not-allowed transition-all"
               maxLength={10}
             />
             <button
               type="submit"
               disabled={disabled || loading || !ticker.trim()}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed transition-all duration-200 text-lg"
+              className="px-8 py-4 text-white font-semibold rounded-lg shadow-md hover:shadow-lg disabled:bg-slate-400 disabled:cursor-not-allowed transition-all duration-200 text-lg bg-brand-gradient"
             >
               {loading ? (
                 <div className="flex items-center space-x-2">

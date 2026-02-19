@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# George Financial Analyst - Startup Script
+# Constant - Your Intern - Startup Script
 
 echo "==================================="
-echo "George Financial Analyst v2.0"
+echo "Constant - Your Intern v2.1"
+echo "FastAPI + Dual Job Queue"
 echo "==================================="
 echo ""
 
@@ -20,11 +21,12 @@ if [ ! -f "frontend/.env" ]; then
     echo "VITE_API_URL=http://localhost:5001" > frontend/.env
 fi
 
-echo "Starting backend server on port 5001..."
-cd backend
-PORT=5001 uv run python app.py &
+echo "Starting FastAPI backend server on port 5001..."
+echo "  - US Queue: 3 workers (FinancialDatasets.ai)"
+echo "  - Non-US Queue: 2 workers (Alpha Vantage)"
+echo ""
+DYLD_LIBRARY_PATH="/opt/homebrew/lib:$DYLD_LIBRARY_PATH" uv run uvicorn backend.main:app --host 0.0.0.0 --port 5001 &
 BACKEND_PID=$!
-cd ..
 
 echo "Waiting for backend to start..."
 sleep 3

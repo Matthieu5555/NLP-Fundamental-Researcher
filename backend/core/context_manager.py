@@ -11,24 +11,42 @@ from typing import Dict, List
 from .session import AnalysisSession, Message
 
 
+# =============================================================================
+# CONTEXT WINDOW CONSTANTS
+# =============================================================================
+
+# Token limits for different models (with buffer reserved for response)
+# Last updated: December 2024
+# Values are conservative to leave room for response generation
+MODEL_TOKEN_LIMITS = {
+    "gpt-3.5-turbo": 3500,      # 4K context, reserve 500 for response
+    "gpt-4": 7500,              # 8K context, reserve 500 for response
+    "gpt-4-turbo": 120000,      # 128K context
+    "claude-3-haiku": 150000,   # 200K context
+    "claude-3-sonnet": 150000,  # 200K context
+    "default": 3500             # Safe fallback for unknown models
+}
+
+# Compression threshold - compress when context exceeds this percentage of limit
+CONTEXT_COMPRESSION_THRESHOLD = 0.75  # 75%
+
+# Number of recent messages to always keep uncompressed
+# These messages maintain full context for coherent conversation
+RECENT_MESSAGES_TO_KEEP = 10
+
+# Token estimation multiplier (words to tokens)
+# English text averages ~1.3 tokens per word (accurate within 5%)
+TOKENS_PER_WORD = 1.3
+
+
 class ContextManager:
     """
     Manages conversation context to stay within token limits.
 
     Uses a two-tier strategy:
-    1. Keep recent messages (last 10) in full
-    2. Summarize older messages when approaching limit
+    1. Keep recent messages (last RECENT_MESSAGES_TO_KEEP) in full
+    2. Summarize older messages when approaching CONTEXT_COMPRESSION_THRESHOLD
     """
-
-    # Model context limits (conservative estimates with buffer for response)
-    MODEL_LIMITS = {
-        "gpt-3.5-turbo": 3500,
-        "gpt-4": 7500,
-        "gpt-4-turbo": 120000,
-        "claude-3-haiku": 150000,
-        "claude-3-sonnet": 150000,
-        "default": 3500
-    }
 
     def __init__(self, model: str = "default"):
         """
@@ -38,14 +56,14 @@ class ContextManager:
             model: Model name to determine context limits
         """
         self.model = model
-        self.max_tokens = self.MODEL_LIMITS.get(model, 3500)
-        self.summarization_threshold = int(self.max_tokens * 0.75)  # 75% threshold
+        self.max_tokens = MODEL_TOKEN_LIMITS.get(model, MODEL_TOKEN_LIMITS["default"])
+        self.summarization_threshold = int(self.max_tokens * CONTEXT_COMPRESSION_THRESHOLD)
 
     def estimate_tokens(self, text: str) -> int:
         """
         Fast token estimation using word count heuristic.
 
-        Uses ~1.3 tokens per word average for English text.
+        Uses TOKENS_PER_WORD multiplier (~1.3 tokens per word).
         This is approximately 95% accurate compared to real tokenizers
         but requires zero external dependencies or API calls.
 
@@ -56,7 +74,7 @@ class ContextManager:
             int: Estimated token count
         """
         words = len(text.split())
-        return int(words * 1.3)
+        return int(words * TOKENS_PER_WORD)
 
     def build_context(
         self,
@@ -70,7 +88,7 @@ class ContextManager:
         Strategy:
         1. Estimate total tokens needed
         2. If over threshold, summarize old messages
-        3. Always keep recent 10 messages in full
+        3. Always keep recent RECENT_MESSAGES_TO_KEEP messages in full
         4. Return formatted context ready for LLM
 
         Args:
@@ -92,9 +110,9 @@ class ContextManager:
         total_tokens += self.estimate_tokens(system_prompt)
         total_tokens += self.estimate_tokens(new_message)
 
-        # Strategy: Keep last 10 messages raw, summarize older if needed
-        recent_messages = messages[-10:] if len(messages) >= 10 else messages
-        older_messages = messages[:-10] if len(messages) > 10 else []
+        # Strategy: Keep last N messages raw, summarize older if needed
+        recent_messages = messages[-RECENT_MESSAGES_TO_KEEP:] if len(messages) >= RECENT_MESSAGES_TO_KEEP else messages
+        older_messages = messages[:-RECENT_MESSAGES_TO_KEEP] if len(messages) > RECENT_MESSAGES_TO_KEEP else []
 
         # Count tokens in recent messages
         for msg in recent_messages:
@@ -141,7 +159,7 @@ class ContextManager:
                     "content": msg.content
                 })
 
-        # Always include recent messages (last 10)
+        # Always include recent messages (last RECENT_MESSAGES_TO_KEEP)
         for msg in recent_messages:
             context_parts.append({
                 "role": msg.role,

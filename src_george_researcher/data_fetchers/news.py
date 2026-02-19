@@ -1,10 +1,27 @@
 """
 News and sentiment data fetching from Alpha Vantage and EODHD.
+
+API Info:
+- Alpha Vantage NEWS_SENTIMENT API
+  - Requires API key (free tier available)
+  - Rate limit: 5 calls/minute, 500 calls/day on free tier
+  - Premium tiers available for higher limits
+  - Timeout: 30 seconds
+
+- EODHD News API
+  - Requires API key (free tier available)
+  - Rate limit: ~1000 calls/day on free tier
+  - Timeout: 30 seconds
+
+All functions return (result, error) tuples for consistent error handling.
 """
 import httpx
+import logging
 from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse
+
+logger = logging.getLogger(__name__)
 
 
 def _extract_source_from_url(url: str) -> str:
@@ -15,7 +32,8 @@ def _extract_source_from_url(url: str) -> str:
         # Get first part of domain (e.g., "reuters" from "reuters.com")
         name = domain.split(".")[0] if domain else ""
         return name.title() if name else "Unknown"
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Failed to extract source from URL {url}: {e}")
         return "Unknown"
 
 

@@ -1,11 +1,22 @@
 """
 Reddit sentiment fetching - no API key required.
 Uses Reddit's public JSON API.
+
+API Info:
+- Uses Reddit's public .json endpoint (no OAuth required)
+- Rate limit: ~10 requests/minute for unauthenticated requests
+- Timeout: 15 seconds
+- 429 errors are handled gracefully (skips that query)
+
+All functions return (result, error) tuples for consistent error handling.
 """
 import httpx
+import logging
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -32,6 +43,12 @@ class RedditSentiment:
 
 
 # Subreddits to search for stock discussion
+# Selected for: high activity, retail investor focus, broad market coverage
+# - wallstreetbets: Largest retail trading community, meme stocks, options plays
+# - stocks: General stock discussion, more moderate than WSB
+# - investing: Long-term investment focus, fundamental analysis
+# - stockmarket: General market news and discussion
+# - options: Options trading strategies and discussion
 STOCK_SUBREDDITS = [
     "wallstreetbets",
     "stocks",
@@ -46,7 +63,8 @@ def _format_timestamp(utc_timestamp: float) -> str:
     try:
         dt = datetime.fromtimestamp(utc_timestamp, tz=timezone.utc)
         return dt.strftime("%Y-%m-%d")
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Failed to format timestamp {utc_timestamp}: {e}")
         return "Unknown"
 
 
@@ -174,8 +192,8 @@ def fetch_reddit_sentiment(
 
                             subreddit_counts[subreddit] = subreddit_counts.get(subreddit, 0) + 1
 
-                    except Exception:
-                        # Skip failed queries
+                    except Exception as e:
+                        logger.debug(f"Reddit query failed for {subreddit}/{term}: {e}")
                         continue
 
         if not all_posts:

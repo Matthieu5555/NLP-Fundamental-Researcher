@@ -2,40 +2,70 @@
 SEC 10-K Filing fetcher and RAG system using FAISS.
 Downloads 10-K filings from SEC EDGAR and enables semantic search.
 
-SEC EDGAR API requires a valid User-Agent with company name and email.
-No API key required.
+API Info:
+- SEC EDGAR API (free, public)
+- Requires valid User-Agent with company name and email
+- Rate limit: 10 requests/second (we use 0.15s delay between requests)
+- No API key required
+- Timeout: 30-60 seconds depending on endpoint
+
+Embedding Model:
+- Model: all-MiniLM-L6-v2 (sentence-transformers)
+- Dimension: 384
+- Chosen for: small size (~80MB), fast inference, good quality for semantic search
+
+Thread Safety:
+- Global state used for lazy loading (FAISS, sentence-transformers)
+- NOT thread-safe - use process-level parallelism if concurrent access needed
+- Safe for sequential use within a single process
+
+All functions return (result, error) tuples for consistent error handling.
 """
 import httpx
+import logging
 import re
 import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 import numpy as np
 
 # Lazy imports for heavy dependencies
-_faiss = None
-_sentence_transformer = None
+# Why globals: FAISS and sentence-transformers have ~2-3s import time.
+# Lazy loading avoids this cost when SEC features aren't used.
+# Trade-off: Not thread-safe, but acceptable for our sequential use case.
+_FAISS = None
+_SENTENCE_TRANSFORMER = None
 
 # SEC requires identifying User-Agent
 SEC_USER_AGENT = "George Financial Researcher george@research-tool.com"
 
 
-def _get_faiss():
-    global _faiss
-    if _faiss is None:
+def _get_FAISS():
+    global _FAISS
+    if _FAISS is None:
         import faiss
-        _faiss = faiss
-    return _faiss
+        _FAISS = faiss
+    return _FAISS
 
 
 def _get_encoder():
-    global _sentence_transformer
-    if _sentence_transformer is None:
+    """
+    Get or initialize the sentence transformer encoder.
+
+    Model: all-MiniLM-L6-v2
+    - 384 dimensions, ~80MB model size
+    - Good balance of speed and quality for semantic search
+    - Widely used, well-tested for document retrieval
+    """
+    global _SENTENCE_TRANSFORMER
+    if _SENTENCE_TRANSFORMER is None:
         from sentence_transformers import SentenceTransformer
-        _sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2')
-    return _sentence_transformer
+        _SENTENCE_TRANSFORMER = SentenceTransformer('all-MiniLM-L6-v2')
+    return _SENTENCE_TRANSFORMER
 
 
 @dataclass(frozen=True)
@@ -45,6 +75,7 @@ class FilingChunk:
     section: str
     filing_date: str
     source: str
+    relevance_score: float = 0.0  # 0-1, higher is more relevant (set during search)
 
 
 @dataclass(frozen=True)
@@ -66,8 +97,8 @@ def _get_company_tickers() -> dict:
             response = client.get("https://www.sec.gov/files/company_tickers.json")
         if response.status_code == 200:
             return response.json()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to fetch SEC company tickers: {e}")
     return {}
 
 
@@ -83,7 +114,8 @@ def _get_cik_from_ticker(ticker: str) -> Optional[str]:
                 return cik.zfill(10)
 
         return None
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Failed to get CIK for ticker: {e}")
         return None
 
 
@@ -158,7 +190,7 @@ def _fetch_10k_filing(ticker: str) -> tuple[Optional[str], Optional[str], Option
 
         return (None, None, None, None)
 
-    except Exception as e:
+    except Exception:
         return (None, None, None, None)
 
 
@@ -182,7 +214,8 @@ def _extract_sections_from_html(html_text: str) -> dict[str, str]:
         extractor = TextExtractor()
         extractor.feed(html_text[:1000000])  # Limit size
         text = extractor.get_text()
-    except Exception:
+    except Exception as e:
+        logger.debug(f"HTML parsing failed, using regex fallback: {e}")
         text = re.sub(r'<[^>]+>', ' ', html_text)
 
     # Clean up whitespace
@@ -215,7 +248,23 @@ def _extract_sections_from_html(html_text: str) -> dict[str, str]:
 
 
 def _chunk_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> list[str]:
-    """Split text into overlapping chunks."""
+    """
+    Split text into overlapping chunks for embedding.
+
+    Chunking Strategy:
+    - chunk_size=1000 chars (~200-250 tokens) fits well in embedding context
+    - overlap=100 chars preserves context across chunk boundaries
+    - Sentence boundary detection avoids mid-sentence splits when possible
+    - Minimum chunk size of 50 chars filters out noise
+
+    Args:
+        text: Input text to chunk
+        chunk_size: Target size per chunk in characters
+        overlap: Overlap between consecutive chunks
+
+    Returns:
+        List of text chunks
+    """
     chunks = []
     start = 0
 
@@ -273,8 +322,8 @@ def fetch_sec_filing(
                         ),
                         None,
                     )
-        except Exception:
-            pass  # Cache invalid, fetch fresh
+        except Exception as e:
+            logger.debug(f"SEC cache invalid, fetching fresh: {e}")
 
     # Fetch from SEC
     text, filing_date, url, company_name = _fetch_10k_filing(symbol)
@@ -328,8 +377,8 @@ def fetch_sec_filing(
         }
         with open(cache_file, 'w') as f:
             json.dump(cache_data, f)
-    except Exception:
-        pass  # Caching failed, continue anyway
+    except Exception as e:
+        logger.debug(f"Failed to cache SEC filing: {e}")
 
     return (filing_data, None)
 
@@ -350,7 +399,7 @@ class SECVectorStore:
 
     def build_index(self, filing: SECFilingData) -> None:
         """Build FAISS index from filing chunks."""
-        faiss = _get_faiss()
+        faiss = _get_FAISS()
         encoder = self._get_encoder()
 
         self.chunks = list(filing.chunks)
@@ -364,8 +413,18 @@ class SECVectorStore:
         self.index = faiss.IndexFlatL2(dimension)
         self.index.add(embeddings.astype('float32'))
 
-    def search(self, query: str, k: int = 5) -> list[FilingChunk]:
-        """Search for relevant chunks."""
+    def search(self, query: str, k: int = 5, min_relevance: float = 0.0) -> list[FilingChunk]:
+        """
+        Search for relevant chunks with relevance scoring.
+
+        Args:
+            query: Search query
+            k: Maximum number of results
+            min_relevance: Minimum relevance score (0-1) to include results
+
+        Returns:
+            List of FilingChunks with relevance_score set, filtered by min_relevance
+        """
         if self.index is None or not self.chunks:
             return []
 
@@ -374,14 +433,30 @@ class SECVectorStore:
         # Encode query
         query_embedding = encoder.encode([query], show_progress_bar=False)
 
-        # Search
+        # Search - FAISS returns L2 distances (lower = more similar)
         distances, indices = self.index.search(query_embedding.astype('float32'), k)
 
-        # Return matching chunks
+        # Convert L2 distances to relevance scores (0-1, higher = better)
+        # Using exponential decay: score = exp(-distance / scale)
+        # Typical L2 distances for MiniLM range from 0 (identical) to ~2 (unrelated)
         results = []
-        for idx in indices[0]:
+        for i, idx in enumerate(indices[0]):
             if 0 <= idx < len(self.chunks):
-                results.append(self.chunks[idx])
+                distance = distances[0][i]
+                # Convert distance to 0-1 relevance score
+                # distance=0 -> score=1.0, distance=1.5 -> score~0.22, distance=2 -> score~0.13
+                relevance_score = float(np.exp(-distance / 1.0))
+
+                if relevance_score >= min_relevance:
+                    chunk = self.chunks[idx]
+                    # Create new chunk with relevance score
+                    results.append(FilingChunk(
+                        text=chunk.text,
+                        section=chunk.section,
+                        filing_date=chunk.filing_date,
+                        source=chunk.source,
+                        relevance_score=relevance_score
+                    ))
 
         return results
 
@@ -391,6 +466,7 @@ def search_sec_filing(
     query: str,
     embeddings_dir: Path,
     k: int = 5,
+    min_relevance: float = 0.0,
 ) -> list[FilingChunk]:
     """
     Search SEC filing for relevant content.
@@ -400,13 +476,14 @@ def search_sec_filing(
         query: Search query
         embeddings_dir: Directory for embeddings cache
         k: Number of results
+        min_relevance: Minimum relevance score (0-1) to include results
 
     Returns:
-        List of relevant FilingChunks
+        List of relevant FilingChunks with relevance_score set
     """
     store = SECVectorStore(embeddings_dir)
     store.build_index(filing)
-    return store.search(query, k)
+    return store.search(query, k, min_relevance=min_relevance)
 
 
 def format_sec_context(chunks: list[FilingChunk], max_chars: int = 3000) -> str:
