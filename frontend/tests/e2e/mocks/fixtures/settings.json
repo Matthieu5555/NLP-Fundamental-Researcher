@@ -1,0 +1,10 @@
+{
+  "master_system_prompt": "Write in flowing prose - NOT bullet points or checklists.",
+  "llm_model": "anthropic/claude-sonnet-4",
+  "temperature": 0.7,
+  "theme": "light",
+  "show_cost_tracking": true,
+  "default_chart_timeframe": "1y",
+  "analysis_depth": "standard",
+  "auto_run_analysis": false
+}

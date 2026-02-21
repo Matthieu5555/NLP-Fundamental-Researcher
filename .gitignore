@@ -52,6 +52,12 @@ Desktop.ini
 *.swp
 *.swo
 
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
+frontend/tests/e2e/.auth/
+frontend/tests/e2e/.tmp/
+
 # Project Specific
 reference_repos/
 archive/

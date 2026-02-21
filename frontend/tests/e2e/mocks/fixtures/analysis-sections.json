@@ -1,0 +1,79 @@
+{
+  "sections": {
+    "full_report": {
+      "title": "Full Report",
+      "content": "## AAPL Investment Thesis\n\nApple Inc. continues to demonstrate robust financial performance driven by its ecosystem lock-in and services growth. Revenue reached $394.3B in FY2024, with services contributing $96.2B at a 74% gross margin.\n\n## Key Strengths\n\nThe company maintains a dominant position in the premium smartphone market with approximately 27% global market share. Its installed base of 2.2 billion active devices provides a massive runway for services monetization.\n\n## Financial Overview\n\nFree cash flow generation remains exceptional at $110.5B, supporting aggressive capital returns including $15B in quarterly dividends and substantial buyback programs."
+    },
+    "fundamentals": {
+      "title": "Fundamental Analysis",
+      "content": "Apple's fundamentals remain strong with ROE at 171.9% and operating margins at 33.4%. The balance sheet carries $162.1B in cash equivalents against $111.1B in total debt, resulting in net cash of $51B."
+    },
+    "bull_case": {
+      "title": "Bull Case",
+      "content": "The bull case centers on three pillars: (1) Services revenue growing at 15%+ CAGR with expanding margins, (2) Vision Pro establishing a new computing platform, and (3) AI integration across the ecosystem driving upgrade cycles."
+    },
+    "bear_case": {
+      "title": "Bear Case",
+      "content": "Bears point to iPhone revenue concentration (52% of total), regulatory headwinds including EU DMA compliance costs, and China risk where revenue declined 8% YoY amid growing domestic competition from Huawei."
+    },
+    "strategy": {
+      "title": "Strategy",
+      "content": "Apple's strategy focuses on vertical integration and ecosystem expansion. The shift toward in-house silicon (M-series, A-series) provides both cost advantages and performance differentiation."
+    },
+    "moat": {
+      "title": "Moat Analysis",
+      "content": "Apple possesses a wide economic moat driven by switching costs (ecosystem lock-in), brand intangibles (premium pricing power), and network effects (App Store, iMessage). The moat is assessed as **wide and stable**."
+    },
+    "technicals": {
+      "title": "Technical Analysis",
+      "content": "AAPL trades above its 50-day and 200-day moving averages, confirming a bullish trend. RSI at 62 suggests momentum without overbought conditions. Support established at $178, resistance at $198."
+    },
+    "dcf_valuation": {
+      "title": "DCF Valuation",
+      "content": "Using a 10-year DCF with 9.2% WACC and 3% terminal growth rate, our model yields a fair value of $205 per share, representing 12% upside from current levels."
+    },
+    "comp_table": {
+      "title": "Comparable Companies",
+      "content": "| Company | P/E | EV/EBITDA | P/FCF | Revenue Growth |\n|---------|-----|-----------|-------|----------------|\n| AAPL | 28.5x | 22.1x | 26.3x | 2.1% |\n| MSFT | 34.2x | 25.8x | 33.1x | 16.0% |\n| GOOGL | 24.1x | 17.3x | 22.8x | 13.6% |"
+    },
+    "earnings_model": {
+      "title": "Earnings Model",
+      "content": "| Metric | FY2023A | FY2024A | FY2025E | FY2026E |\n|--------|---------|---------|---------|----------|\n| Revenue ($B) | 383.3 | 394.3 | 412.5 | 438.2 |\n| EPS | 6.13 | 6.42 | 7.05 | 7.68 |"
+    },
+    "sensitivity": {
+      "title": "Sensitivity Analysis",
+      "content": "Fair value ranges from $165 (bear: 11% WACC, 2% terminal) to $260 (bull: 8% WACC, 4% terminal). Base case: $205."
+    },
+    "conviction": {
+      "title": "Conviction Score",
+      "content": "Overall conviction: **7.2/10** (Moderate Buy). Highest on moat quality (9/10) and financial strength (8.5/10). Lowest on valuation (5.5/10) and growth trajectory (6/10)."
+    },
+    "sources": {
+      "title": "Sources",
+      "sources": [
+        { "id": 1, "title": "Apple 10-K FY2024", "url": "https://sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=AAPL", "source_type": "filing", "date": "2024-10-25" },
+        { "id": 2, "title": "Apple Services Revenue Analysis", "url": "https://example.com/apple-services", "source_type": "news", "date": "2024-11-15" },
+        { "id": 3, "title": "Smartphone Market Share Q3 2024", "url": "https://example.com/market-share", "source_type": "search", "date": "2024-12-01" }
+      ],
+      "content": ""
+    }
+  },
+  "contradictions": [
+    {
+      "disputed_fact": "iPhone growth trajectory",
+      "bull_interpretation": "AI-driven iPhone 17 supercycle will reignite hardware growth above 10%",
+      "bear_interpretation": "Smartphone market is saturated, expect low single-digit growth at best",
+      "judgment_question": "Will Apple Intelligence drive a meaningful upgrade cycle?",
+      "priority": "HIGH"
+    }
+  ],
+  "research_gaps": [
+    {
+      "title": "Vision Pro adoption curve",
+      "description": "Limited data on enterprise adoption rates and developer ecosystem growth",
+      "data_source": "Apple quarterly earnings calls, developer conference data",
+      "priority": "MEDIUM"
+    }
+  ],
+  "excluded_source_ids": []
+}

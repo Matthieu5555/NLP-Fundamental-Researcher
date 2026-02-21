@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "ticker": "AAPL",
+      "company_name": "Apple Inc.",
+      "current_price": 183.25,
+      "last_fair_value": 205.00,
+      "fair_value_gap_pct": 11.9,
+      "last_session_id": "test-session-aapl-001",
+      "added_at": "2025-01-15T10:30:00Z"
+    },
+    {
+      "ticker": "MSFT",
+      "company_name": "Microsoft Corporation",
+      "current_price": 415.80,
+      "last_fair_value": 380.00,
+      "fair_value_gap_pct": -8.6,
+      "last_session_id": "test-session-msft-002",
+      "added_at": "2025-01-14T14:00:00Z"
+    }
+  ]
+}
