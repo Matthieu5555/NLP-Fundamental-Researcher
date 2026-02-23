@@ -77,6 +77,9 @@ class FinancialStatement:
     net_income: Optional[float] = None
     earnings_per_share: Optional[float] = None
     earnings_per_share_diluted: Optional[float] = None
+    depreciation_and_amortization: Optional[float] = None
+    interest_expense: Optional[float] = None
+    stock_based_compensation: Optional[float] = None
 
     # Balance Sheet
     total_assets: Optional[float] = None
@@ -312,6 +315,9 @@ class FDSClient:
                     "net_income": stmt.get("net_income"),
                     "earnings_per_share": stmt.get("earnings_per_share"),
                     "earnings_per_share_diluted": stmt.get("earnings_per_share_diluted"),
+                    "depreciation_and_amortization": stmt.get("depreciation_and_amortization"),
+                    "interest_expense": stmt.get("interest_expense"),
+                    "stock_based_compensation": stmt.get("stock_based_compensation"),
                 }
 
         for stmt in balance_sheets:
@@ -335,6 +341,11 @@ class FDSClient:
                     "free_cash_flow": stmt.get("free_cash_flow"),
                     "capital_expenditure": stmt.get("capital_expenditure"),
                 })
+                # D&A and SBC often come from cash flow statements if not on income statement
+                if not periods[period_key].get("depreciation_and_amortization"):
+                    periods[period_key]["depreciation_and_amortization"] = stmt.get("depreciation_and_amortization")
+                if not periods[period_key].get("stock_based_compensation"):
+                    periods[period_key]["stock_based_compensation"] = stmt.get("stock_based_compensation")
 
         for period_data in periods.values():
             statements.append(FinancialStatement(**period_data))

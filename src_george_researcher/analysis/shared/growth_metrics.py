@@ -85,6 +85,12 @@ class EnrichedPeriod:
     net_income: Optional[GrowthMetric] = None
     eps: Optional[GrowthMetric] = None
 
+    # EBITDA (computed: Operating Income + D&A)
+    ebitda: Optional[GrowthMetric] = None
+    ebitda_margin: Optional[GrowthMetric] = None
+    depreciation_and_amortization: Optional[GrowthMetric] = None
+    stock_based_compensation: Optional[GrowthMetric] = None
+
     # Margins (computed)
     gross_margin: Optional[GrowthMetric] = None
     operating_margin: Optional[GrowthMetric] = None
@@ -116,7 +122,9 @@ class EnrichedPeriod:
 
         # Add all metrics that exist
         for attr in ["revenue", "gross_profit", "operating_income", "net_income",
-                     "eps", "gross_margin", "operating_margin", "net_margin",
+                     "eps", "ebitda", "ebitda_margin",
+                     "depreciation_and_amortization", "stock_based_compensation",
+                     "gross_margin", "operating_margin", "net_margin",
                      "total_assets", "total_liabilities", "total_equity",
                      "cash", "total_debt", "operating_cash_flow",
                      "free_cash_flow", "capex", "debt_to_equity", "current_ratio"]:
@@ -302,15 +310,30 @@ def compute_growth_metrics(
         if i + 1 < len(sorted_stmts):
             qoq_stmt = sorted_stmts[i + 1]
 
+        # Compute EBITDA = Operating Income + D&A
+        da_val = getattr(stmt, 'depreciation_and_amortization', None)
+        sbc_val = getattr(stmt, 'stock_based_compensation', None)
+        ebitda_val = None
+        if stmt.operating_income is not None:
+            ebitda_val = stmt.operating_income + (da_val or 0)
+
         # Compute margins
         gross_margin = _compute_margin(stmt.gross_profit, stmt.revenue)
         operating_margin = _compute_margin(stmt.operating_income, stmt.revenue)
         net_margin = _compute_margin(stmt.net_income, stmt.revenue)
+        ebitda_margin = _compute_margin(ebitda_val, stmt.revenue)
+
+        # YoY EBITDA
+        yoy_da_val = getattr(yoy_stmt, 'depreciation_and_amortization', None) if yoy_stmt else None
+        yoy_ebitda_val = None
+        if yoy_stmt and yoy_stmt.operating_income is not None:
+            yoy_ebitda_val = yoy_stmt.operating_income + (yoy_da_val or 0)
 
         # YoY margins for delta
         yoy_gross_margin = _compute_margin(yoy_stmt.gross_profit, yoy_stmt.revenue) if yoy_stmt else None
         yoy_operating_margin = _compute_margin(yoy_stmt.operating_income, yoy_stmt.revenue) if yoy_stmt else None
         yoy_net_margin = _compute_margin(yoy_stmt.net_income, yoy_stmt.revenue) if yoy_stmt else None
+        yoy_ebitda_margin = _compute_margin(yoy_ebitda_val, yoy_stmt.revenue) if yoy_stmt else None
 
         # Debt to equity ratio
         debt_to_equity = None
@@ -354,6 +377,28 @@ def compute_growth_metrics(
                 current_value=stmt.earnings_per_share,
                 yoy_change=_compute_pct_change(stmt.earnings_per_share, yoy_stmt.earnings_per_share if yoy_stmt else None),
                 qoq_change=_compute_pct_change(stmt.earnings_per_share, qoq_stmt.earnings_per_share if qoq_stmt else None),
+            ),
+
+            # EBITDA
+            ebitda=GrowthMetric(
+                name="EBITDA",
+                current_value=ebitda_val,
+                yoy_change=_compute_pct_change(ebitda_val, yoy_ebitda_val),
+            ),
+            ebitda_margin=GrowthMetric(
+                name="EBITDA Margin",
+                current_value=ebitda_margin,
+                yoy_delta=ebitda_margin - yoy_ebitda_margin if ebitda_margin and yoy_ebitda_margin else None,
+            ),
+            depreciation_and_amortization=GrowthMetric(
+                name="D&A",
+                current_value=da_val,
+                yoy_change=_compute_pct_change(da_val, yoy_da_val),
+            ),
+            stock_based_compensation=GrowthMetric(
+                name="SBC",
+                current_value=sbc_val,
+                yoy_change=_compute_pct_change(sbc_val, getattr(yoy_stmt, 'stock_based_compensation', None) if yoy_stmt else None),
             ),
 
             # Margins

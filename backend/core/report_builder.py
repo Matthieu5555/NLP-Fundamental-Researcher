@@ -28,6 +28,15 @@ class SectionType(Enum):
     SENTIMENT = "sentiment"                  # Market and news sentiment analysis
     RISKS = "risks"                          # Key risk factors and mitigation strategies
     RECOMMENDATION = "recommendation"        # Final investment recommendation (buy/hold/sell)
+    DCF_VALUATION = "dcf_valuation"          # DCF model and fair value
+    COMP_TABLE = "comp_table"                # Comparable company analysis
+    EARNINGS_MODEL = "earnings_model"        # Earnings model summary table
+    SENSITIVITY = "sensitivity"              # Sensitivity analysis grid
+    CONVICTION = "conviction"                # Conviction scoring
+    SCENARIO_ANALYSIS = "scenario_analysis"  # Bull/Base/Bear scenario modeling
+    PRECEDENT_TRANSACTIONS = "precedent_transactions"  # M&A precedent transactions
+    FOOTBALL_FIELD = "football_field"        # Valuation football field summary
+    STRATEGIC_ASSESSMENT = "strategic_assessment"  # PESTEL/Porter's/Market Sizing
     SOURCES = "sources"                      # Bibliography and citation references
     CUSTOM = "custom"                        # User-defined custom section type
 
@@ -253,6 +262,15 @@ class ReportState:
                 "insider_activity": "Insider Activity",
                 "executive_summary": "Executive Summary",
                 "full_report": "Full Analysis Report",
+                "dcf_valuation": "DCF Valuation",
+                "comp_table": "Comparable Companies",
+                "earnings_model": "Earnings Model",
+                "sensitivity": "Sensitivity Analysis",
+                "conviction": "Conviction Score",
+                "scenario_analysis": "Scenario Analysis",
+                "precedent_transactions": "Precedent Transactions",
+                "football_field": "Valuation Summary",
+                "strategic_assessment": "Strategic Assessment",
             }
             section_types = {
                 "recommendation": SectionType.RECOMMENDATION,
@@ -265,6 +283,15 @@ class ReportState:
                 "insider_activity": SectionType.CUSTOM,
                 "executive_summary": SectionType.EXECUTIVE_SUMMARY,
                 "full_report": SectionType.CUSTOM,
+                "dcf_valuation": SectionType.DCF_VALUATION,
+                "comp_table": SectionType.COMP_TABLE,
+                "earnings_model": SectionType.EARNINGS_MODEL,
+                "sensitivity": SectionType.SENSITIVITY,
+                "conviction": SectionType.CONVICTION,
+                "scenario_analysis": SectionType.SCENARIO_ANALYSIS,
+                "precedent_transactions": SectionType.PRECEDENT_TRANSACTIONS,
+                "football_field": SectionType.FOOTBALL_FIELD,
+                "strategic_assessment": SectionType.STRATEGIC_ASSESSMENT,
             }
             title = section_titles.get(section_id, section_id.replace("_", " ").title())
             section_type = section_types.get(section_id, SectionType.CUSTOM)
@@ -340,7 +367,16 @@ class ReportState:
         # Sections in order
         section_order = [
             SectionType.EXECUTIVE_SUMMARY,
+            SectionType.FOOTBALL_FIELD,
+            SectionType.STRATEGIC_ASSESSMENT,
             SectionType.FUNDAMENTALS,
+            SectionType.DCF_VALUATION,
+            SectionType.SCENARIO_ANALYSIS,
+            SectionType.COMP_TABLE,
+            SectionType.PRECEDENT_TRANSACTIONS,
+            SectionType.EARNINGS_MODEL,
+            SectionType.SENSITIVITY,
+            SectionType.CONVICTION,
             SectionType.TECHNICALS,
             SectionType.SENTIMENT,
             SectionType.BULL_CASE,

@@ -6,6 +6,7 @@ import SessionBrowser from './components/SessionBrowser'
 import AuthModal from './components/AuthModal'
 import UsageStats from './components/UsageStats'
 import SettingsModal from './components/SettingsModal'
+import WatchlistDashboard from './components/WatchlistDashboard'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import api from './utils/api'
 import './index.css'
@@ -22,6 +23,7 @@ function AppContent() {
   const [showSessionBrowser, setShowSessionBrowser] = useState(false)
   const [showUsageStats, setShowUsageStats] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showWatchlist, setShowWatchlist] = useState(false)
   const [beliefs, setBeliefs] = useState([])
 
   // Load user theme on startup
@@ -173,12 +175,24 @@ function AppContent() {
               <>
                 {/* Action Buttons (left side) */}
                 {!sessionId && (
-                  <button
-                    onClick={() => setShowSessionBrowser(true)}
-                    className="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-lg transition-all"
-                  >
-                    Resume Analysis
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowSessionBrowser(true)}
+                      className="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-lg transition-all"
+                    >
+                      Resume Analysis
+                    </button>
+                    <button
+                      onClick={() => setShowWatchlist(!showWatchlist)}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-all border ${
+                        showWatchlist
+                          ? 'text-blue-700 bg-blue-50 border-blue-300'
+                          : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300 hover:border-slate-400'
+                      }`}
+                    >
+                      Watchlist
+                    </button>
+                  </>
                 )}
                 {sessionId && (
                   <button
@@ -236,6 +250,18 @@ function AppContent() {
       <main className="flex-grow overflow-y-auto">
         {isAuthenticated ? (
           <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+            {/* Watchlist Dashboard */}
+            {showWatchlist && !sessionId && (
+              <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
+                <WatchlistDashboard
+                  onNavigateToSession={(sid, t) => {
+                    setShowWatchlist(false)
+                    handleResumeSession({ session_id: sid, ticker: t })
+                  }}
+                />
+              </div>
+            )}
+
             {/* Stock Picker */}
             <div className={sessionId ? 'opacity-50 pointer-events-none' : ''}>
               <StockPicker

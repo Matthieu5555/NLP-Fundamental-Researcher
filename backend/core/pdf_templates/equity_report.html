@@ -763,6 +763,80 @@
     {% endif %}
 </div>
 
+<!-- ===== VALUATION: DCF MODEL ===== -->
+{% if dcf_valuation %}
+<div class="section-page">
+    <h1 class="section-header">DCF Valuation</h1>
+    {{ dcf_valuation | safe }}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: COMPARABLE COMPANIES ===== -->
+{% if comp_table %}
+<div class="section-page">
+    <h1 class="section-header">Comparable Company Analysis</h1>
+    {{ comp_table | safe }}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: EARNINGS MODEL ===== -->
+{% if earnings_model %}
+<div class="section-page">
+    <h1 class="section-header">Earnings Model Summary</h1>
+    {{ earnings_model | safe }}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: SCENARIO ANALYSIS ===== -->
+{% if scenario_analysis %}
+<div class="section-page">
+    <h1 class="section-header">Scenario Analysis</h1>
+    {{ scenario_analysis | safe }}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: PRECEDENT TRANSACTIONS ===== -->
+{% if precedent_transactions %}
+<div class="section-page">
+    <h1 class="section-header">Precedent Transactions</h1>
+    {{ precedent_transactions | safe }}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: SENSITIVITY ANALYSIS ===== -->
+{% if sensitivity %}
+<div class="section-page">
+    <h1 class="section-header">Sensitivity Analysis</h1>
+    {{ sensitivity | safe }}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION SUMMARY: FOOTBALL FIELD ===== -->
+{% if football_field %}
+<div class="section-page">
+    <h1 class="section-header">Valuation Summary</h1>
+    {{ football_field | safe }}
+</div>
+{% endif %}
+
+<!-- ===== STRATEGIC ASSESSMENT ===== -->
+{% if strategic_assessment %}
+<div class="section-page">
+    <h1 class="section-header">Strategic Assessment</h1>
+    <div class="two-column-text">
+        {{ strategic_assessment | safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: CONVICTION SCORE ===== -->
+{% if conviction %}
+<div class="section-page">
+    <h1 class="section-header">Conviction Score</h1>
+    {{ conviction | safe }}
+</div>
+{% endif %}
+
 <!-- ===== APPENDIX CONTINUED: FUNDAMENTALS ===== -->
 {% if fundamentals %}
 <div class="section-page">

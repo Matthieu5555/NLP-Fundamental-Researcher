@@ -124,26 +124,7 @@ george_researcher_js/
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [ARCHITECTURE_AND_SCALING.md](./ARCHITECTURE_AND_SCALING.md) | Full architecture, data sources, scaling strategy |
-| [USER_STORIES.md](./USER_STORIES.md) | Feature documentation as user stories |
-| [CONTEXT.md](./CONTEXT.md) | Development context and recent changes |
-| [NEWS_REFACTOR.md](./NEWS_REFACTOR.md) | Future enhancement: smarter news search |
-
-## Current Status
-
-| Phase | Status |
-|-------|--------|
-| Phase 1-3.5: Core Platform | ✅ Complete |
-| Phase 4: Non-US Handling | ✅ Complete |
-| Phase 5: Enhanced Features | ✅ Complete (US) |
-| Phase 6: Data Caching | ✅ Complete |
-| Phase 7: Authentication | ✅ Complete |
-| Phase 8: User-Scoped Sessions | ✅ Complete |
-| Phase 9: Usage Tracking | ✅ Complete |
-
-**Beta Infrastructure:** Complete. All phases through 9 implemented.
+See [DOCS.md](./DOCS.md) for full architecture, features, API reference, project structure, design principles, tech debt, and future enhancement plans.
 
 ## Tech Stack
 

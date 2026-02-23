@@ -150,6 +150,17 @@ class Worker:
             await job_queue.complete_job(job.job_id, result)
             logger.info(f"Worker {self.worker_id} completed job {job.job_id}")
 
+            # Update watchlist fair value if DCF completed
+            fair_value = result.get("_fair_value_per_share") if result else None
+            if fair_value is not None:
+                try:
+                    from backend.core.watchlist_db import watchlist_db
+                    await watchlist_db.broadcast_fair_value(
+                        job.ticker, fair_value, job.session_id
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to update watchlist fair value: {e}")
+
             # Track ACTUAL usage (real tokens and costs from LLM responses)
             await self._track_usage(job)
 

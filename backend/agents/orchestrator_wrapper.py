@@ -79,7 +79,7 @@ def run_full_analysis(
     # Wrap progress callback to match orchestrator signature
     def wrapped_progress(message: str, step: int = None):
         if progress_callback:
-            total = 19 if is_us else 14  # US has more steps
+            total = 24 if is_us else 14  # US has more steps (includes valuation)
             progress_callback(step or 1, total, message)
 
     if is_us:
@@ -116,6 +116,26 @@ def run_full_analysis(
                 session.metadata["is_us"] = True
                 session.metadata["contradictions"] = structured_data["contradictions"]
                 session.metadata["research_gaps"] = structured_data["research_gaps"]
+
+                # Store structured valuation data for frontend interactive components
+                if result.dcf_result:
+                    session.metadata["dcf_model"] = result.dcf_result.to_dict()
+
+                if result.sensitivity_result:
+                    session.metadata["sensitivity_data"] = result.sensitivity_result.to_dict()
+
+                if result.conviction_result:
+                    session.metadata["conviction_data"] = result.conviction_result.to_dict()
+
+                if result.scenario_result:
+                    session.metadata["scenario_data"] = result.scenario_result.to_dict()
+
+                if result.football_field_result:
+                    session.metadata["football_field_data"] = result.football_field_result.to_dict()
+
+        # Include fair value in result for async watchlist update by the worker
+        if result.dcf_result:
+            analysis_dict["_fair_value_per_share"] = result.dcf_result.fair_value_per_share
 
         return analysis_dict
 
@@ -186,6 +206,16 @@ def _convert_us_result(result: USFullAnalysis) -> dict:
         "moat": result.moat_analysis.content if result.moat_analysis else None,
         "strategy": result.strategy_analysis.content if result.strategy_analysis else None,
         "recommendation": result.recommendation.content if result.recommendation else None,
+        # Valuation content
+        "dcf_valuation": result.dcf_analysis.content if result.dcf_analysis else None,
+        "comp_table": result.comp_analysis.content if result.comp_analysis else None,
+        "earnings_model": result.earnings_model.content if result.earnings_model else None,
+        "sensitivity": result.sensitivity_analysis.content if result.sensitivity_analysis else None,
+        "conviction": result.conviction_analysis.content if result.conviction_analysis else None,
+        "scenario_analysis": result.scenario_analysis.content if result.scenario_analysis else None,
+        "precedent_transactions": result.precedent_analysis.content if result.precedent_analysis else None,
+        "football_field": result.football_field_analysis.content if result.football_field_analysis else None,
+        "strategic_assessment": result.strategic_assessment_analysis.content if result.strategic_assessment_analysis else None,
     }
 
 
@@ -237,6 +267,35 @@ def _populate_report_us(report: Any, result: USFullAnalysis):
 
     if result.strategy_analysis:
         report.update_section("strategy", result.strategy_analysis.content)
+
+    # Valuation sections
+    if result.dcf_analysis and result.dcf_analysis.success:
+        report.update_section("dcf_valuation", result.dcf_analysis.content)
+
+    if result.comp_analysis and result.comp_analysis.success:
+        report.update_section("comp_table", result.comp_analysis.content)
+
+    if result.earnings_model and result.earnings_model.success:
+        report.update_section("earnings_model", result.earnings_model.content)
+
+    if result.sensitivity_analysis and result.sensitivity_analysis.success:
+        report.update_section("sensitivity", result.sensitivity_analysis.content)
+
+    if result.conviction_analysis and result.conviction_analysis.success:
+        report.update_section("conviction", result.conviction_analysis.content)
+
+    # New valuation sections
+    if result.scenario_analysis and result.scenario_analysis.success:
+        report.update_section("scenario_analysis", result.scenario_analysis.content)
+
+    if result.precedent_analysis and result.precedent_analysis.success:
+        report.update_section("precedent_transactions", result.precedent_analysis.content)
+
+    if result.football_field_analysis and result.football_field_analysis.success:
+        report.update_section("football_field", result.football_field_analysis.content)
+
+    if result.strategic_assessment_analysis and result.strategic_assessment_analysis.success:
+        report.update_section("strategic_assessment", result.strategic_assessment_analysis.content)
 
     # Add sources
     for source in result.sources_collected:

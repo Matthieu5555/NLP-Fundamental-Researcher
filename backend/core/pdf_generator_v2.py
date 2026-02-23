@@ -458,6 +458,61 @@ def build_template_context(
         if hasattr(moat, 'content'):
             moat_analysis = md_to_html(moat.content)
 
+    # Valuation sections
+    dcf_valuation = ''
+    if 'dcf_valuation' in report_state.sections:
+        dcf_sec = report_state.sections['dcf_valuation']
+        if hasattr(dcf_sec, 'content'):
+            dcf_valuation = md_to_html(dcf_sec.content)
+
+    comp_table = ''
+    if 'comp_table' in report_state.sections:
+        comp_sec = report_state.sections['comp_table']
+        if hasattr(comp_sec, 'content'):
+            comp_table = md_to_html(comp_sec.content)
+
+    earnings_model = ''
+    if 'earnings_model' in report_state.sections:
+        earn_sec = report_state.sections['earnings_model']
+        if hasattr(earn_sec, 'content'):
+            earnings_model = md_to_html(earn_sec.content)
+
+    sensitivity = ''
+    if 'sensitivity' in report_state.sections:
+        sens_sec = report_state.sections['sensitivity']
+        if hasattr(sens_sec, 'content'):
+            sensitivity = md_to_html(sens_sec.content)
+
+    conviction = ''
+    if 'conviction' in report_state.sections:
+        conv_sec = report_state.sections['conviction']
+        if hasattr(conv_sec, 'content'):
+            conviction = md_to_html(conv_sec.content)
+
+    scenario_analysis = ''
+    if 'scenario_analysis' in report_state.sections:
+        scen_sec = report_state.sections['scenario_analysis']
+        if hasattr(scen_sec, 'content'):
+            scenario_analysis = md_to_html(scen_sec.content)
+
+    precedent_transactions = ''
+    if 'precedent_transactions' in report_state.sections:
+        prec_sec = report_state.sections['precedent_transactions']
+        if hasattr(prec_sec, 'content'):
+            precedent_transactions = md_to_html(prec_sec.content)
+
+    football_field = ''
+    if 'football_field' in report_state.sections:
+        ff_sec = report_state.sections['football_field']
+        if hasattr(ff_sec, 'content'):
+            football_field = md_to_html(ff_sec.content)
+
+    strategic_assessment = ''
+    if 'strategic_assessment' in report_state.sections:
+        sa_sec = report_state.sections['strategic_assessment']
+        if hasattr(sa_sec, 'content'):
+            strategic_assessment = md_to_html(sa_sec.content)
+
     # Sources
     research_sources = []
     sources_section = report_state.sections.get('sources')
@@ -542,6 +597,15 @@ def build_template_context(
         'fundamentals': fundamentals,
         'technicals': technicals,
         'moat_analysis': moat_analysis,
+        'dcf_valuation': dcf_valuation,
+        'comp_table': comp_table,
+        'earnings_model': earnings_model,
+        'sensitivity': sensitivity,
+        'conviction': conviction,
+        'scenario_analysis': scenario_analysis,
+        'precedent_transactions': precedent_transactions,
+        'football_field': football_field,
+        'strategic_assessment': strategic_assessment,
 
         # Sources
         'research_sources': research_sources,

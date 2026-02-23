@@ -225,6 +225,24 @@ async def get_stats(
     return session.report_state.get_stats()
 
 
+@router.get("/{session_id}/valuation-data")
+async def get_valuation_data(
+    session: AnalysisSession = Depends(get_user_session_with_report),
+):
+    """
+    Get structured valuation data for interactive frontend components.
+
+    Returns DCF model, sensitivity grid, conviction scores from session metadata.
+    """
+    return {
+        "dcf_model": session.metadata.get("dcf_model"),
+        "sensitivity_data": session.metadata.get("sensitivity_data"),
+        "conviction_data": session.metadata.get("conviction_data"),
+        "scenario_data": session.metadata.get("scenario_data"),
+        "football_field_data": session.metadata.get("football_field_data"),
+    }
+
+
 @router.post("/{session_id}/sources/{source_id}/exclude")
 async def exclude_source(
     source_id: int,

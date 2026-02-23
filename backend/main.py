@@ -190,7 +190,7 @@ def create_app() -> FastAPI:
     )
 
     # Import and register routers
-    from backend.routers import analysis, auth, cache, chart, chat, companies, reports, sessions, settings, usage
+    from backend.routers import analysis, auth, cache, chart, chat, companies, reports, sessions, settings, usage, watchlist
 
     app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -202,6 +202,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions.router, prefix="/api/sessions", tags=["sessions"])
     app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
     app.include_router(usage.router, prefix="/api/usage", tags=["usage"])
+    app.include_router(watchlist.router, prefix="/api/watchlist", tags=["watchlist"])
 
     @app.get("/")
     async def root():

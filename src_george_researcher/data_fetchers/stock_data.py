@@ -91,6 +91,9 @@ class StockInfo:
     recommendation: Optional[str] = None  # yfinance name
     analyst_rating: Optional[str] = None  # FDS name (alias)
     num_analysts: Optional[int] = None
+    # Debt & capital structure
+    net_debt: Optional[float] = None  # total_debt - cash_and_equivalents
+    interest_expense: Optional[float] = None
     # Dividend/earnings
     eps: Optional[float] = None
     dividend_yield: Optional[float] = None
