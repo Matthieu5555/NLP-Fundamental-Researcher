@@ -38,6 +38,7 @@ from backend.middleware.auth_middleware import get_current_user
 from backend.dependencies import get_user_session
 from backend.jobs import job_queue, QueueType, JobStatus
 from src_george_researcher.data_fetchers.data_router import classify_company
+from src_george_researcher.analysis.pipeline_config import US_TOTAL_STEPS, NON_US_TOTAL_STEPS
 
 logger = logging.getLogger(__name__)
 
@@ -424,7 +425,7 @@ async def run_analysis_stream(
     async def generate():
         """Stream progress updates via SSE."""
         last_progress = -1
-        total_steps = 19 if job.queue_type == QueueType.US else 14
+        total_steps = US_TOTAL_STEPS if job.queue_type == QueueType.US else NON_US_TOTAL_STEPS
 
         while True:
             current_job = await job_queue.get_job_by_session(session_id)

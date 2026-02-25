@@ -2,7 +2,7 @@
 LLM and API pricing data - single source of truth.
 
 Pricing is per 1 million tokens (USD).
-Last updated: January 2025
+Last updated: February 2026
 
 To update prices:
 1. Check OpenRouter: https://openrouter.ai/docs/models
@@ -16,33 +16,47 @@ from typing import Dict
 
 # OpenRouter LLM pricing (per 1M tokens)
 LLM_PRICING: Dict[str, Dict[str, float]] = {
-    # Anthropic Claude 4 series
-    "anthropic/claude-sonnet-4": {"input": 3.00, "output": 15.00},
-    "anthropic/claude-4-sonnet": {"input": 3.00, "output": 15.00},
-    "anthropic/claude-opus-4": {"input": 15.00, "output": 75.00},
-    "anthropic/claude-4-opus": {"input": 15.00, "output": 75.00},
+    # Moonshot AI
+    "moonshotai/kimi-k2.5": {"input": 0.45, "output": 2.20},
+    "moonshotai/kimi-k2-thinking": {"input": 0.47, "output": 2.00},
 
-    # Anthropic Claude 3.x series
-    "anthropic/claude-3-haiku": {"input": 0.25, "output": 1.25},
-    "anthropic/claude-3.5-sonnet": {"input": 3.00, "output": 15.00},
-    "anthropic/claude-3-5-sonnet": {"input": 3.00, "output": 15.00},
-    "anthropic/claude-3.5-haiku": {"input": 0.80, "output": 4.00},
-    "anthropic/claude-3-5-haiku": {"input": 0.80, "output": 4.00},
-    "anthropic/claude-3-sonnet": {"input": 3.00, "output": 15.00},
-    "anthropic/claude-3-opus": {"input": 15.00, "output": 75.00},
+    # DeepSeek
+    "deepseek/deepseek-v3.2-20251201": {"input": 0.26, "output": 0.38},
+    "deepseek/deepseek-v3.2-speciale-20251201": {"input": 0.40, "output": 1.20},
+
+    # Alibaba Qwen
+    "qwen/qwen3.5-plus-02-15": {"input": 0.40, "output": 2.40},
+    "qwen/qwen3.5-397b-a17b": {"input": 0.55, "output": 3.50},
+    "qwen/qwen3-coder-next-2025-02-03": {"input": 0.12, "output": 0.75},
+    "qwen/qwen3-max-thinking-20260123": {"input": 1.20, "output": 6.00},
+
+    # Zhipu AI GLM
+    "z-ai/glm-5-20260211": {"input": 0.95, "output": 2.55},
+    "z-ai/glm-4.7-20251222": {"input": 0.38, "output": 1.70},
+    "z-ai/glm-4.7-flash-20260119": {"input": 0.06, "output": 0.40},
+    "z-ai/glm-4.6-20251208": {"input": 0.30, "output": 0.90},
+
+    # Anthropic Claude 4.6 series
+    "anthropic/claude-sonnet-4.6": {"input": 3.00, "output": 15.00},
+    "anthropic/claude-opus-4.6": {"input": 5.00, "output": 25.00},
+
+    # Anthropic Claude 4 series (legacy)
+    "anthropic/claude-sonnet-4": {"input": 3.00, "output": 15.00},
+    "anthropic/claude-opus-4": {"input": 15.00, "output": 75.00},
 
     # OpenAI models
+    "openai/gpt-5.2-pro": {"input": 21.00, "output": 168.00},
+    "openai/gpt-5-nano": {"input": 0.05, "output": 0.40},
     "openai/gpt-4o": {"input": 2.50, "output": 10.00},
     "openai/gpt-4o-mini": {"input": 0.15, "output": 0.60},
-    "openai/gpt-4-turbo": {"input": 10.00, "output": 30.00},
-    "openai/gpt-3.5-turbo": {"input": 0.50, "output": 1.50},
 
     # Google models via OpenRouter
+    "google/gemini-3.1-pro-preview": {"input": 2.00, "output": 12.00},
+    "google/gemini-3-flash-preview": {"input": 0.50, "output": 3.00},
     "google/gemini-2.0-flash": {"input": 0.10, "output": 0.40},
-    "google/gemini-2.0-flash-exp": {"input": 0.00, "output": 0.00},
-    "google/gemini-flash-1.5": {"input": 0.075, "output": 0.30},
-    "google/gemini-pro": {"input": 0.125, "output": 0.375},
-    "google/gemini-pro-1.5": {"input": 1.25, "output": 5.00},
+
+    # Meta
+    "meta-llama/llama-4-scout-17b-16e-instruct": {"input": 0.11, "output": 0.34},
 
     # Native Gemini API
     "gemini-2.0-flash": {"input": 0.10, "output": 0.40},
@@ -61,7 +75,7 @@ def get_llm_pricing(model: str) -> Dict[str, float]:
     Get pricing for an LLM model.
 
     Args:
-        model: Model identifier (e.g., "anthropic/claude-3-haiku")
+        model: Model identifier (e.g., "moonshotai/kimi-k2.5")
 
     Returns:
         Dict with "input" and "output" prices per 1M tokens

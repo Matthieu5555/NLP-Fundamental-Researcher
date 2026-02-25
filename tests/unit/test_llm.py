@@ -28,7 +28,7 @@ class TestCallLLM:
 
             result = call_llm(
                 api_key="test-key",
-                model="anthropic/claude-3-haiku",
+                model="moonshotai/kimi-k2.5",
                 system_prompt="You are helpful.",
                 user_prompt="Say hello",
             )
@@ -51,7 +51,7 @@ class TestCallLLM:
 
             result = call_llm(
                 api_key="test-key",
-                model="anthropic/claude-3-haiku",
+                model="moonshotai/kimi-k2.5",
                 system_prompt="",
                 user_prompt="test",
             )
@@ -67,7 +67,7 @@ class TestCallLLM:
 
             result = call_llm(
                 api_key="test-key",
-                model="anthropic/claude-3-haiku",
+                model="moonshotai/kimi-k2.5",
                 system_prompt="",
                 user_prompt="test",
             )
@@ -96,7 +96,7 @@ class TestCallLLM:
 
             call_llm(
                 api_key="test-key",
-                model="anthropic/claude-3-haiku",
+                model="moonshotai/kimi-k2.5",
                 system_prompt="Base instructions",
                 user_prompt="test",
                 master_prompt="Always be concise.",
@@ -125,7 +125,7 @@ class TestCallLLM:
 
             result = call_llm(
                 api_key="test-key",
-                model="anthropic/claude-3-haiku",
+                model="moonshotai/kimi-k2.5",
                 system_prompt="",
                 user_prompt="test",
             )

@@ -279,8 +279,8 @@ class Worker:
 
         # Progress callback that updates the job queue
         async def progress_callback(step: int, total: int, message: str):
-            progress = int((step / total) * 100)
-            await job_queue.update_progress(job.job_id, progress, message, step)
+            progress = min(100, int((step / total) * 100))
+            await job_queue.update_progress(job.job_id, progress, message, min(step, total))
 
         # Run analysis in thread pool to not block event loop
         # The orchestrator is synchronous, so we use asyncio.to_thread

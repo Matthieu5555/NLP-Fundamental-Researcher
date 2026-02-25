@@ -55,16 +55,36 @@ class CostBreakdown:
     def set_model(self, model: str) -> None:
         """Set the LLM model name for display."""
         # Extract friendly name from OpenRouter model ID
-        if "claude-sonnet-4" in model.lower():
-            self.llm_model = "Claude Sonnet 4"
+        if "kimi-k2.5" in model.lower():
+            self.llm_model = "Kimi K2.5"
+        elif "kimi-k2" in model.lower():
+            self.llm_model = "Kimi K2"
+        elif "claude-sonnet-4" in model.lower():
+            self.llm_model = "Claude Sonnet 4.6"
         elif "claude-opus-4" in model.lower():
-            self.llm_model = "Claude Opus 4"
-        elif "claude-3.5-sonnet" in model.lower() or "claude-3-5-sonnet" in model.lower():
-            self.llm_model = "Claude 3.5 Sonnet"
-        elif "claude-3.5-haiku" in model.lower() or "claude-3-5-haiku" in model.lower():
-            self.llm_model = "Claude 3.5 Haiku"
-        elif "claude-3-haiku" in model.lower():
-            self.llm_model = "Claude 3 Haiku"
+            self.llm_model = "Claude Opus 4.6"
+        elif "gpt-5.2-pro" in model.lower():
+            self.llm_model = "GPT-5.2 Pro"
+        elif "gpt-5-nano" in model.lower():
+            self.llm_model = "GPT-5 Nano"
+        elif "llama-4-scout" in model.lower():
+            self.llm_model = "Llama 4 Scout"
+        elif "gemini-3.1-pro" in model.lower():
+            self.llm_model = "Gemini 3.1 Pro"
+        elif "gemini-3-flash" in model.lower():
+            self.llm_model = "Gemini 3 Flash"
+        elif "deepseek" in model.lower():
+            self.llm_model = "DeepSeek V3.2"
+        elif "qwen3.5" in model.lower():
+            self.llm_model = "Qwen 3.5"
+        elif "qwen3-coder" in model.lower():
+            self.llm_model = "Qwen 3 Coder"
+        elif "qwen" in model.lower():
+            self.llm_model = "Qwen"
+        elif "glm-5" in model.lower():
+            self.llm_model = "GLM-5"
+        elif "glm-4" in model.lower():
+            self.llm_model = "GLM-4.7"
         elif "gemini" in model.lower():
             self.llm_model = "Gemini"
         else:

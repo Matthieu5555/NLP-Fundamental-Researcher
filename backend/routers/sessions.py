@@ -176,7 +176,7 @@ async def finalize_session(
 
     load_dotenv()
     api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+    model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 
     if not api_key:
         raise HTTPException(status_code=500, detail="LLM API key not configured")
@@ -245,7 +245,7 @@ async def regenerate_report(
 
     load_dotenv()
     api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+    model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 
     if not api_key:
         raise HTTPException(status_code=500, detail="LLM API key not configured")
@@ -335,11 +335,11 @@ async def regenerate_report(
         )
 
         try:
-            from backend.core.pdf_generator_v2 import (
-                generate_report_headline,
+            from backend.core.pdf_formatting import (
                 extract_highlights,
                 extract_recommendation,
             )
+            from backend.core.pdf_generator_v2 import generate_report_headline
 
             company_name = sess.metadata.get("company_name", ticker)
             rating = extract_recommendation(sess.report_state)

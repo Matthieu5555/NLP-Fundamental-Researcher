@@ -68,6 +68,8 @@ from src_george_researcher.analysis.strategic_assessment import (
     StrategicAssessment,
     run_strategic_assessment,
 )
+from src_george_researcher.analysis.pipeline_config import USStep, US_TOTAL_STEPS
+from src_george_researcher.data_fetchers.price_resolver import resolve_current_price
 from src_george_researcher.data_fetchers.accounting_standard import (
     NormalizationResult,
     detect_and_flag,
@@ -186,6 +188,7 @@ class USAnalysisResults:
 @dataclass(frozen=True)
 class USFullAnalysis:
     """Complete US analysis result."""
+    # Required fields (no defaults) — must come first
     symbol: str
     timestamp: str
     company_facts: Optional[CompanyFacts]
@@ -196,11 +199,17 @@ class USFullAnalysis:
     news: Optional[List[NewsArticle]]
     web_research: Optional[Any]
     sentiment_report: str
-
-    # Analysis results
     fundamentals_analysis: Optional[AnalysisResult]  # Combined quant + synthesis
     insider_analysis: Optional[AnalysisResult]
     technical_analysis: Optional[AnalysisResult]
+    total_tokens: int
+    total_cost_usd: float
+    cost_breakdown: CostBreakdown
+    success: bool
+    errors: List[str]
+    sources_collected: List[dict]
+
+    # Optional fields (with defaults)
     strategic_assessment_analysis: Optional[AnalysisResult] = None
     strategic_assessment: Optional[StrategicAssessment] = None
     bull_thesis: Optional[AnalysisResult] = None
@@ -208,8 +217,6 @@ class USFullAnalysis:
     moat_analysis: Optional[AnalysisResult] = None
     strategy_analysis: Optional[AnalysisResult] = None
     recommendation: Optional[AnalysisResult] = None
-
-    # Valuation results
     dcf_analysis: Optional[AnalysisResult] = None
     dcf_result: Optional[DCFResult] = None
     comp_analysis: Optional[AnalysisResult] = None
@@ -226,17 +233,7 @@ class USFullAnalysis:
     football_field_result: Optional[FootballFieldResult] = None
     conviction_analysis: Optional[AnalysisResult] = None
     conviction_result: Optional[ConvictionResult] = None
-
-    # Accounting normalization
     normalization: Optional[NormalizationResult] = None
-
-    # Metadata
-    total_tokens: int
-    total_cost_usd: float
-    cost_breakdown: CostBreakdown
-    success: bool
-    errors: List[str]
-    sources_collected: List[dict]
 
 
 # =============================================================================
@@ -266,7 +263,7 @@ def _fetch_all_data_us(
         return fetched
 
     # Step 1: Company Facts (FREE)
-    report_progress("Fetching company facts...", 1)
+    report_progress("Fetching company facts...", USStep.FETCH_COMPANY_FACTS)
     company_facts, error = fds.get_company_facts(symbol)
     if error:
         fetched.errors.append(f"Company facts: {error}")
@@ -283,7 +280,7 @@ def _fetch_all_data_us(
     company_name = company_facts.name if company_facts else symbol
 
     # Step 2: Financial Statements ($0.02)
-    report_progress("Fetching financial statements...", 2)
+    report_progress("Fetching financial statements...", USStep.FETCH_FINANCIALS)
     financials, error = fds.get_financials(symbol, period="annual", limit=5)
     if error:
         fetched.errors.append(f"Financials: {error}")
@@ -296,7 +293,7 @@ def _fetch_all_data_us(
         )
 
     # Step 3: Prices for Technicals ($0.01)
-    report_progress("Fetching price history...", 3)
+    report_progress("Fetching price history...", USStep.FETCH_PRICES)
     prices, error = fds.get_prices(symbol, limit=365)
     if error:
         fetched.errors.append(f"Prices: {error}")
@@ -317,7 +314,7 @@ def _fetch_all_data_us(
             logger.warning(f"yfinance fallback also failed for {symbol}: {yf_error}")
 
     # Step 4: Insider Trades ($0.02)
-    report_progress("Fetching insider trades...", 4)
+    report_progress("Fetching insider trades...", USStep.FETCH_INSIDER_TRADES)
     insider_trades, error = fds.get_insider_trades(symbol, limit=50)
     if error:
         fetched.errors.append(f"Insider trades: {error}")
@@ -326,7 +323,7 @@ def _fetch_all_data_us(
         fetched.cost.add_fds_cost("insider_trades")
 
     # Step 5: Analyst Estimates ($0.02)
-    report_progress("Fetching analyst estimates...", 5)
+    report_progress("Fetching analyst estimates...", USStep.FETCH_ANALYST_ESTIMATES)
     estimates, error = fds.get_analyst_estimates(symbol, limit=8)
     if error:
         fetched.errors.append(f"Analyst estimates: {error}")
@@ -335,7 +332,7 @@ def _fetch_all_data_us(
         fetched.cost.add_fds_cost("analyst_estimates")
 
     # Step 6: FDS News ($0.02)
-    report_progress("Fetching company news...", 6)
+    report_progress("Fetching company news...", USStep.FETCH_NEWS)
     news, error = fds.get_news(symbol, limit=10)
     if error:
         fetched.errors.append(f"News: {error}")
@@ -361,7 +358,7 @@ def _fetch_all_data_us(
             })
 
     # Step 7: Gemini Search - Web Research (Round 1)
-    report_progress("Searching web for recent developments...", 7)
+    report_progress("Searching web for recent developments...", USStep.WEB_SEARCH_1)
     if config.google_api_key:
         web_search, search_error = search_with_gemini(
             symbol,
@@ -388,7 +385,7 @@ def _fetch_all_data_us(
 
     # Step 8: Follow-up Research (Round 2)
     if fetched.sentiment_report and config.google_api_key:
-        report_progress("Researching follow-up topics...", 8)
+        report_progress("Researching follow-up topics...", USStep.WEB_SEARCH_2)
         try:
             followup_topics = identify_research_topics(
                 api_key=config.openrouter_api_key,
@@ -423,7 +420,8 @@ def _calculate_technicals_from_fds(prices: List[PriceData]) -> Optional[Technica
     sorted_prices = sorted(prices, key=lambda x: x.date)
     closes = [p.close for p in sorted_prices]
 
-    # Current price
+    # Current price from most recent close (may be 0 if FDS data is incomplete;
+    # the price_resolver handles fallback — technicals just reports what FDS gave us)
     current_price = closes[-1]
 
     # Moving averages
@@ -586,7 +584,7 @@ def _analyze_fundamentals_us(
     model = config.openrouter_model
 
     # Unified Fundamentals Analysis - ONE comprehensive analysis
-    report_progress("Running Fundamentals Agent...", 9)
+    report_progress("Running Fundamentals Agent...", USStep.FUNDAMENTALS)
 
     # Build comprehensive prompt with all data
     unified_prompt = f"""## Financial Statement Data (5-Year History)
@@ -796,12 +794,12 @@ def run_us_analysis(
     combined_fundamentals = fundamentals_result
 
     # Step 4: Insider Analysis
-    report_progress("Analyzing insider activity...", 11)
+    report_progress("Analyzing insider activity...", USStep.INSIDER_ANALYSIS)
     insider_result = _analyze_insider_signals(fetched.insider_trades or [], config)
     total_cost.add_llm_cost(insider_result.cost_usd)
 
     # Step 5: Technical Analysis
-    report_progress("Running Technical Analysis Agent...", 12)
+    report_progress("Running Technical Analysis Agent...", USStep.TECHNICAL_ANALYSIS)
     technical_result = None
     if fetched.technicals:
         technical_result = analyze_technicals(
@@ -831,7 +829,7 @@ def run_us_analysis(
     )
 
     # Step 7: Strategic Assessment (PESTEL, Porter's, Market Sizing)
-    report_progress("Running Strategic Assessment (PESTEL, Porter's, Market Sizing)...", 13)
+    report_progress("Running Strategic Assessment (PESTEL, Porter's, Market Sizing)...", USStep.STRATEGIC_ASSESSMENT)
     strategic_assessment_obj = None
     strategic_assessment_result = None
     try:
@@ -845,9 +843,30 @@ def run_us_analysis(
         total_cost.add_llm_cost(strategic_assessment_result.cost_usd)
     except Exception as e:
         logger.warning(f"Strategic assessment failed: {e}")
+        sector = stock_info.sector or "Unknown"
+        industry = stock_info.industry or "Unknown"
+        strategic_assessment_result = AnalysisResult(
+            section="External Forces",
+            content=(
+                f"## External Forces — {stock_info.name}\n\n"
+                f"*Automated fallback: the full PESTEL/Porter's assessment could not be completed.*\n\n"
+                f"### Industry Context\n\n"
+                f"{stock_info.name} operates in the **{industry}** industry within the **{sector}** sector. "
+                f"Investors should consider the standard external forces affecting this space:\n\n"
+                f"**Political & Regulatory:** Government policy, trade regulations, and industry-specific compliance requirements.\n\n"
+                f"**Economic:** Interest rate environment, inflation trends, consumer/enterprise spending cycles, and currency exposure.\n\n"
+                f"**Technological:** Pace of innovation, R&D intensity, and disruption risk from emerging technologies.\n\n"
+                f"**Competitive:** Barrier to entry, supplier/buyer power, and threat of substitutes within {industry}.\n\n"
+                f"*A full strategic assessment with market sizing (TAM/SAM/SOM) and competitive positioning "
+                f"was not available for this analysis run. Re-running the analysis may resolve this.*"
+            ),
+            tokens_used=0,
+            success=True,
+            cost_usd=0.0,
+        )
 
     # Step 8: Strategy Analysis (SWOT + outlook, informed by strategic assessment)
-    report_progress("Running Strategy Analysis Agent...", 14)
+    report_progress("Running Strategy Analysis Agent...", USStep.STRATEGY_ANALYSIS)
     strategy_result = analyze_strategy(
         config.openrouter_api_key,
         config.openrouter_model,
@@ -858,7 +877,7 @@ def run_us_analysis(
     total_cost.add_llm_cost(strategy_result.cost_usd)
 
     # Step 9: Moat Analysis
-    report_progress("Running Moat Analysis Agent...", 15)
+    report_progress("Running Moat Analysis Agent...", USStep.MOAT_ANALYSIS)
     moat_result = analyze_moat(
         config.openrouter_api_key,
         config.openrouter_model,
@@ -874,7 +893,7 @@ def run_us_analysis(
     # Step 10: DCF Valuation (now informed by strategic assessment)
     dcf_result_obj = None
     dcf_analysis_result = None
-    report_progress("Running strategy-informed DCF valuation...", 16)
+    report_progress("Running strategy-informed DCF valuation...", USStep.DCF_VALUATION)
     try:
         from src_george_researcher.valuation.dcf_agent import run_dcf_analysis
         dcf_result_obj, dcf_analysis_result = run_dcf_analysis(
@@ -898,7 +917,7 @@ def run_us_analysis(
     # Step 11: Comparable Company Table
     comp_result_obj = None
     comp_analysis_result = None
-    report_progress("Building comparable company table...", 17)
+    report_progress("Building comparable company table...", USStep.COMP_TABLE)
     try:
         from src_george_researcher.valuation.comp_agent import run_comp_analysis
         comp_result_obj, comp_analysis_result = run_comp_analysis(
@@ -916,7 +935,7 @@ def run_us_analysis(
 
     # Step 12: Earnings Model (no LLM)
     earnings_model_result = None
-    report_progress("Building earnings model...", 18)
+    report_progress("Building earnings model...", USStep.EARNINGS_MODEL)
     try:
         from src_george_researcher.valuation.earnings_model import run_earnings_model
         earnings_model_result = run_earnings_model(
@@ -931,7 +950,7 @@ def run_us_analysis(
     growth_margin_sensitivity_obj = None
     sensitivity_analysis_result = None
     if dcf_result_obj:
-        report_progress("Running sensitivity analysis...", 19)
+        report_progress("Running sensitivity analysis...", USStep.SENSITIVITY)
         try:
             from src_george_researcher.valuation.sensitivity import run_sensitivity_analysis
             sensitivity_result_obj, growth_margin_sensitivity_obj, sensitivity_analysis_result = run_sensitivity_analysis(dcf_result_obj)
@@ -942,7 +961,7 @@ def run_us_analysis(
     scenario_result_obj = None
     scenario_analysis_result = None
     if dcf_result_obj:
-        report_progress("Running bull/base/bear scenario modeling...", 19)
+        report_progress("Running bull/base/bear scenario modeling...", USStep.SCENARIOS)
         try:
             from src_george_researcher.valuation.scenarios import run_scenarios, format_scenarios_markdown
             scenario_result_obj = run_scenarios(
@@ -966,7 +985,7 @@ def run_us_analysis(
     precedent_result_obj = None
     precedent_analysis_result = None
     if fetched.sentiment_report and stock_info.industry:
-        report_progress("Analyzing precedent M&A transactions...", 20)
+        report_progress("Analyzing precedent M&A transactions...", USStep.PRECEDENT_MA)
         try:
             from src_george_researcher.valuation.precedent_transactions import run_precedent_analysis
 
@@ -997,7 +1016,7 @@ def run_us_analysis(
     # Step 15: Football Field (no LLM, aggregates all valuation methods)
     football_field_obj = None
     football_field_analysis = None
-    report_progress("Building valuation football field...", 21)
+    report_progress("Building valuation football field...", USStep.FOOTBALL_FIELD)
     try:
         from src_george_researcher.valuation.football_field import build_football_field, format_football_field_markdown
 
@@ -1042,7 +1061,7 @@ def run_us_analysis(
     if scenario_analysis_result and scenario_analysis_result.success:
         valuation_context += f"\n\nScenario Analysis:\n{scenario_analysis_result.content[:800]}"
 
-    report_progress("Running Bull Case Agent (Round 1)...", 20)
+    report_progress("Running Bull Case Agent (Round 1)...", USStep.BULL_ROUND_1)
     base_context = AnalysisContext(
         api_key=config.openrouter_api_key,
         model=config.openrouter_model,
@@ -1058,7 +1077,7 @@ def run_us_analysis(
     bull_result = generate_bull_thesis(base_context)
     total_cost.add_llm_cost(bull_result.cost_usd)
 
-    report_progress("Running Bear Case Agent (Round 1)...", 21)
+    report_progress("Running Bear Case Agent (Round 1)...", USStep.BEAR_ROUND_1)
     bear_context = AnalysisContext(
         api_key=config.openrouter_api_key,
         model=config.openrouter_model,
@@ -1075,7 +1094,7 @@ def run_us_analysis(
 
     # Round 2 rebuttals
     if bull_result.success and bear_result.success:
-        report_progress("Running Bull Case Agent (Round 2)...", 22)
+        report_progress("Running Bull Case Agent (Round 2)...", USStep.BULL_ROUND_2)
         bull_context_r2 = AnalysisContext(
             api_key=config.openrouter_api_key,
             model=config.openrouter_model,
@@ -1092,7 +1111,7 @@ def run_us_analysis(
         if bull_result_r2.success:
             bull_result = bull_result_r2
 
-        report_progress("Running Bear Case Agent (Round 2)...", 23)
+        report_progress("Running Bear Case Agent (Round 2)...", USStep.BEAR_ROUND_2)
         bear_context_r2 = AnalysisContext(
             api_key=config.openrouter_api_key,
             model=config.openrouter_model,
@@ -1110,7 +1129,7 @@ def run_us_analysis(
             bear_result = bear_result_r2
 
     # Step 18: Recommendation Synthesis
-    report_progress("Synthesizing final recommendation...", 24)
+    report_progress("Synthesizing final recommendation...", USStep.RECOMMENDATION)
     synthesis_context = AnalysisContext(
         api_key=config.openrouter_api_key,
         model=config.openrouter_model,
@@ -1132,7 +1151,7 @@ def run_us_analysis(
 
     conviction_result_obj = None
     conviction_analysis_result = None
-    report_progress("Scoring investment conviction...", 25)
+    report_progress("Scoring investment conviction...", USStep.CONVICTION)
     try:
         from src_george_researcher.valuation.conviction import score_conviction
         conviction_result_obj, conviction_analysis_result = score_conviction(
@@ -1230,7 +1249,6 @@ def _build_stock_info_from_fds(fetched: USFetchedData) -> StockInfo:
     if fetched.financials:
         latest_stmt = fetched.financials[0]
 
-    current_price = technicals.current_price if technicals else None
     eps = latest.eps.current_value if latest and latest.eps else None
 
     # Compute net debt from balance sheet
@@ -1252,6 +1270,25 @@ def _build_stock_info_from_fds(fetched: USFetchedData) -> StockInfo:
         except Exception as e:
             logger.warning(f"yfinance supplement error for {symbol}: {e}")
 
+    # Resolve current price through cascading fallback (FDS → yfinance → derivation)
+    yf_shares = yf_info.shares_outstanding if yf_info else None
+    resolved = resolve_current_price(
+        symbol=symbol,
+        fds_prices=fetched.prices,
+        yf_info=yf_info,
+        market_cap=facts.market_cap if facts else None,
+        shares_outstanding=yf_shares,
+    )
+    current_price = resolved.price if resolved.success else None
+
+    # Derive shares_outstanding from market_cap / price when yfinance unavailable
+    derived_shares = None
+    if not yf_shares and facts and facts.market_cap and current_price and current_price > 0:
+        derived_shares = facts.market_cap / current_price
+        logger.info(
+            f"[{symbol}] Derived shares_outstanding from market_cap/price: {derived_shares:,.0f}"
+        )
+
     return StockInfo(
         symbol=symbol,
         name=facts.name if facts else "",
@@ -1260,6 +1297,7 @@ def _build_stock_info_from_fds(fetched: USFetchedData) -> StockInfo:
         country="United States",
         exchange=facts.exchange if facts else None,
         currency="USD",
+        current_price=current_price,
         market_cap=facts.market_cap if facts else None,
         enterprise_value=yf_info.enterprise_value if yf_info else None,
         pe_ratio=(current_price / eps) if current_price and eps and eps > 0 else None,
@@ -1287,7 +1325,7 @@ def _build_stock_info_from_fds(fetched: USFetchedData) -> StockInfo:
         high_52w=technicals.high_52w if technicals else None,
         low_52w=technicals.low_52w if technicals else None,
         avg_volume=technicals.avg_volume_20d if technicals else None,
-        shares_outstanding=yf_info.shares_outstanding if yf_info else None,
+        shares_outstanding=yf_shares or derived_shares,
         float_shares=yf_info.float_shares if yf_info else None,
         held_by_institutions=yf_info.held_by_institutions if yf_info else None,
         held_by_insiders=yf_info.held_by_insiders if yf_info else None,

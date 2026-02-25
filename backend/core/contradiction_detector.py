@@ -24,14 +24,11 @@ import logging
 import json
 from typing import List, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass, asdict
-import sys
-from pathlib import Path
 
 if TYPE_CHECKING:
     from src_george_researcher.orchestrator import FullAnalysis
 
-# Add parent path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# sys.path configured in backend/main.py
 from backend.agents.llm_wrapper import get_llm_response
 
 logger = logging.getLogger(__name__)

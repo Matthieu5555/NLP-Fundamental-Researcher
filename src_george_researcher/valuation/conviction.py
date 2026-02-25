@@ -39,7 +39,8 @@ class ConvictionCategory:
 class ConvictionResult:
     """Complete conviction scoring result."""
     overall_score: int
-    recommendation: str  # "BUY", "HOLD", "SELL"
+    recommendation: str  # "BUY" or "SELL"
+    confidence: int  # 0-100 confidence level
     categories: List[ConvictionCategory]
     summary: str
 
@@ -47,6 +48,7 @@ class ConvictionResult:
         return {
             "overall_score": self.overall_score,
             "recommendation": self.recommendation,
+            "confidence": self.confidence,
             "categories": [c.to_dict() for c in self.categories],
             "summary": self.summary,
         }
@@ -64,9 +66,10 @@ def _parse_conviction(response_text: str) -> Optional[ConvictionResult]:
         data = json.loads(text)
 
         overall = max(0, min(100, data.get("overall_score", 50)))
-        recommendation = data.get("recommendation", "HOLD").upper()
-        if recommendation not in ("BUY", "HOLD", "SELL"):
-            recommendation = "HOLD"
+        # No HOLD — derive recommendation from score
+        recommendation = "BUY" if overall > 50 else "SELL"
+        # Confidence is a separate dimension: how reliable is our analysis
+        confidence = max(0, min(100, data.get("confidence", 50)))
 
         categories = []
         for cat in data.get("categories", []):
@@ -79,6 +82,7 @@ def _parse_conviction(response_text: str) -> Optional[ConvictionResult]:
         return ConvictionResult(
             overall_score=overall,
             recommendation=recommendation,
+            confidence=confidence,
             categories=categories,
             summary=data.get("summary", ""),
         )
@@ -89,7 +93,7 @@ def _parse_conviction(response_text: str) -> Optional[ConvictionResult]:
 def format_conviction_markdown(result: ConvictionResult) -> str:
     """Format conviction result as markdown."""
     lines = [
-        f"**Overall Conviction: {result.overall_score}/100 - {result.recommendation}**\n",
+        f"**{result.recommendation} at {result.confidence}% confidence** (Score: {result.overall_score}/100)\n",
         f"{result.summary}\n",
         "**Category Scores**\n",
         "| Category | Score | Evidence |",
@@ -185,14 +189,15 @@ def score_conviction(
         # Default fallback
         conviction_result = ConvictionResult(
             overall_score=50,
-            recommendation="HOLD",
+            recommendation="SELL",
+            confidence=50,
             categories=[
                 ConvictionCategory("Valuation", 50, "Insufficient data for scoring."),
                 ConvictionCategory("Fundamentals", 50, "Insufficient data for scoring."),
                 ConvictionCategory("Technicals", 50, "Insufficient data for scoring."),
                 ConvictionCategory("Sentiment", 50, "Insufficient data for scoring."),
             ],
-            summary="Conviction scoring could not be fully determined. Defaulting to neutral HOLD.",
+            summary="Conviction scoring could not be fully determined. Defaulting to SELL at 50% confidence.",
         )
 
     content = format_conviction_markdown(conviction_result)

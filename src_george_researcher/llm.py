@@ -2,6 +2,7 @@
 LLM client for OpenRouter API.
 Functional interface for making LLM calls with circuit breaker protection.
 """
+import json
 import httpx
 from typing import Optional
 from dataclasses import dataclass
@@ -49,7 +50,7 @@ def call_llm(
 
     Args:
         api_key: OpenRouter API key
-        model: Model identifier (e.g., anthropic/claude-3-haiku)
+        model: Model identifier (e.g., moonshotai/kimi-k2.5)
         system_prompt: System message
         user_prompt: User message
         temperature: Sampling temperature (0.0 for deterministic)
@@ -137,7 +138,7 @@ def call_llm(
             success=False,
             error="Request timed out",
         )
-    except Exception as e:
+    except (httpx.ConnectError, httpx.ReadError, json.JSONDecodeError, KeyError) as e:
         _openrouter_breaker.record_failure()
         return LLMResponse(
             content="",

@@ -65,7 +65,7 @@ def run_comp_analysis(
 
 {table_markdown}
 
-Current price: ${stock_info.current_price:.2f}
+Current price: ${f"{stock_info.current_price:.2f}" if stock_info.current_price else "N/A"}
 
 Provide your comparable company analysis."""
 

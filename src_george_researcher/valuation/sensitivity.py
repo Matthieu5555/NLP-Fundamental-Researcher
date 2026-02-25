@@ -9,24 +9,23 @@ Two grids, pure math, no LLM calls:
 from dataclasses import dataclass
 from typing import Dict, List
 
-# Minimum allowed values to prevent unrealistic scenarios.
-MIN_WACC = 0.04
-MIN_TERMINAL_GROWTH = 0.005
-
-# Step sizes for the 5x5 grid around the base case.
-WACC_STEP_LARGE = 0.02
-WACC_STEP_SMALL = 0.01
-TGR_STEP_LARGE = 0.01
-TGR_STEP_SMALL = 0.005
-
-# Step sizes for revenue growth x margin grid
-GROWTH_STEP_LARGE = 0.04
-GROWTH_STEP_SMALL = 0.02
-MARGIN_STEP_LARGE = 0.04
-MARGIN_STEP_SMALL = 0.02
-
 from src_george_researcher.analysis_agents import AnalysisResult
 from src_george_researcher.valuation.dcf_engine import DCFAssumptions, DCFResult, calculate_dcf
+from src_george_researcher.valuation.constants import (
+    MIN_WACC, MIN_TERMINAL_GROWTH,
+    SENSITIVITY_WACC_STEP, SENSITIVITY_TGR_STEP,
+    SENSITIVITY_GROWTH_STEP, SENSITIVITY_MARGIN_STEP,
+)
+
+# Step sizes derived from constants — large = full step, small = half step
+WACC_STEP_LARGE = SENSITIVITY_WACC_STEP * 2
+WACC_STEP_SMALL = SENSITIVITY_WACC_STEP
+TGR_STEP_LARGE = SENSITIVITY_TGR_STEP * 2
+TGR_STEP_SMALL = SENSITIVITY_TGR_STEP
+GROWTH_STEP_LARGE = SENSITIVITY_GROWTH_STEP
+GROWTH_STEP_SMALL = SENSITIVITY_GROWTH_STEP / 2
+MARGIN_STEP_LARGE = SENSITIVITY_MARGIN_STEP
+MARGIN_STEP_SMALL = SENSITIVITY_MARGIN_STEP / 2
 
 
 @dataclass(frozen=True)

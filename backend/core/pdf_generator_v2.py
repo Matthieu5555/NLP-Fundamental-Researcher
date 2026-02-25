@@ -1,17 +1,9 @@
 """
 PDF Report Generator v2 - HTML/CSS to PDF using WeasyPrint.
 
-This replaces the fpdf2-based generator with a modern HTML/CSS approach
-that produces professional "Goldman Sachs" style equity research reports.
-
-Features:
-- Magazine-style two-column layouts
-- Professional sidebar with key metrics
-- Color-coded rating badges
-- SWOT grids with color coding
-- Bull/Bear case sections
-- Proper Unicode support
-- Easy template customization
+Produces professional "Goldman Sachs" style equity research reports.
+Formatting utilities live in pdf_formatting.py; this module handles
+template context building, LLM headline generation, and PDF rendering.
 """
 
 import base64
@@ -21,12 +13,21 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any, TYPE_CHECKING
 
-import markdown
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 
 from .report_builder import ReportState, Source, AnalystSource
 from .branding_config import ReportBrandingConfig, get_default_config
+from .pdf_formatting import (
+    RATING_COLORS,
+    get_exchange_name,
+    md_to_html,
+    extract_highlights,
+    extract_recommendation,
+    parse_swot,
+    format_number,
+    remove_key_questions_section,
+)
 
 if TYPE_CHECKING:
     from src_george_researcher.data_fetchers.stock_data import StockInfo
@@ -37,187 +38,6 @@ logger = logging.getLogger(__name__)
 # Template directory
 TEMPLATE_DIR = Path(__file__).parent / "pdf_templates"
 
-# Rating colors
-RATING_COLORS = {
-    'BUY': '#16a34a',       # Green
-    'STRONG BUY': '#16a34a',
-    'SELL': '#dc2626',      # Red
-    'STRONG SELL': '#dc2626',
-    'HOLD': '#d97706',      # Amber
-    'NEUTRAL': '#d97706',
-    'N/A': '#6b7280',       # Gray
-}
-
-# Exchange code to readable name mapping
-EXCHANGE_NAMES = {
-    'NMS': 'NASDAQ',
-    'NGM': 'NASDAQ',
-    'NCM': 'NASDAQ',
-    'NYQ': 'NYSE',
-    'NYSE': 'NYSE',
-    'NASDAQ': 'NASDAQ',
-    'ASE': 'NYSE American',
-    'PCX': 'NYSE Arca',
-    'BTS': 'BATS',
-    'LSE': 'London',
-    'PAR': 'Euronext Paris',
-    'EPA': 'Euronext Paris',
-    'FRA': 'Frankfurt',
-    'TYO': 'Tokyo',
-    'HKG': 'Hong Kong',
-}
-
-
-def get_exchange_name(exchange_code: str) -> str:
-    """Convert exchange code to readable name."""
-    if not exchange_code:
-        return ''
-    return EXCHANGE_NAMES.get(exchange_code.upper(), exchange_code)
-
-
-def md_to_html(text: str) -> str:
-    """Convert markdown text to HTML."""
-    if not text:
-        return ""
-
-    # Use markdown library with common extensions
-    html = markdown.markdown(
-        text,
-        extensions=['tables', 'nl2br', 'sane_lists']
-    )
-    return html
-
-
-def extract_highlights(content: str, max_items: int = 4) -> List[str]:
-    """Extract key highlights from content (first few bullet points or sentences)."""
-    highlights = []
-
-    # Look for bullet points first
-    bullet_pattern = r'^[-*]\s+(.+)$'
-    for match in re.finditer(bullet_pattern, content, re.MULTILINE):
-        highlights.append(match.group(1).strip())
-        if len(highlights) >= max_items:
-            break
-
-    # If no bullets found, extract first sentences
-    if not highlights:
-        sentences = re.split(r'(?<=[.!?])\s+', content)
-        for sentence in sentences[:max_items]:
-            sentence = sentence.strip()
-            if len(sentence) > 20:  # Skip very short fragments
-                highlights.append(sentence)
-
-    return highlights[:max_items]
-
-
-def extract_recommendation(report_state: ReportState) -> str:
-    """Parse recommendation section to extract BUY/SELL/HOLD verdict."""
-    rec_section = report_state.sections.get('recommendation')
-    if not rec_section:
-        return 'N/A'
-
-    content = rec_section.content.upper() if hasattr(rec_section, 'content') else ''
-
-    if 'STRONG BUY' in content or 'STRONGLY BUY' in content:
-        return 'BUY'
-    elif 'STRONG SELL' in content or 'STRONGLY SELL' in content:
-        return 'SELL'
-    elif 'BUY' in content and 'SELL' not in content:
-        return 'BUY'
-    elif 'SELL' in content and 'BUY' not in content:
-        return 'SELL'
-    elif 'HOLD' in content or 'NEUTRAL' in content:
-        return 'HOLD'
-
-    return 'N/A'
-
-
-def parse_swot(content: str) -> Optional[Dict[str, str]]:
-    """Parse SWOT content into structured sections."""
-    if not content:
-        return None
-
-    swot = {
-        'strengths': '',
-        'weaknesses': '',
-        'opportunities': '',
-        'threats': ''
-    }
-
-    # Try to find sections by headers
-    sections_map = {
-        'strength': 'strengths',
-        'weakness': 'weaknesses',
-        'opportunit': 'opportunities',
-        'threat': 'threats'
-    }
-
-    current_section = None
-    current_content = []
-
-    for line in content.split('\n'):
-        line_lower = line.lower().strip()
-
-        # Check if this is a section header
-        new_section = None
-        for key, section_name in sections_map.items():
-            if key in line_lower and (line.startswith('#') or line.startswith('**')):
-                new_section = section_name
-                break
-
-        if new_section:
-            # Save previous section
-            if current_section and current_content:
-                swot[current_section] = md_to_html('\n'.join(current_content))
-            current_section = new_section
-            current_content = []
-        elif current_section:
-            current_content.append(line)
-
-    # Save last section
-    if current_section and current_content:
-        swot[current_section] = md_to_html('\n'.join(current_content))
-
-    # If parsing failed, return None
-    if not any(swot.values()):
-        return None
-
-    return swot
-
-
-def format_number(value: Optional[float], format_type: str = 'number') -> str:
-    """Format numbers for display."""
-    if value is None:
-        return 'N/A'
-
-    if format_type == 'market_cap':
-        if value >= 1e12:
-            return f'${value/1e12:.2f}T'
-        elif value >= 1e9:
-            return f'${value/1e9:.2f}B'
-        elif value >= 1e6:
-            return f'${value/1e6:.2f}M'
-        return f'${value:,.0f}'
-
-    elif format_type == 'price':
-        return f'${value:,.2f}'
-
-    elif format_type == 'percent':
-        sign = '+' if value >= 0 else ''
-        return f'{sign}{value:.1f}%'
-
-    elif format_type == 'ratio':
-        return f'{value:.2f}x'
-
-    elif format_type == 'shares':
-        if value >= 1e9:
-            return f'{value/1e9:.2f}B'
-        elif value >= 1e6:
-            return f'{value/1e6:.2f}M'
-        return f'{value:,.0f}'
-
-    return f'{value:,.2f}'
-
 
 def generate_report_headline(
     company_name: str,
@@ -227,9 +47,7 @@ def generate_report_headline(
 ) -> str:
     """Generate a catchy headline for the report using LLM."""
     try:
-        # Import LLM wrapper
-        import sys
-        sys.path.insert(0, str(Path(__file__).parent.parent))
+        # sys.path configured in backend/main.py
         from backend.agents.llm_wrapper import get_llm_response
 
         # Build context for LLM
@@ -267,7 +85,7 @@ Your headline:"""
         headline = get_llm_response(
             prompt=prompt,
             system_prompt=system_prompt,
-            temperature=0.8
+            temperature=0.8  # High temperature for creative, punchy headlines
         )
 
         # Clean up response
@@ -279,28 +97,9 @@ Your headline:"""
 
         return headline
 
-    except Exception as e:
+    except Exception as e:  # Broad catch: optional feature, any failure is non-fatal
         logger.warning(f"Failed to generate headline via LLM: {e}")
         return f"{company_name}: Investment Analysis and Outlook"
-
-
-def remove_key_questions_section(html_content: str) -> str:
-    """Remove the 'Key Questions for the Analyst' section from HTML content."""
-    if not html_content:
-        return html_content
-
-    # Common patterns for this section
-    patterns = [
-        r'<h[23][^>]*>.*?Key Questions.*?</h[23]>.*?(?=<h[23]|$)',
-        r'<h[23][^>]*>.*?Questions for.*?Analyst.*?</h[23]>.*?(?=<h[23]|$)',
-        r'<strong>Key Questions.*?</strong>.*?(?=<h|<strong>|$)',
-    ]
-
-    result = html_content
-    for pattern in patterns:
-        result = re.sub(pattern, '', result, flags=re.IGNORECASE | re.DOTALL)
-
-    return result
 
 
 def build_template_context(
@@ -508,8 +307,8 @@ def build_template_context(
             football_field = md_to_html(ff_sec.content)
 
     strategic_assessment = ''
-    if 'strategic_assessment' in report_state.sections:
-        sa_sec = report_state.sections['strategic_assessment']
+    if 'external_forces' in report_state.sections:
+        sa_sec = report_state.sections['external_forces']
         if hasattr(sa_sec, 'content'):
             strategic_assessment = md_to_html(sa_sec.content)
 
@@ -662,7 +461,7 @@ def generate_pdf_v2(
         try:
             from .pdf_data_collector import collect_first_page_data
             first_page_data = collect_first_page_data(ticker, stock_info)
-        except Exception as e:
+        except Exception as e:  # Broad catch: optional feature, any failure is non-fatal
             logger.warning(f"Could not collect first page data: {e}")
             first_page_data = None
 
@@ -676,7 +475,7 @@ def generate_pdf_v2(
                 branding.firm.primary_color,
                 period='1y'
             )
-        except Exception as e:
+        except Exception as e:  # Broad catch: optional feature, any failure is non-fatal
             logger.warning(f"Could not generate technical chart: {e}")
 
     # Generate sidebar chart (5-year price history)
@@ -688,7 +487,7 @@ def generate_pdf_v2(
             branding.firm.primary_color,
             period='5y'
         )
-    except Exception as e:
+    except Exception as e:  # Broad catch: optional feature, any failure is non-fatal
         logger.warning(f"Could not generate sidebar chart: {e}")
 
     # Build template context

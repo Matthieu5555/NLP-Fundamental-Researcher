@@ -49,7 +49,7 @@ test.describe('Settings', () => {
 
     // Change model via select
     const modelSelect = page.locator('select').first();
-    await modelSelect.selectOption('anthropic/claude-opus-4');
+    await modelSelect.selectOption('anthropic/claude-opus-4.6');
 
     // Save
     await page.getByRole('button', { name: 'Save Settings' }).click();

@@ -59,9 +59,7 @@ def generate_price_chart(
     Returns:
         PNG bytes suitable for embedding in PDF, or None on error
     """
-    # Import here to avoid circular imports
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    # sys.path configured in backend/main.py
     from src_george_researcher.data_fetchers.stock_data import fetch_historical_data
 
     # Fetch historical data
@@ -166,8 +164,7 @@ def generate_mini_chart(
     Returns:
         PNG bytes or None on error
     """
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    # sys.path configured in backend/main.py
     from src_george_researcher.data_fetchers.stock_data import fetch_historical_data
 
     df, error = fetch_historical_data(ticker, period=period, interval='1d')
@@ -218,8 +215,7 @@ def generate_sidebar_chart(
     Returns:
         PNG bytes suitable for PDF sidebar, or None on error
     """
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    # sys.path configured in backend/main.py
     from src_george_researcher.data_fetchers.stock_data import fetch_historical_data
 
     # Use weekly data for cleaner 10-year chart
@@ -306,8 +302,7 @@ def generate_technical_chart(
     Returns:
         PNG bytes for full-page chart, or None on error
     """
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    # sys.path configured in backend/main.py
     from src_george_researcher.data_fetchers.stock_data import (
         fetch_historical_data,
         calculate_bollinger_bands,

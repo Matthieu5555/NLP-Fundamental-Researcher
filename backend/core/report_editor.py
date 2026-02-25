@@ -187,7 +187,7 @@ def edit_section(
     intent: ClassifiedIntent,
     llm_func: Callable[..., Any],
     api_key: str,
-    model: str = "anthropic/claude-sonnet-4"
+    model: str = "anthropic/claude-sonnet-4.6"
 ) -> EditResult:
     """
     Apply an edit to a report section based on classified intent.
@@ -256,7 +256,7 @@ def edit_section(
             model=model,
             system_prompt="You are a senior financial analyst editing research reports. Produce clean, professional output.",
             user_prompt=prompt,
-            temperature=0.3,
+            temperature=0.3,  # Low temperature for precise, faithful edits
             max_tokens=3000
         )
 
@@ -298,7 +298,7 @@ def edit_section(
             tokens_used=len(new_content.split()) * 2  # Rough estimate
         )
 
-    except Exception as e:
+    except (KeyError, ValueError, TypeError) as e:
         logger.error(f"Section edit error: {e}")
         return EditResult(
             success=False,

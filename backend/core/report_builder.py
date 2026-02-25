@@ -36,7 +36,7 @@ class SectionType(Enum):
     SCENARIO_ANALYSIS = "scenario_analysis"  # Bull/Base/Bear scenario modeling
     PRECEDENT_TRANSACTIONS = "precedent_transactions"  # M&A precedent transactions
     FOOTBALL_FIELD = "football_field"        # Valuation football field summary
-    STRATEGIC_ASSESSMENT = "strategic_assessment"  # PESTEL/Porter's/Market Sizing
+    EXTERNAL_FORCES = "external_forces"            # PESTEL/Porter's/Market Sizing
     SOURCES = "sources"                      # Bibliography and citation references
     CUSTOM = "custom"                        # User-defined custom section type
 
@@ -270,7 +270,7 @@ class ReportState:
                 "scenario_analysis": "Scenario Analysis",
                 "precedent_transactions": "Precedent Transactions",
                 "football_field": "Valuation Summary",
-                "strategic_assessment": "Strategic Assessment",
+                "external_forces": "External Forces",
             }
             section_types = {
                 "recommendation": SectionType.RECOMMENDATION,
@@ -291,7 +291,7 @@ class ReportState:
                 "scenario_analysis": SectionType.SCENARIO_ANALYSIS,
                 "precedent_transactions": SectionType.PRECEDENT_TRANSACTIONS,
                 "football_field": SectionType.FOOTBALL_FIELD,
-                "strategic_assessment": SectionType.STRATEGIC_ASSESSMENT,
+                "external_forces": SectionType.EXTERNAL_FORCES,
             }
             title = section_titles.get(section_id, section_id.replace("_", " ").title())
             section_type = section_types.get(section_id, SectionType.CUSTOM)
@@ -368,7 +368,7 @@ class ReportState:
         section_order = [
             SectionType.EXECUTIVE_SUMMARY,
             SectionType.FOOTBALL_FIELD,
-            SectionType.STRATEGIC_ASSESSMENT,
+            SectionType.EXTERNAL_FORCES,
             SectionType.FUNDAMENTALS,
             SectionType.DCF_VALUATION,
             SectionType.SCENARIO_ANALYSIS,

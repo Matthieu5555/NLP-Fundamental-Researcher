@@ -32,7 +32,7 @@ def load_config() -> Config:
     """Load configuration from environment variables."""
     return Config(
         openrouter_api_key=os.getenv("OPENROUTER_API_KEY", ""),
-        openrouter_model=os.getenv("OPENROUTER_MODEL", "anthropic/claude-3-haiku"),
+        openrouter_model=os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5"),
         alpha_vantage_key=os.getenv("ALPHA_VANTAGE_API_KEY"),
         eodhd_key=os.getenv("EODHD_API_KEY"),
         google_api_key=os.getenv("GOOGLE_API_KEY"),

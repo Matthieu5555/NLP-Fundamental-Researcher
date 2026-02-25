@@ -29,31 +29,22 @@ from src_george_researcher.valuation.dcf_engine import (
     compute_wacc,
 )
 from src_george_researcher.valuation.exceptions import AssumptionParseError, InsufficientDataError
+from src_george_researcher.valuation.constants import (
+    MAX_GROWTH_RATE, MIN_FCF_MARGIN, MAX_FCF_MARGIN,
+    MIN_WACC, MAX_WACC, MIN_TERMINAL_GROWTH,
+    MAX_HISTORICAL_PERIODS, MAX_ANALYST_ESTIMATES,
+    DEFAULT_REVENUE_GROWTH, DEFAULT_FCF_MARGIN, DEFAULT_WACC, DEFAULT_TERMINAL_GROWTH,
+)
 from src_george_researcher.analysis.strategic_assessment import StrategicAssessment
-
-# Max historical periods sent to LLM for DCF assumption reasoning.
-# Higher values give more context but increase token cost.
-MAX_HISTORICAL_PERIODS = 5
-
-# Max analyst estimate years to include in context.
-MAX_ANALYST_ESTIMATES = 4
-
-# Validation bounds for LLM-generated assumptions.
-MAX_GROWTH_RATE = 0.50          # +/-50% annual revenue growth
-MIN_FCF_MARGIN = -0.50          # Allow deep negative for growth companies
-MAX_FCF_MARGIN = 0.80           # Cap at 80%
-MIN_WACC = 0.05                 # 5% floor
-MAX_WACC = 0.20                 # 20% ceiling
-MIN_TERMINAL_GROWTH = 0.005     # 0.5% floor
 
 logger = logging.getLogger(__name__)
 
 # Conservative defaults if LLM parsing fails
 DEFAULT_ASSUMPTIONS = DCFAssumptions(
-    revenue_growth_rates=[0.05, 0.04, 0.03, 0.03, 0.02],
-    fcf_margin=0.15,
-    wacc=0.10,
-    terminal_growth_rate=0.025,
+    revenue_growth_rates=DEFAULT_REVENUE_GROWTH,
+    fcf_margin=DEFAULT_FCF_MARGIN,
+    wacc=DEFAULT_WACC,
+    terminal_growth_rate=DEFAULT_TERMINAL_GROWTH,
     revenue_growth_rationale="Conservative defaults used due to parsing failure.",
     fcf_margin_rationale="Conservative defaults used due to parsing failure.",
     wacc_rationale="Conservative defaults used due to parsing failure.",
@@ -144,6 +135,7 @@ def _parse_assumptions(
         # Use computed WACC if available, otherwise use LLM's estimate
         wacc = computed_wacc if computed_wacc else data.get("wacc", 0.10)
         wacc = max(MIN_WACC, min(MAX_WACC, wacc))
+        # Terminal growth must stay ≥1pp below WACC to avoid infinite terminal value
         terminal_growth = max(MIN_TERMINAL_GROWTH, min(wacc - 0.01, terminal_growth))
 
         # Check if decomposed model data is present
@@ -198,7 +190,7 @@ def _format_dcf_narrative(result: DCFResult) -> str:
 
     lines = [
         f"**DCF Fair Value: ${result.fair_value_per_share:.2f}** | "
-        f"Current Price: ${result.current_price:.2f} | "
+        f"Current Price: ${result.current_price:.2f if result.current_price else 'N/A'} | "
         f"{'Upside' if result.upside_downside_pct > 0 else 'Downside'}: {abs_pct:.1f}%\n",
 
         f"Our discounted cash flow model suggests the stock is approximately {abs_pct:.1f}% "
@@ -314,8 +306,8 @@ def _build_dcf_context(
 **Company**: {stock_info.name} ({stock_info.symbol})
 **Sector**: {stock_info.sector or 'Unknown'}
 **Industry**: {stock_info.industry or 'Unknown'}
-**Current Price**: ${stock_info.current_price:.2f}
-**Market Cap**: ${stock_info.market_cap / 1e9:.1f}B
+**Current Price**: ${f"{stock_info.current_price:.2f}" if stock_info.current_price else "N/A"}
+**Market Cap**: ${f"{stock_info.market_cap / 1e9:.1f}B" if stock_info.market_cap else "N/A"}
 **Beta**: {stock_info.beta or 'N/A'}
 
 {financial_history}

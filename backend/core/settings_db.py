@@ -19,7 +19,7 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id TEXT PRIMARY KEY,
     master_system_prompt TEXT DEFAULT '',
-    llm_model TEXT DEFAULT 'anthropic/claude-sonnet-4',
+    llm_model TEXT DEFAULT 'moonshotai/kimi-k2.5',
     temperature REAL DEFAULT 0.7,
     theme TEXT DEFAULT 'light',
     show_cost_tracking BOOLEAN DEFAULT TRUE,
@@ -36,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_settings_user ON user_settings(user_id);
 # Default settings values
 DEFAULTS = {
     "master_system_prompt": "",
-    "llm_model": "anthropic/claude-sonnet-4",
+    "llm_model": "moonshotai/kimi-k2.5",
     "temperature": 0.7,
     "theme": "light",
     "show_cost_tracking": True,
@@ -51,7 +51,7 @@ class UserSettings:
     """User settings data model."""
     user_id: str
     master_system_prompt: str = ""
-    llm_model: str = "anthropic/claude-sonnet-4"
+    llm_model: str = "moonshotai/kimi-k2.5"
     temperature: float = 0.7
     theme: str = "light"
     show_cost_tracking: bool = True

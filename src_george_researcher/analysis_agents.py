@@ -24,7 +24,7 @@ from .prompts import (
 logger = logging.getLogger(__name__)
 
 # Use Haiku for cheap classification tasks
-HAIKU_MODEL = "anthropic/claude-3-haiku"
+HAIKU_MODEL = "moonshotai/kimi-k2.5"
 
 # =============================================================================
 # CONTEXT LIMITS FOR LLM PROMPTS

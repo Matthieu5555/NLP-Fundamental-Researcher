@@ -58,8 +58,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Constants
-BELIEF_EXTRACTION_MODEL = "anthropic/claude-3-haiku"
+# Fast, cheap model for background belief extraction (doesn't need high reasoning)
+BELIEF_EXTRACTION_MODEL = "moonshotai/kimi-k2.5"
+# Delay between words in SSE stream — balances readability with perceived speed
 WORD_STREAM_DELAY = 0.02
 
 
@@ -144,9 +145,9 @@ def _normalize_url(url: str) -> str:
 
 
 def _add_rag_sources_to_report(
-    session: AnalysisSession, rag_sources: List[Dict]
+    session: AnalysisSession, rag_sources: list
 ) -> List[Dict]:
-    """Add RAG sources to the report's sources section."""
+    """Add RAG sources (RAGSource objects) to the report's sources section."""
     if not rag_sources or not session.report_state:
         return []
 
@@ -163,7 +164,7 @@ def _add_rag_sources_to_report(
     current_count = len(sources_section.sources)
 
     for src in rag_sources:
-        src_url = src.get("url", "")
+        src_url = src.url if hasattr(src, "url") else ""
         normalized_url = _normalize_url(src_url)
 
         if normalized_url and normalized_url in existing_urls:
@@ -172,10 +173,10 @@ def _add_rag_sources_to_report(
         current_count += 1
         new_source = Source(
             id=current_count,
-            title=src.get("title", "Research"),
+            title=src.title if hasattr(src, "title") else "Research",
             url=src_url,
-            source_type=src.get("type", "search"),
-            date=src.get("date", "recent"),
+            source_type=src.source_type if hasattr(src, "source_type") else "search",
+            date=src.date if hasattr(src, "date") else "recent",
         )
         sources_section.sources.append(new_source)
         sources_added.append(new_source.to_dict())
@@ -222,7 +223,7 @@ def _extract_and_store_beliefs(
 
         return extracted_beliefs
 
-    except Exception as e:
+    except (KeyError, ValueError, TypeError) as e:
         logger.warning(f"Belief extraction failed: {e}")
         return []
 
@@ -286,7 +287,7 @@ async def stream_chat(
 
                 load_dotenv()
                 api_key = os.getenv("OPENROUTER_API_KEY")
-                model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+                model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 
                 with session_manager.session_context(session_id) as sess:
                     if not sess:
@@ -362,7 +363,7 @@ async def stream_chat(
             additional_context = rag_engine.format_context_for_llm(rag_context)
             report_rag_context = _execute_report_rag(message, current_session)
 
-            if rag_context["search_performed"]:
+            if rag_context.search_performed:
                 yield _sse_json(
                     {"status": "Constant is looking up some new information..."}
                 )
@@ -412,7 +413,7 @@ Analysis overview:
             input_tokens = llm_result.input_tokens
             output_tokens = llm_result.output_tokens
             model_name = llm_config.model or os.getenv(
-                "OPENROUTER_MODEL", "anthropic/claude-sonnet-4"
+                "OPENROUTER_MODEL", "moonshotai/kimi-k2.5"
             )
             cost_tracker.add_llm_call(model_name, input_tokens, output_tokens)
 
@@ -434,13 +435,13 @@ Analysis overview:
                     response_text,
                     metadata={
                         "sources": citations,
-                        "rag_search_performed": rag_context["search_performed"],
+                        "rag_search_performed": rag_context.search_performed,
                         "intent": intent.intent.value,
                     },
                 )
 
                 sources_added = _add_rag_sources_to_report(
-                    sess, rag_context.get("sources", [])
+                    sess, rag_context.sources
                 )
                 extracted_beliefs = _extract_and_store_beliefs(
                     sess, message, response_text, cost_tracker
@@ -492,7 +493,7 @@ Analysis overview:
                 )
             )
 
-        except Exception as e:
+        except Exception as e:  # Broad catch: SSE generator must not crash
             import traceback
 
             logger.error(f"Chat error: {traceback.format_exc()}")
@@ -536,7 +537,7 @@ async def send_message(
     if intent.intent == UserIntent.REPORT_EDIT:
         load_dotenv()
         api_key = os.getenv("OPENROUTER_API_KEY")
-        model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4")
+        model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 
         with session_manager.session_context(request.session_id) as sess:
             if not sess:
@@ -638,7 +639,7 @@ Analysis overview:
     input_tokens = llm_result.input_tokens
     output_tokens = llm_result.output_tokens
     model_name = llm_config.model or os.getenv(
-        "OPENROUTER_MODEL", "anthropic/claude-sonnet-4"
+        "OPENROUTER_MODEL", "moonshotai/kimi-k2.5"
     )
     cost_tracker.add_llm_call(model_name, input_tokens, output_tokens)
 
@@ -654,12 +655,12 @@ Analysis overview:
             response_text,
             metadata={
                 "sources": citations,
-                "rag_search_performed": rag_context["search_performed"],
+                "rag_search_performed": rag_context.search_performed,
                 "intent": intent.intent.value,
             },
         )
 
-        _add_rag_sources_to_report(sess, rag_context.get("sources", []))
+        _add_rag_sources_to_report(sess, rag_context.sources)
         extracted_beliefs = _extract_and_store_beliefs(
             sess, request.message, response_text, cost_tracker
         )
@@ -694,7 +695,7 @@ Analysis overview:
             "message_count": message_count,
             "intent": intent.intent.value,
             "report_updated": report_updated or bool(extracted_beliefs),
-            "rag_search_performed": rag_context["search_performed"],
+            "rag_search_performed": rag_context.search_performed,
             "cost_usd": round(cost_tracker.get_total_cost(), 4),
         },
     }

@@ -28,21 +28,48 @@ No expiration - cleared when instance is destroyed.
 
 import logging
 import os
-import sys
 import json
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from pathlib import Path
 
+import httpx
+
+
+@dataclass
+class SearchClassification:
+    """Query classification result for RAG routing."""
+    news: bool = False
+    filings: bool = False
+
+
+@dataclass
+class RAGSource:
+    """A single RAG search result."""
+    content: str
+    source_type: str  # "news" or "sec_filing"
+    relevance: float = 0.0
+    title: str = ""
+    url: str = ""
+    date: str = ""
+    section: str = ""
+    filing_date: str = ""
+    source: str = ""
+
+
+@dataclass
+class RAGResult:
+    """Complete RAG retrieval result."""
+    sources: List[RAGSource] = field(default_factory=list)
+    search_performed: bool = False
+    errors: List[str] = field(default_factory=list)
+
 logger = logging.getLogger(__name__)
 
-# Ensure project root is in path for src_george_researcher imports
-# This is also done in main.py at startup, but we need it for direct imports
-_project_root = Path(__file__).parent.parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
+# sys.path configured in backend/main.py
 
 # Haiku model for cheap classification
-HAIKU_MODEL = "anthropic/claude-3-haiku"
+HAIKU_MODEL = "moonshotai/kimi-k2.5"
 
 # Classification prompt
 SEARCH_CLASSIFICATION_PROMPT = """You are a query classifier for a financial analysis chatbot.
@@ -102,7 +129,7 @@ class RAGEngine:
 
         logger.info(f"RAGEngine initialized. Gemini Search: {self.search_enabled}, LLM Classification: {self.llm_classification_enabled}")
 
-    def classify_query_with_llm(self, query: str, ticker: str) -> Dict[str, bool]:
+    def classify_query_with_llm(self, query: str, ticker: str) -> SearchClassification:
         """
         Use Haiku to classify if query needs external research.
 
@@ -111,7 +138,7 @@ class RAGEngine:
             ticker: Stock ticker being analyzed
 
         Returns:
-            Dict with 'web_search' and 'sec_filings' boolean flags
+            SearchClassification with news and filings boolean flags
         """
         if not self.openrouter_api_key:
             logger.warning("No OpenRouter API key, falling back to keyword classification")
@@ -139,19 +166,19 @@ class RAGEngine:
             result = json.loads(response.content.strip())
             logger.info(f"LLM classified query: web_search={result.get('web_search')}, sec_filings={result.get('sec_filings')}")
 
-            return {
-                "news": result.get("web_search", False),
-                "filings": result.get("sec_filings", False)
-            }
+            return SearchClassification(
+                news=result.get("web_search", False),
+                filings=result.get("sec_filings", False),
+            )
 
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse LLM classification response: {e}")
             return self._keyword_classify(query)
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.error(f"LLM classification error: {e}")
             return self._keyword_classify(query)
 
-    def _keyword_classify(self, query: str) -> Dict[str, bool]:
+    def _keyword_classify(self, query: str) -> SearchClassification:
         """
         Fallback keyword-based classification.
 
@@ -159,15 +186,15 @@ class RAGEngine:
             query: User query string
 
         Returns:
-            Dict with 'news' and 'filings' boolean flags
+            SearchClassification with news and filings boolean flags
         """
         query_lower = query.lower()
-        return {
-            "news": any(kw in query_lower for kw in self.NEWS_KEYWORDS),
-            "filings": any(kw in query_lower for kw in self.FILING_KEYWORDS)
-        }
+        return SearchClassification(
+            news=any(kw in query_lower for kw in self.NEWS_KEYWORDS),
+            filings=any(kw in query_lower for kw in self.FILING_KEYWORDS),
+        )
 
-    def should_search(self, query: str, ticker: str = None, use_llm: bool = True) -> Dict[str, bool]:
+    def should_search(self, query: str, ticker: str = None, use_llm: bool = True) -> SearchClassification:
         """
         Determine which searches to run.
 
@@ -179,7 +206,7 @@ class RAGEngine:
             use_llm: Whether to use LLM classification (default True)
 
         Returns:
-            Dict with 'news' and 'filings' boolean flags
+            SearchClassification with news and filings boolean flags
         """
         if use_llm and ticker and self.llm_classification_enabled:
             return self.classify_query_with_llm(query, ticker)
@@ -191,7 +218,7 @@ class RAGEngine:
         ticker: str,
         company_name: str = None,
         max_results: int = 5
-    ) -> Dict:
+    ) -> RAGResult:
         """
         Retrieve relevant context from all applicable sources.
 
@@ -202,40 +229,33 @@ class RAGEngine:
             max_results: Maximum number of results per source
 
         Returns:
-            Dict containing:
-                - sources: List of source dicts with type, content, url, etc.
-                - search_performed: Boolean indicating if any search was done
-                - errors: List of error messages (if any)
+            RAGResult with sources, search_performed flag, and any errors
         """
         search_flags = self.should_search(query, ticker=ticker)
-        context = {
-            "sources": [],
-            "search_performed": False,
-            "errors": []
-        }
+        result = RAGResult()
 
         if not company_name:
             company_name = ticker
 
         # Search news if relevant
-        if search_flags["news"] and self.search_enabled:
+        if search_flags.news and self.search_enabled:
             news_results, news_error = self._search_news(ticker, company_name, query, max_results)
             if news_results:
-                context["sources"].extend(news_results)
-                context["search_performed"] = True
+                result.sources.extend(news_results)
+                result.search_performed = True
             elif news_error:
-                context["errors"].append(f"News search: {news_error}")
+                result.errors.append(f"News search: {news_error}")
 
         # Search SEC filings if relevant
-        if search_flags["filings"]:
+        if search_flags.filings:
             filing_results, filing_error = self._search_filings(ticker, query, max_results=3)
             if filing_results:
-                context["sources"].extend(filing_results)
-                context["search_performed"] = True
+                result.sources.extend(filing_results)
+                result.search_performed = True
             elif filing_error:
-                context["errors"].append(f"SEC filing search: {filing_error}")
+                result.errors.append(f"SEC filing search: {filing_error}")
 
-        return context
+        return result
 
     # Minimum confidence for Gemini sources
     MIN_GEMINI_CONFIDENCE = 0.5
@@ -246,7 +266,7 @@ class RAGEngine:
         company_name: str,
         query: str,
         max_results: int = 5
-    ) -> tuple[List[Dict], Optional[str]]:
+    ) -> tuple[List[RAGSource], Optional[str]]:
         """
         Search recent news via Gemini Search Grounding (Google Search).
 
@@ -257,7 +277,7 @@ class RAGEngine:
             max_results: Maximum results to return
 
         Returns:
-            Tuple of (list of news dicts, error message or None)
+            Tuple of (list of RAGSource objects, error message or None)
         """
         try:
             from src_george_researcher.data_fetchers.gemini_search import search_with_gemini
@@ -277,21 +297,21 @@ class RAGEngine:
             if not results:
                 return ([], None)
 
-            # Format results with confidence scores
-            formatted = []
-            for result in results.results:
-                formatted.append({
-                    "type": "news",
-                    "title": result.title,
-                    "content": result.content,
-                    "url": result.url,
-                    "score": result.score  # Now actual confidence, not position-based
-                })
+            formatted = [
+                RAGSource(
+                    content=r.content,
+                    source_type="news",
+                    relevance=r.score,
+                    title=r.title,
+                    url=r.url,
+                )
+                for r in results.results
+            ]
 
             logger.info(f"News search returned {len(formatted)} sources (min_confidence={self.MIN_GEMINI_CONFIDENCE})")
             return (formatted, None)
 
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.error(f"News search failed: {e}")
             return ([], str(e))
 
@@ -300,12 +320,12 @@ class RAGEngine:
         ticker: str,
         query: str,
         max_results: int = 3
-    ) -> tuple[List[Dict], Optional[str]]:
+    ) -> tuple[List[RAGSource], Optional[str]]:
         """
         Search SEC filings via existing RAG infrastructure.
 
         Returns:
-            Tuple of (list of filing chunk dicts, error message or None)
+            Tuple of (list of RAGSource objects, error message or None)
         """
         try:
             # Check cache first
@@ -332,22 +352,22 @@ class RAGEngine:
                 min_relevance=self.MIN_SEC_RELEVANCE
             )
 
-            # Format results with relevance score
-            formatted = []
-            for chunk in chunks:
-                formatted.append({
-                    "type": "sec_filing",
-                    "content": chunk.text[:600],  # Truncate to 600 chars
-                    "section": chunk.section,
-                    "filing_date": chunk.filing_date,
-                    "source": chunk.source,
-                    "relevance_score": chunk.relevance_score
-                })
+            formatted = [
+                RAGSource(
+                    content=chunk.text[:600],  # Truncate to 600 chars
+                    source_type="sec_filing",
+                    relevance=chunk.relevance_score,
+                    section=chunk.section,
+                    filing_date=chunk.filing_date,
+                    source=chunk.source,
+                )
+                for chunk in chunks
+            ]
 
             logger.info(f"SEC search returned {len(chunks)} chunks above threshold {self.MIN_SEC_RELEVANCE}")
             return (formatted, None)
 
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.error(f"SEC filing search failed: {e}")
             return ([], str(e))
 
@@ -377,70 +397,70 @@ class RAGEngine:
 
             return (filing_data, error)
 
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError, OSError) as e:
             logger.error(f"SEC filing fetch failed: {e}")
             return (None, str(e))
 
-    def format_context_for_llm(self, context: Dict) -> str:
+    def format_context_for_llm(self, context: RAGResult) -> str:
         """
         Format search results as context block for LLM.
 
         Args:
-            context: Context dict from retrieve_context()
+            context: RAGResult from retrieve_context()
 
         Returns:
             Formatted string for LLM system prompt
         """
-        if not context["sources"]:
+        if not context.sources:
             return ""
 
         formatted_parts = ["## Additional Context from Research\n"]
 
         # Add news results
-        news_results = [s for s in context["sources"] if s["type"] == "news"]
+        news_results = [s for s in context.sources if s.source_type == "news"]
         if news_results:
             formatted_parts.append("### Recent News:\n")
             for source in news_results[:3]:  # Top 3 news items
-                formatted_parts.append(f"**{source['title']}**")
-                formatted_parts.append(f"{source['content'][:300]}...")
-                formatted_parts.append(f"Source: {source['url']}\n")
+                formatted_parts.append(f"**{source.title}**")
+                formatted_parts.append(f"{source.content[:300]}...")
+                formatted_parts.append(f"Source: {source.url}\n")
 
         # Add SEC filing results
-        filing_results = [s for s in context["sources"] if s["type"] == "sec_filing"]
+        filing_results = [s for s in context.sources if s.source_type == "sec_filing"]
         if filing_results:
             formatted_parts.append("\n### From SEC 10-K Filing:\n")
             for source in filing_results[:3]:  # Top 3 excerpts
-                formatted_parts.append(f"**[{source['section']}]** (Filed: {source['filing_date']})")
-                formatted_parts.append(f"{source['content'][:400]}...\n")
+                formatted_parts.append(f"**[{source.section}]** (Filed: {source.filing_date})")
+                formatted_parts.append(f"{source.content[:400]}...\n")
 
         return "\n".join(formatted_parts)
 
-    def get_source_citations(self, context: Dict) -> List[Dict]:
+    def get_source_citations(self, context: RAGResult) -> List[Dict]:
         """
         Extract source citations for display in UI.
 
         Args:
-            context: Context dict from retrieve_context()
+            context: RAGResult from retrieve_context()
 
         Returns:
             List of citation dicts with type, title, url, date
         """
         citations = []
 
-        for source in context["sources"]:
-            if source["type"] == "news":
+        for source in context.sources:
+            if source.source_type == "news":
                 citations.append({
                     "type": "news",
-                    "title": source["title"],
-                    "url": source["url"],
+                    "title": source.title,
+                    "url": source.url,
                     "date": "recent"
                 })
-            elif source["type"] == "sec_filing":
+            elif source.source_type == "sec_filing":
                 citations.append({
                     "type": "filing",
-                    "title": f"SEC 10-K: {source['section']}",
-                    "url": source.get("source", "SEC EDGAR"),
-                    "date": source["filing_date"]
+                    "title": f"SEC 10-K: {source.section}",
+                    "url": source.source or "SEC EDGAR",
+                    "date": source.filing_date
                 })
 
         return citations[:5]  # Return top 5 citations

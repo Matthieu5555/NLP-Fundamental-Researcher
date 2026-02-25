@@ -7,6 +7,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, Any
 
+from src_george_researcher.analysis.pipeline_config import US_TOTAL_STEPS
+
 
 class JobStatus(str, Enum):
     """Status of a background job."""
@@ -41,7 +43,7 @@ class Job:
     progress: int = 0  # 0-100
     progress_message: str = "Queued"
     current_step: int = 0
-    total_steps: int = 14
+    total_steps: int = US_TOTAL_STEPS
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 
@@ -79,7 +81,7 @@ class Job:
             progress=data.get("progress", 0),
             progress_message=data.get("progress_message", ""),
             current_step=data.get("current_step", 0),
-            total_steps=data.get("total_steps", 14),
+            total_steps=data.get("total_steps", US_TOTAL_STEPS),
             result=data.get("result"),
             error=data.get("error"),
         )

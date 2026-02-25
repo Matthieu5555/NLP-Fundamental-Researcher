@@ -18,6 +18,8 @@ from enum import Enum
 from typing import Optional, Dict, List, Callable, Any
 from dataclasses import dataclass
 
+import httpx
+
 logger = logging.getLogger(__name__)
 
 
@@ -204,7 +206,7 @@ def classify_intent_llm(
     message: str,
     llm_func: Callable[..., Any],
     api_key: str,
-    model: str = "anthropic/claude-3-haiku"
+    model: str = "moonshotai/kimi-k2.5"
 ) -> ClassifiedIntent:
     """
     LLM-powered intent classification for higher accuracy.
@@ -257,7 +259,7 @@ def classify_intent_llm(
     except (json.JSONDecodeError, KeyError, ValueError) as e:
         logger.warning(f"Failed to parse intent classification response: {e}")
         return classify_intent_heuristic(message)
-    except Exception as e:
+    except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
         logger.error(f"Intent classification error: {e}")
         return classify_intent_heuristic(message)
 
@@ -267,7 +269,7 @@ def classify_intent(
     use_llm: bool = False,
     llm_func: Callable[..., Any] = None,
     api_key: str = None,
-    model: str = "anthropic/claude-3-haiku"
+    model: str = "moonshotai/kimi-k2.5"
 ) -> ClassifiedIntent:
     """
     Main entry point for intent classification.

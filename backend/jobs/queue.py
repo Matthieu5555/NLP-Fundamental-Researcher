@@ -18,6 +18,7 @@ import aiosqlite
 
 from backend.core.base_db import AsyncSQLiteDB
 from .models import Job, JobStatus, QueueType
+from src_george_researcher.analysis.pipeline_config import US_TOTAL_STEPS, NON_US_TOTAL_STEPS
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     progress INTEGER DEFAULT 0,
     progress_message TEXT DEFAULT 'Queued',
     current_step INTEGER DEFAULT 0,
-    total_steps INTEGER DEFAULT 14,
+    total_steps INTEGER DEFAULT 25,
     result_json TEXT,
     error TEXT
 );
@@ -89,6 +90,7 @@ class DualJobQueue(AsyncSQLiteDB):
             queue_type=queue_type,
             status=JobStatus.PENDING,
             created_at=datetime.now(),
+            total_steps=US_TOTAL_STEPS if queue_type == QueueType.US else NON_US_TOTAL_STEPS,
         )
 
         async with aiosqlite.connect(self.db_path) as db:
@@ -351,7 +353,7 @@ class DualJobQueue(AsyncSQLiteDB):
             progress=row.get("progress", 0),
             progress_message=row.get("progress_message", ""),
             current_step=row.get("current_step", 0),
-            total_steps=row.get("total_steps", 14),
+            total_steps=row.get("total_steps", US_TOTAL_STEPS),
             result=result,
             error=row.get("error"),
         )

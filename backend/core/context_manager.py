@@ -22,8 +22,12 @@ MODEL_TOKEN_LIMITS = {
     "gpt-3.5-turbo": 3500,      # 4K context, reserve 500 for response
     "gpt-4": 7500,              # 8K context, reserve 500 for response
     "gpt-4-turbo": 120000,      # 128K context
-    "claude-3-haiku": 150000,   # 200K context
-    "claude-3-sonnet": 150000,  # 200K context
+    "kimi-k2.5": 128000,        # 128K context
+    "kimi-k2": 256000,          # 256K context
+    "claude-sonnet-4.6": 150000,# 200K context
+    "claude-opus-4.6": 150000,  # 200K context
+    "gemini-3": 1000000,        # 1M context
+    "llama-4-scout": 150000,    # 10M context (conservative)
     "default": 3500             # Safe fallback for unknown models
 }
 

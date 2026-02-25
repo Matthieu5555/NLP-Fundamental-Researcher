@@ -5,13 +5,14 @@ function ConvictionScore({ convictionData }) {
 
   if (!convictionData) return null
 
-  const { overall_score, recommendation, categories, summary } = convictionData
+  const { overall_score, recommendation, confidence, categories, summary } = convictionData
+  const displayConfidence = confidence ?? 50
 
   const getRecommendationColor = (rec) => {
     switch (rec) {
       case 'BUY': return { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' }
       case 'SELL': return { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' }
-      default: return { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-300' }
+      default: return { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' }
     }
   }
 
@@ -37,8 +38,9 @@ function ConvictionScore({ convictionData }) {
               <p className="text-lg text-slate-500">/100</p>
             </div>
           </div>
-          <div className={`px-6 py-3 rounded-xl ${recColor.bg} border ${recColor.border}`}>
+          <div className={`px-6 py-3 rounded-xl ${recColor.bg} border ${recColor.border} text-center`}>
             <p className={`text-2xl font-bold ${recColor.text}`}>{recommendation}</p>
+            <p className={`text-sm font-medium ${recColor.text} opacity-80`}>{displayConfidence}% confidence</p>
           </div>
         </div>
         {/* Overall score bar */}

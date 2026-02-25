@@ -3,11 +3,17 @@
 import pytest
 import json
 
-from src_george_researcher.analysis.shared.parsing import (
-    extract_json_from_llm_response,
-    strip_markdown_code_block,
-    safe_extract_json,
+import importlib.util, pathlib, sys
+_spec = importlib.util.spec_from_file_location(
+    "parsing",
+    pathlib.Path(__file__).resolve().parents[2] / "src_george_researcher" / "analysis" / "shared" / "parsing.py",
 )
+_parsing = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = _parsing
+_spec.loader.exec_module(_parsing)
+extract_json_from_llm_response = _parsing.extract_json_from_llm_response
+strip_markdown_code_block = _parsing.strip_markdown_code_block
+safe_extract_json = _parsing.safe_extract_json
 
 
 class TestStripMarkdownCodeBlock:

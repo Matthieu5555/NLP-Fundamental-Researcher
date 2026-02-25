@@ -250,30 +250,23 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
     }
   }
 
-  // Tabs: Special amber tabs first (Analyst Notes, Further Research, Sources, Full Report), then content tabs
-  // Order: Strategy > Moat > Financials > Fundamental > Bull > Bear > Technicals
+  // Tabs: Amber workflow tabs + exactly 12 content sections
   const tabs = [
     { id: 'analyst_notes', label: `Analyst Notes${beliefs.length > 0 ? ` (${beliefs.length})` : ''}`, special: 'amber' },
     { id: 'further_research', label: 'Further Research', special: 'amber' },
     { id: 'sources', label: 'Sources', special: 'amber' },
-    { id: 'all', label: 'Full Report' },
-    { id: 'conviction', label: 'Conviction' },
-    { id: 'dcf_valuation', label: 'DCF Valuation' },
-    { id: 'comp_table', label: 'Comparables' },
-    { id: 'earnings_model', label: 'Earnings Model' },
-    { id: 'sensitivity', label: 'Sensitivity' },
-    { id: 'scenario_analysis', label: 'Scenarios' },
-    { id: 'football_field', label: 'Football Field' },
-    { id: 'strategic_assessment', label: 'Strategic Assessment' },
-    { id: 'precedent_transactions', label: 'Precedent M&A' },
+    { id: 'all', label: 'Investment Thesis', special: 'amber' },
     { id: 'strategy', label: 'Strategy' },
     { id: 'moat', label: 'Moat' },
-    { id: 'financials_tab', label: 'Financials', special: financialStatements?.is_available ? null : 'disabled' },
     { id: 'fundamentals', label: 'Fundamentals' },
+    { id: 'financials_tab', label: 'Financials', special: financialStatements?.is_available ? null : 'disabled' },
     { id: 'bull_case', label: 'Bull Case' },
     { id: 'bear_case', label: 'Bear Case' },
+    { id: 'external_forces', label: 'External Forces' },
     { id: 'charts', label: 'Charts' },
     { id: 'technicals', label: 'Chartism' },
+    { id: 'valuation', label: 'Valuation' },
+    { id: 'conviction', label: 'Conviction' },
   ]
 
   // Get all sources from metadata or sources section
@@ -531,14 +524,14 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
             {/* Progress bar */}
             <div className="mb-4">
               <div className="flex justify-between text-sm text-slate-600 mb-2">
-                <span>Step {progressStep} of {progressTotal}</span>
-                <span>{Math.round((progressStep / progressTotal) * 100)}%</span>
+                <span>Step {Math.min(progressStep, progressTotal)} of {progressTotal}</span>
+                <span>{Math.min(100, Math.round((progressStep / progressTotal) * 100))}%</span>
               </div>
               <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
-                    width: `${(progressStep / progressTotal) * 100}%`,
+                    width: `${Math.min(100, (progressStep / progressTotal) * 100)}%`,
                     background: 'linear-gradient(to right, #C87A23, #E8A040)'
                   }}
                 />
@@ -589,7 +582,7 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
             <nav className="flex overflow-x-auto px-4">
               {tabs.map((tab, idx) => {
                 const isActive = activeTab === tab.id
-                const hasContent = tab.id === 'all' || tab.id === 'analyst_notes' || tab.id === 'further_research' || tab.id === 'sources' || tab.id === 'charts' || tab.id === 'financials_tab' || tab.id === 'dcf_valuation' || tab.id === 'comp_table' || tab.id === 'earnings_model' || tab.id === 'sensitivity' || tab.id === 'conviction' || tab.id === 'scenario_analysis' || tab.id === 'football_field' || tab.id === 'strategic_assessment' || tab.id === 'precedent_transactions' || sections[tab.id]
+                const hasContent = tab.id === 'all' || tab.id === 'analyst_notes' || tab.id === 'further_research' || tab.id === 'sources' || tab.id === 'charts' || tab.id === 'financials_tab' || tab.id === 'valuation' || tab.id === 'external_forces' || tab.id === 'conviction' || sections[tab.id]
                 const isAmberTab = tab.special === 'amber'
                 const isDisabledTab = tab.special === 'disabled'
 
@@ -1288,177 +1281,14 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
                   </div>
                 )}
               </div>
-            ) : activeTab === 'dcf_valuation' ? (
-              /* DCF Valuation Tab */
+            ) : activeTab === 'external_forces' ? (
+              /* External Forces Tab - PESTEL, Porter's, Market Sizing */
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800">DCF Valuation</h3>
-                  <p className="text-sm text-slate-500 mt-1">Discounted cash flow model with LLM-reasoned assumptions</p>
-                </div>
-                {dcfModel ? (
-                  <DCFTable dcfModel={dcfModel} />
-                ) : sections.dcf_valuation ? (
-                  <div className="prose prose-slate max-w-none text-sm leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
-                        thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
-                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                        p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
-                      }}
-                    >
-                      {sections.dcf_valuation.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">DCF model not available</p>
-                    <p className="text-sm mt-2">This may occur if required financial data is missing.</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'comp_table' ? (
-              /* Comparable Companies Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Comparable Companies</h3>
-                  <p className="text-sm text-slate-500 mt-1">Peer valuation comparison</p>
-                </div>
-                {sections.comp_table ? (
-                  <CompTable content={sections.comp_table.content} />
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Comparable analysis not available</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'earnings_model' ? (
-              /* Earnings Model Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Earnings Model</h3>
-                  <p className="text-sm text-slate-500 mt-1">Historical actuals and analyst estimates</p>
-                </div>
-                {sections.earnings_model ? (
-                  <div className="prose prose-slate max-w-none text-sm leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
-                        thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
-                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                        p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
-                      }}
-                    >
-                      {sections.earnings_model.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Earnings model not available</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'sensitivity' ? (
-              /* Sensitivity Analysis Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Sensitivity Analysis</h3>
-                  <p className="text-sm text-slate-500 mt-1">Fair value across different WACC and terminal growth assumptions</p>
-                </div>
-                {sensitivityData ? (
-                  <SensitivityGrid sensitivityData={sensitivityData} />
-                ) : sections.sensitivity ? (
-                  <div className="prose prose-slate max-w-none text-sm leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
-                        thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
-                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                        p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
-                      }}
-                    >
-                      {sections.sensitivity.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Sensitivity analysis not available</p>
-                    <p className="text-sm mt-2">Requires a successful DCF model.</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'scenario_analysis' ? (
-              /* Scenario Analysis Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Scenario Analysis</h3>
-                  <p className="text-sm text-slate-500 mt-1">Bull / Base / Bear probability-weighted fair value</p>
-                </div>
-                {sections.scenario_analysis ? (
-                  <div className="prose prose-slate max-w-none text-sm leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
-                        thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
-                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                        p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
-                      }}
-                    >
-                      {sections.scenario_analysis.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Scenario analysis not available</p>
-                    <p className="text-sm mt-2">Requires a successful DCF model.</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'football_field' ? (
-              /* Football Field Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Valuation Football Field</h3>
-                  <p className="text-sm text-slate-500 mt-1">Cross-method valuation range comparison</p>
-                </div>
-                {sections.football_field ? (
-                  <div className="prose prose-slate max-w-none text-sm leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
-                        thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
-                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                        p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
-                      }}
-                    >
-                      {sections.football_field.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Football field not available</p>
-                    <p className="text-sm mt-2">Requires valuation data from multiple methods.</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === 'strategic_assessment' ? (
-              /* Strategic Assessment Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Strategic Assessment</h3>
+                  <h3 className="text-xl font-bold text-slate-800">External Forces</h3>
                   <p className="text-sm text-slate-500 mt-1">PESTEL analysis, Porter's Five Forces, and TAM/SAM/SOM</p>
                 </div>
-                {sections.strategic_assessment ? (
+                {sections.external_forces ? (
                   <div className="prose prose-slate max-w-none text-sm leading-relaxed">
                     <ReactMarkdown
                       components={{
@@ -1470,44 +1300,163 @@ function AnalysisView({ sessionId, ticker, onAnalysisComplete, reportVersion = 0
                         li: ({ children }) => <li className="text-slate-700">{children}</li>,
                       }}
                     >
-                      {sections.strategic_assessment.content}
+                      {sections.external_forces.content}
                     </ReactMarkdown>
                   </div>
                 ) : (
                   <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Strategic assessment not available</p>
+                    <p className="text-lg font-medium">External forces analysis not available</p>
                   </div>
                 )}
               </div>
-            ) : activeTab === 'precedent_transactions' ? (
-              /* Precedent M&A Tab */
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Precedent M&A Transactions</h3>
-                  <p className="text-sm text-slate-500 mt-1">Recent comparable M&A deal multiples</p>
+            ) : activeTab === 'valuation' ? (
+              /* Valuation Tab - All valuation methods composed together */
+              <div className="space-y-10">
+                {/* Football Field - Overview first */}
+                <div className="border-b border-slate-200 pb-8">
+                  <h3 className="text-xl font-bold text-slate-800">Valuation Football Field</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Cross-method valuation range comparison</p>
+                  {sections.football_field ? (
+                    <div className="prose prose-slate max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
+                          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
+                          strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                          p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
+                        }}
+                      >
+                        {sections.football_field.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : <p className="text-sm text-slate-400 italic">Football field not yet available</p>}
                 </div>
-                {sections.precedent_transactions ? (
-                  <div className="prose prose-slate max-w-none text-sm leading-relaxed">
-                    <ReactMarkdown
-                      components={{
-                        table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
-                        thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
-                        strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
-                        p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
-                        em: ({ children }) => <em className="text-slate-500 italic">{children}</em>,
-                      }}
-                    >
-                      {sections.precedent_transactions.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-lg">
-                    <p className="text-lg font-medium">Precedent transactions not available</p>
-                    <p className="text-sm mt-2">Requires web search data for recent M&A activity.</p>
-                  </div>
-                )}
+
+                {/* DCF Valuation */}
+                <div className="border-b border-slate-200 pb-8">
+                  <h3 className="text-xl font-bold text-slate-800">DCF Valuation</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Discounted cash flow model with LLM-reasoned assumptions</p>
+                  {dcfModel ? (
+                    <DCFTable dcfModel={dcfModel} />
+                  ) : sections.dcf_valuation ? (
+                    <div className="prose prose-slate max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
+                          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
+                          strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                          p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
+                        }}
+                      >
+                        {sections.dcf_valuation.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : <p className="text-sm text-slate-400 italic">DCF model not yet available</p>}
+                </div>
+
+                {/* Scenario Analysis */}
+                <div className="border-b border-slate-200 pb-8">
+                  <h3 className="text-xl font-bold text-slate-800">Scenario Analysis</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Bull / Base / Bear probability-weighted fair value</p>
+                  {sections.scenario_analysis ? (
+                    <div className="prose prose-slate max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
+                          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
+                          strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                          p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
+                        }}
+                      >
+                        {sections.scenario_analysis.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : <p className="text-sm text-slate-400 italic">Scenario analysis not yet available</p>}
+                </div>
+
+                {/* Comparable Companies */}
+                <div className="border-b border-slate-200 pb-8">
+                  <h3 className="text-xl font-bold text-slate-800">Comparable Companies</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Peer valuation comparison</p>
+                  {sections.comp_table ? (
+                    <CompTable content={sections.comp_table.content} />
+                  ) : <p className="text-sm text-slate-400 italic">Comparable analysis not yet available</p>}
+                </div>
+
+                {/* Precedent M&A */}
+                <div className="border-b border-slate-200 pb-8">
+                  <h3 className="text-xl font-bold text-slate-800">Precedent M&A Transactions</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Recent comparable M&A deal multiples</p>
+                  {sections.precedent_transactions ? (
+                    <div className="prose prose-slate max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
+                          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
+                          strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                          p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
+                          em: ({ children }) => <em className="text-slate-500 italic">{children}</em>,
+                        }}
+                      >
+                        {sections.precedent_transactions.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : <p className="text-sm text-slate-400 italic">Precedent transactions not yet available</p>}
+                </div>
+
+                {/* Earnings Model */}
+                <div className="border-b border-slate-200 pb-8">
+                  <h3 className="text-xl font-bold text-slate-800">Earnings Model</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Historical actuals and analyst estimates</p>
+                  {sections.earnings_model ? (
+                    <div className="prose prose-slate max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
+                          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
+                          strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                          p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
+                        }}
+                      >
+                        {sections.earnings_model.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : <p className="text-sm text-slate-400 italic">Earnings model not yet available</p>}
+                </div>
+
+                {/* Sensitivity Analysis */}
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Sensitivity Analysis</h3>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">Fair value across different WACC and terminal growth assumptions</p>
+                  {sensitivityData ? (
+                    <SensitivityGrid sensitivityData={sensitivityData} />
+                  ) : sections.sensitivity ? (
+                    <div className="prose prose-slate max-w-none text-sm leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          table: ({ children }) => <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100">{children}</thead>,
+                          th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-slate-700 border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{children}</td>,
+                          strong: ({ children }) => <strong className="font-semibold text-slate-800">{children}</strong>,
+                          p: ({ children }) => <p className="mb-3 text-slate-700">{children}</p>,
+                        }}
+                      >
+                        {sections.sensitivity.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : <p className="text-sm text-slate-400 italic">Sensitivity analysis not yet available</p>}
+                </div>
               </div>
             ) : activeTab === 'conviction' ? (
               /* Conviction Score Tab */

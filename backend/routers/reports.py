@@ -15,9 +15,7 @@ Endpoints:
 """
 
 import logging
-import sys
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Depends
@@ -92,7 +90,7 @@ async def export_pdf(
         from backend.core.pdf_generator_v2 import generate_pdf
         from backend.core.branding_config import load_branding_config
 
-        sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+        # sys.path configured in backend/main.py
         from src_george_researcher.data_fetchers.stock_data import fetch_stock_info
 
         branding = load_branding_config(request.firm_id, request.analyst_id)

@@ -14,6 +14,21 @@ from src_george_researcher.valuation.dcf_engine import (
     DCFResult,
     calculate_dcf,
 )
+from src_george_researcher.valuation.constants import (
+    SCENARIO_WEIGHTS,
+    MAX_GROWTH_RATE, MIN_WACC, MAX_WACC, MIN_TERMINAL_GROWTH,
+    MIN_FCF_MARGIN, MAX_FCF_MARGIN,
+    # Bull case shifts
+    BULL_GROWTH_MULTIPLIER, BULL_GROWTH_BOOST,
+    BULL_MARGIN_BOOST, BULL_OPEX_REDUCTION, BULL_CAPEX_REDUCTION,
+    BULL_WACC_REDUCTION, BULL_TGR_BOOST, BULL_TGR_WACC_SPREAD,
+    BULL_FCF_MULTIPLIER, BULL_FCF_BOOST,
+    # Bear case shifts
+    BEAR_GROWTH_MULTIPLIER, BEAR_GROWTH_CUT,
+    BEAR_GROSS_MARGIN_CUT, BEAR_OPEX_INCREASE, BEAR_CAPEX_INCREASE,
+    BEAR_WACC_INCREASE, BEAR_TGR_CUT,
+    BEAR_FCF_MULTIPLIER, BEAR_FCF_CUT,
+)
 
 
 @dataclass(frozen=True)
@@ -63,7 +78,7 @@ def run_scenarios(
     base_assumptions: DCFAssumptions,
     bull_assumptions: Optional[DCFAssumptions] = None,
     bear_assumptions: Optional[DCFAssumptions] = None,
-    probabilities: tuple = (0.25, 0.50, 0.25),
+    probabilities: tuple = SCENARIO_WEIGHTS,
 ) -> ScenarioResult:
     """
     Run bull/base/bear scenario analysis.
@@ -118,19 +133,18 @@ def run_scenarios(
 
 def _generate_bull_case(base: DCFAssumptions) -> DCFAssumptions:
     """Generate optimistic scenario by boosting growth and margins."""
-    # Boost growth rates by ~30% relative
-    bull_growth = [min(0.50, r * 1.3 + 0.02) for r in base.revenue_growth_rates]
+    bull_growth = [min(MAX_GROWTH_RATE, r * BULL_GROWTH_MULTIPLIER + BULL_GROWTH_BOOST)
+                   for r in base.revenue_growth_rates]
 
     if base.is_decomposed:
-        # Expand margins
-        bull_gross = [min(0.95, m + 0.02) for m in (base.gross_margins or [])] or None
-        bull_opex = [max(0.05, o - 0.02) for o in (base.opex_as_pct_revenue or [])] or None
-        bull_capex = [max(0.01, c - 0.005) for c in (base.capex_as_pct_revenue or [])] or None
+        bull_gross = [min(0.95, m + BULL_MARGIN_BOOST) for m in (base.gross_margins or [])] or None
+        bull_opex = [max(0.05, o - BULL_OPEX_REDUCTION) for o in (base.opex_as_pct_revenue or [])] or None
+        bull_capex = [max(0.01, c - BULL_CAPEX_REDUCTION) for c in (base.capex_as_pct_revenue or [])] or None
 
         return DCFAssumptions(
             revenue_growth_rates=bull_growth,
-            wacc=max(0.05, base.wacc - 0.005),
-            terminal_growth_rate=min(base.wacc - 0.02, base.terminal_growth_rate + 0.005),
+            wacc=max(MIN_WACC, base.wacc - BULL_WACC_REDUCTION),
+            terminal_growth_rate=min(base.wacc - BULL_TGR_WACC_SPREAD, base.terminal_growth_rate + BULL_TGR_BOOST),
             projection_years=base.projection_years,
             gross_margins=bull_gross,
             opex_as_pct_revenue=bull_opex,
@@ -145,9 +159,9 @@ def _generate_bull_case(base: DCFAssumptions) -> DCFAssumptions:
     else:
         return DCFAssumptions(
             revenue_growth_rates=bull_growth,
-            fcf_margin=min(0.80, base.fcf_margin * 1.15 + 0.02),
-            wacc=max(0.05, base.wacc - 0.005),
-            terminal_growth_rate=min(base.wacc - 0.02, base.terminal_growth_rate + 0.005),
+            fcf_margin=min(MAX_FCF_MARGIN, base.fcf_margin * BULL_FCF_MULTIPLIER + BULL_FCF_BOOST),
+            wacc=max(MIN_WACC, base.wacc - BULL_WACC_REDUCTION),
+            terminal_growth_rate=min(base.wacc - BULL_TGR_WACC_SPREAD, base.terminal_growth_rate + BULL_TGR_BOOST),
             projection_years=base.projection_years,
             revenue_growth_rationale="Bull case: accelerated growth.",
             fcf_margin_rationale="Bull case: margin expansion from operating leverage.",
@@ -156,17 +170,18 @@ def _generate_bull_case(base: DCFAssumptions) -> DCFAssumptions:
 
 def _generate_bear_case(base: DCFAssumptions) -> DCFAssumptions:
     """Generate pessimistic scenario by cutting growth and margins."""
-    bear_growth = [max(-0.30, r * 0.6 - 0.02) for r in base.revenue_growth_rates]
+    bear_growth = [max(-MAX_GROWTH_RATE, r * BEAR_GROWTH_MULTIPLIER - BEAR_GROWTH_CUT)
+                   for r in base.revenue_growth_rates]
 
     if base.is_decomposed:
-        bear_gross = [max(0.0, m - 0.03) for m in (base.gross_margins or [])] or None
-        bear_opex = [min(0.80, o + 0.03) for o in (base.opex_as_pct_revenue or [])] or None
-        bear_capex = [min(0.25, c + 0.01) for c in (base.capex_as_pct_revenue or [])] or None
+        bear_gross = [max(0.0, m - BEAR_GROSS_MARGIN_CUT) for m in (base.gross_margins or [])] or None
+        bear_opex = [min(0.80, o + BEAR_OPEX_INCREASE) for o in (base.opex_as_pct_revenue or [])] or None
+        bear_capex = [min(0.25, c + BEAR_CAPEX_INCREASE) for c in (base.capex_as_pct_revenue or [])] or None
 
         return DCFAssumptions(
             revenue_growth_rates=bear_growth,
-            wacc=min(0.20, base.wacc + 0.01),
-            terminal_growth_rate=max(0.005, base.terminal_growth_rate - 0.005),
+            wacc=min(MAX_WACC, base.wacc + BEAR_WACC_INCREASE),
+            terminal_growth_rate=max(MIN_TERMINAL_GROWTH, base.terminal_growth_rate - BEAR_TGR_CUT),
             projection_years=base.projection_years,
             gross_margins=bear_gross,
             opex_as_pct_revenue=bear_opex,
@@ -181,9 +196,9 @@ def _generate_bear_case(base: DCFAssumptions) -> DCFAssumptions:
     else:
         return DCFAssumptions(
             revenue_growth_rates=bear_growth,
-            fcf_margin=max(-0.50, base.fcf_margin * 0.75 - 0.02),
-            wacc=min(0.20, base.wacc + 0.01),
-            terminal_growth_rate=max(0.005, base.terminal_growth_rate - 0.005),
+            fcf_margin=max(MIN_FCF_MARGIN, base.fcf_margin * BEAR_FCF_MULTIPLIER - BEAR_FCF_CUT),
+            wacc=min(MAX_WACC, base.wacc + BEAR_WACC_INCREASE),
+            terminal_growth_rate=max(MIN_TERMINAL_GROWTH, base.terminal_growth_rate - BEAR_TGR_CUT),
             projection_years=base.projection_years,
             revenue_growth_rationale="Bear case: growth deceleration.",
             fcf_margin_rationale="Bear case: margin compression.",

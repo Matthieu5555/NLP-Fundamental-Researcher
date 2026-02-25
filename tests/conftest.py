@@ -26,7 +26,7 @@ def mock_config() -> Config:
     """Provide a test configuration that doesn't require real API keys."""
     return Config(
         openrouter_api_key="test-key-not-real",
-        openrouter_model="anthropic/claude-3-haiku",
+        openrouter_model="moonshotai/kimi-k2.5",
         alpha_vantage_key="test-av-key",
         eodhd_key="test-eodhd-key",
         google_api_key="test-google-key",
@@ -43,7 +43,7 @@ def mock_llm_response() -> LLMResponse:
     """Provide a successful mock LLM response."""
     return LLMResponse(
         content="This is a test response from the LLM.",
-        model="anthropic/claude-3-haiku",
+        model="moonshotai/kimi-k2.5",
         tokens_used=150,
         success=True,
         error=None,
@@ -58,7 +58,7 @@ def mock_llm_error_response() -> LLMResponse:
     """Provide a failed mock LLM response."""
     return LLMResponse(
         content="",
-        model="anthropic/claude-3-haiku",
+        model="moonshotai/kimi-k2.5",
         tokens_used=0,
         success=False,
         error="API rate limit exceeded",

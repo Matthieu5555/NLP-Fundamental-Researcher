@@ -21,12 +21,10 @@ Retry Behavior:
 
 Environment Variables Required:
     OPENROUTER_API_KEY - API key for OpenRouter
-    OPENROUTER_MODEL   - Model to use (default: anthropic/claude-sonnet-4)
+    OPENROUTER_MODEL   - Model to use (default: moonshotai/kimi-k2.5)
 """
 
-import sys
 import time
-from pathlib import Path
 import logging
 from typing import Optional
 from dataclasses import dataclass
@@ -34,13 +32,7 @@ from dataclasses import dataclass
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Ensure project root is in path (main.py does this at startup, but we need it
-# for direct imports like tests). Only add if not already present.
-_project_root = Path(__file__).parent.parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
-
-# Import from the sibling module (must be after path setup)
+# sys.path configured in backend/main.py
 from src_george_researcher import llm as llm_module  # noqa: E402
 from src_george_researcher import config  # noqa: E402
 
@@ -219,7 +211,7 @@ def get_llm_response(
 class LLMConfig:
     """User LLM configuration from settings."""
 
-    model: str = "anthropic/claude-sonnet-4"
+    model: str = "moonshotai/kimi-k2.5"
     temperature: float = 0.7
     master_prompt: str = ""
 
@@ -243,7 +235,7 @@ async def get_user_llm_config(user_id: str) -> LLMConfig:
             temperature=settings.temperature,
             master_prompt=settings.master_system_prompt,
         )
-    except Exception as e:
+    except (KeyError, ValueError, OSError) as e:
         logger.warning(f"Failed to load user settings, using defaults: {e}")
         return LLMConfig()
 

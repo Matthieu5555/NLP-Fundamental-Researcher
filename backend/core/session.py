@@ -23,7 +23,6 @@ from .report_builder import ReportState, SectionType, AnalystSource
 
 logger = logging.getLogger(__name__)
 
-
 class SessionMetadata(TypedDict, total=False):
     """
     Typed metadata for analysis sessions.

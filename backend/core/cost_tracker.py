@@ -5,18 +5,11 @@ Tracks token usage and calculates estimated costs for:
 - OpenRouter LLM calls (various models)
 - Gemini Search Grounding queries
 """
-import sys
-from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict, Optional
 import logging
 
-# Ensure src_george_researcher is importable
-_project_root = Path(__file__).parent.parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
-
-# Import from shared pricing module (single source of truth)
+# sys.path configured in backend/main.py
 from src_george_researcher.pricing import (
     calculate_llm_cost,
     get_llm_pricing,
@@ -144,7 +137,7 @@ class CostTracker:
 
     Usage:
         tracker = CostTracker()
-        tracker.add_llm_call("anthropic/claude-3-haiku", 500, 200)
+        tracker.add_llm_call("moonshotai/kimi-k2.5", 500, 200)
         tracker.add_search_query()
         print(tracker.get_summary())
     """

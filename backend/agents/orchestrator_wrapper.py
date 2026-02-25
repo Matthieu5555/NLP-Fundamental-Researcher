@@ -20,26 +20,19 @@ Re-exports:
     CostBreakdown        - Per-API cost tracking
 """
 
-import sys
 import logging
-from pathlib import Path
 from typing import Optional, Callable, Any
 
 logger = logging.getLogger(__name__)
 
-# Ensure project root is in path (main.py does this at startup, but we need it
-# for direct imports like tests). Only add if not already present.
-_project_root = Path(__file__).parent.parent.parent
-if str(_project_root) not in sys.path:
-    sys.path.insert(0, str(_project_root))
-
-# Import from the sibling module
+# sys.path configured in backend/main.py
 from src_george_researcher import orchestrator as orch
 from src_george_researcher import config as cfg
 from src_george_researcher import analysis_agents as anlys
 from src_george_researcher.data_fetchers import stock_data as sd
 from src_george_researcher.analysis.us.orchestrator import run_us_analysis, USFullAnalysis
 from src_george_researcher.analysis.shared.cost_tracking import CostBreakdown
+from src_george_researcher.analysis.pipeline_config import US_TOTAL_STEPS, NON_US_TOTAL_STEPS
 from backend.core.contradiction_detector import (
     get_structured_contradictions,
     detect_contradictions_and_research_items
@@ -79,7 +72,7 @@ def run_full_analysis(
     # Wrap progress callback to match orchestrator signature
     def wrapped_progress(message: str, step: int = None):
         if progress_callback:
-            total = 24 if is_us else 14  # US has more steps (includes valuation)
+            total = US_TOTAL_STEPS if is_us else NON_US_TOTAL_STEPS
             progress_callback(step or 1, total, message)
 
     if is_us:
@@ -99,7 +92,7 @@ def run_full_analysis(
         try:
             structured_data = get_structured_contradictions(result)
             further_research_md = detect_contradictions_and_research_items(result)
-        except Exception as e:
+        except (KeyError, ValueError, TypeError) as e:
             logger.warning(f"Contradiction detection failed: {e}")
             structured_data = {"contradictions": [], "research_gaps": []}
             further_research_md = "Contradiction analysis could not be completed."
@@ -159,7 +152,7 @@ def run_full_analysis(
         try:
             structured_data = get_structured_contradictions(result)
             further_research_md = detect_contradictions_and_research_items(result)
-        except Exception as e:
+        except (KeyError, ValueError, TypeError) as e:
             logger.warning(f"Contradiction detection failed: {e}")
             structured_data = {"contradictions": [], "research_gaps": []}
             further_research_md = "Contradiction analysis could not be completed."
@@ -215,7 +208,7 @@ def _convert_us_result(result: USFullAnalysis) -> dict:
         "scenario_analysis": result.scenario_analysis.content if result.scenario_analysis else None,
         "precedent_transactions": result.precedent_analysis.content if result.precedent_analysis else None,
         "football_field": result.football_field_analysis.content if result.football_field_analysis else None,
-        "strategic_assessment": result.strategic_assessment_analysis.content if result.strategic_assessment_analysis else None,
+        "external_forces": result.strategic_assessment_analysis.content if result.strategic_assessment_analysis else None,
     }
 
 
@@ -294,8 +287,8 @@ def _populate_report_us(report: Any, result: USFullAnalysis):
     if result.football_field_analysis and result.football_field_analysis.success:
         report.update_section("football_field", result.football_field_analysis.content)
 
-    if result.strategic_assessment_analysis and result.strategic_assessment_analysis.success:
-        report.update_section("strategic_assessment", result.strategic_assessment_analysis.content)
+    if result.strategic_assessment_analysis and result.strategic_assessment_analysis.content:
+        report.update_section("external_forces", result.strategic_assessment_analysis.content)
 
     # Add sources
     for source in result.sources_collected:

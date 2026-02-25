@@ -251,8 +251,8 @@ def run_strategic_assessment(
 **Company**: {stock_info.name} ({stock_info.symbol})
 **Sector**: {stock_info.sector or 'Unknown'}
 **Industry**: {stock_info.industry or 'Unknown'}
-**Market Cap**: ${stock_info.market_cap / 1e9:.1f}B
-**Revenue**: ${stock_info.revenue / 1e9:.1f}B
+**Market Cap**: ${f"{stock_info.market_cap / 1e9:.1f}B" if stock_info.market_cap else "N/A"}
+**Revenue**: ${f"{stock_info.revenue / 1e9:.1f}B" if stock_info.revenue else "N/A"}
 **Business**: {(stock_info.business_summary or '')[:800]}
 
 **Fundamentals Context**:
@@ -291,7 +291,7 @@ Provide PESTEL, Porter's Five Forces, TAM/SAM/SOM, and growth driver analysis.""
     assessment.narrative = narrative
 
     analysis_result = AnalysisResult(
-        section="Strategic Assessment",
+        section="External Forces",
         content=narrative,
         tokens_used=response.tokens_used,
         success=assessment is not None,

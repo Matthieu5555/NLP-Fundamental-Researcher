@@ -11,12 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
-import sys
 
-# Add project path for imports
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
+# sys.path configured in backend/main.py
 from src_george_researcher.data_fetchers.stock_data import (
     fetch_stock_info,
     fetch_historical_data,
