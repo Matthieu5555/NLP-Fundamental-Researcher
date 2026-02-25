@@ -58,7 +58,6 @@ frontend/test-results/
 frontend/tests/e2e/.auth/
 frontend/tests/e2e/.tmp/
 
-# Claude Code
 .claude/
 
 # BMAD
