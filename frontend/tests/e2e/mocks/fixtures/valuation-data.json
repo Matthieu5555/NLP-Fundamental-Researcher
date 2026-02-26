@@ -1,45 +1,149 @@
 {
   "dcf_model": {
     "assumptions": {
-      "wacc": 9.2,
-      "terminal_growth": 3.0,
-      "projection_years": 10,
-      "tax_rate": 16.2
+      "revenue_growth_rates": [0.12, 0.10, 0.08, 0.07, 0.06],
+      "wacc": 0.092,
+      "terminal_growth_rate": 0.03,
+      "projection_years": 5,
+      "fcf_margin": 0.28,
+      "revenue_growth_rationale": "Strong cloud momentum with AI tailwinds supporting double-digit growth tapering to mid-single digits by year 5.",
+      "wacc_rationale": "Low beta mega-cap with minimal debt; WACC reflects AAA-equivalent risk profile.",
+      "terminal_growth_rationale": "Terminal growth at long-run nominal GDP given mature end-state.",
+      "fcf_margin_rationale": "Best-in-class FCF conversion from high gross margins and operating leverage."
     },
-    "projections": [
-      { "year": 2025, "revenue": 412500, "fcf": 115200, "discount_factor": 0.916 },
-      { "year": 2026, "revenue": 438200, "fcf": 123400, "discount_factor": 0.839 },
-      { "year": 2027, "revenue": 464900, "fcf": 131800, "discount_factor": 0.768 }
-    ],
-    "terminal_value": 2145000,
-    "enterprise_value": 3250000,
-    "equity_value": 3301000,
-    "fair_value_per_share": 205.0,
-    "current_price": 183.0,
-    "upside_pct": 12.0
+    "projected_revenues": [462000000000, 508200000000, 548856000000, 587275920000, 622512475200],
+    "projected_fcfs": [129360000000, 142296000000, 153679680000, 164437265600, 174303493056],
+    "discounted_fcfs": [118420000000, 119300000000, 118200000000, 115800000000, 112400000000],
+    "terminal_value": 2950000000000,
+    "pv_terminal_value": 1900000000000,
+    "enterprise_value": 2484120000000,
+    "equity_value": 2534120000000,
+    "net_debt": -50000000000,
+    "shares_outstanding": 15200000000,
+    "fair_value_per_share": 166.72,
+    "current_price": 148.50,
+    "upside_downside_pct": 12.3,
+    "base_revenue": 412500000000
   },
   "sensitivity_data": {
-    "wacc_values": [8.0, 9.0, 9.2, 10.0, 11.0],
-    "terminal_growth_values": [2.0, 2.5, 3.0, 3.5, 4.0],
-    "matrix": [
+    "wacc_values": [0.072, 0.082, 0.092, 0.102, 0.112],
+    "terminal_growth_values": [0.02, 0.025, 0.03, 0.035, 0.04],
+    "fair_value_grid": [
       [235, 245, 260, 280, 310],
       [200, 210, 225, 240, 260],
-      [195, 205, 215, 230, 250],
-      [175, 185, 195, 205, 220],
-      [155, 165, 175, 185, 195]
+      [150, 158, 167, 178, 192],
+      [130, 137, 145, 154, 165],
+      [115, 121, 128, 136, 145]
     ],
-    "current_price": 183.0
+    "base_wacc_idx": 2,
+    "base_tgr_idx": 2,
+    "current_price": 148.50
+  },
+  "growth_margin_sensitivity_data": {
+    "growth_values": [0.06, 0.08, 0.10, 0.12, 0.14],
+    "margin_values": [0.22, 0.25, 0.28, 0.31, 0.34],
+    "fair_value_grid": [
+      [105, 118, 132, 146, 161],
+      [120, 135, 151, 167, 184],
+      [136, 153, 167, 189, 208],
+      [152, 171, 191, 212, 233],
+      [169, 190, 213, 236, 260]
+    ],
+    "base_growth_idx": 2,
+    "base_margin_idx": 2,
+    "current_price": 148.50
   },
   "conviction_data": {
-    "overall_score": 7.2,
-    "rating": "Moderate Buy",
-    "dimensions": [
-      { "name": "Moat Quality", "score": 9.0, "weight": 0.2 },
-      { "name": "Financial Strength", "score": 8.5, "weight": 0.2 },
-      { "name": "Management", "score": 7.5, "weight": 0.15 },
-      { "name": "Growth Trajectory", "score": 6.0, "weight": 0.15 },
-      { "name": "Valuation", "score": 5.5, "weight": 0.2 },
-      { "name": "Catalyst Clarity", "score": 6.5, "weight": 0.1 }
+    "overall_score": 72,
+    "recommendation": "BUY",
+    "confidence": 68,
+    "categories": [
+      { "name": "Moat & Competitive Position", "score": 90, "evidence": "Dominant cloud platform with network effects and high switching costs. Azure growing faster than AWS." },
+      { "name": "Financial Strength", "score": 85, "evidence": "AAA credit rating, $75B+ annual FCF, minimal net debt. Exceptional balance sheet quality." },
+      { "name": "Management Quality", "score": 75, "evidence": "Strong capital allocation under Nadella. Successful pivot to cloud. AI strategy well-positioned." },
+      { "name": "Growth Trajectory", "score": 68, "evidence": "AI Copilot revenue ramping. Cloud growth mid-20s%. Office 365 penetration increasing." },
+      { "name": "Valuation", "score": 55, "evidence": "Trading at 28x forward P/E vs 5yr avg 32x. DCF suggests 12% upside but premium valuation." },
+      { "name": "Catalyst Clarity", "score": 62, "evidence": "AI monetization inflection, Azure market share gains, margin expansion from scale." }
+    ],
+    "summary": "Strong buy conviction driven by best-in-class competitive moat and financial strength, tempered by premium valuation. AI tailwinds provide asymmetric upside risk."
+  },
+  "scenario_data": {
+    "bull": {
+      "name": "Bull",
+      "probability": 0.25,
+      "fair_value": 210.50,
+      "upside_pct": 41.8,
+      "revenue_yr5": 745000000000,
+      "assumptions": {
+        "revenue_growth_rates": [0.156, 0.13, 0.104, 0.091, 0.078],
+        "wacc": 0.082,
+        "terminal_growth_rate": 0.035,
+        "fcf_margin": 0.32
+      }
+    },
+    "base": {
+      "name": "Base",
+      "probability": 0.50,
+      "fair_value": 166.72,
+      "upside_pct": 12.3,
+      "revenue_yr5": 622500000000,
+      "assumptions": {
+        "revenue_growth_rates": [0.12, 0.10, 0.08, 0.07, 0.06],
+        "wacc": 0.092,
+        "terminal_growth_rate": 0.03,
+        "fcf_margin": 0.28
+      }
+    },
+    "bear": {
+      "name": "Bear",
+      "probability": 0.25,
+      "fair_value": 118.40,
+      "upside_pct": -20.3,
+      "revenue_yr5": 525000000000,
+      "assumptions": {
+        "revenue_growth_rates": [0.072, 0.06, 0.048, 0.042, 0.036],
+        "wacc": 0.102,
+        "terminal_growth_rate": 0.025,
+        "fcf_margin": 0.23
+      }
+    },
+    "weighted_fair_value": 165.59,
+    "current_price": 148.50,
+    "weighted_upside_pct": 11.5
+  },
+  "football_field_data": {
+    "ranges": [
+      { "method": "DCF (Scenario)", "low": 118.40, "mid": 166.72, "high": 210.50, "source": "Bear / Base / Bull" },
+      { "method": "Comps - P/E", "low": 140.00, "mid": 158.00, "high": 175.00, "source": "Peer median" },
+      { "method": "Comps - Fwd P/E", "low": 145.00, "mid": 165.00, "high": 182.00, "source": "Peer median" },
+      { "method": "Comps - EV/Revenue", "low": 130.00, "mid": 152.00, "high": 170.00, "source": "Peer median" },
+      { "method": "Comps - EV/EBITDA", "low": 135.00, "mid": 160.00, "high": 180.00, "source": "Peer median" },
+      { "method": "M&A Precedent", "low": 175.00, "mid": 195.00, "high": 220.00, "source": "Control premium" }
+    ],
+    "current_price": 148.50,
+    "weighted_fair_value": 165.59,
+    "consensus_target": 175.00
+  },
+  "earnings_model_data": {
+    "rows": [
+      { "fiscal_year": 2023, "is_estimate": false, "revenue": 340000000000, "revenue_growth": 0.07, "ebitda": 136000000000, "ebitda_margin": 0.40, "eps": 9.68 },
+      { "fiscal_year": 2024, "is_estimate": false, "revenue": 380000000000, "revenue_growth": 0.118, "ebitda": 159600000000, "ebitda_margin": 0.42, "eps": 11.25 },
+      { "fiscal_year": 2025, "is_estimate": false, "revenue": 412500000000, "revenue_growth": 0.086, "ebitda": 178000000000, "ebitda_margin": 0.431, "eps": 12.40 },
+      { "fiscal_year": 2026, "is_estimate": true, "revenue": 462000000000, "revenue_growth": 0.12, "ebitda": null, "ebitda_margin": null, "eps": 14.10 },
+      { "fiscal_year": 2027, "is_estimate": true, "revenue": 508200000000, "revenue_growth": 0.10, "ebitda": null, "ebitda_margin": null, "eps": 15.85 }
     ]
+  },
+  "precedent_data": {
+    "deals": [
+      { "acquirer": "Broadcom", "target": "VMware", "date": "2023", "deal_value_usd": 69000000000, "ev_to_revenue": 5.2, "ev_to_ebitda": 22.5, "premium_pct": 0.44, "description": "Enterprise software consolidation; cross-selling into Broadcom's semiconductor customer base." },
+      { "acquirer": "Microsoft", "target": "Activision Blizzard", "date": "2023", "deal_value_usd": 68700000000, "ev_to_revenue": 8.6, "ev_to_ebitda": 24.8, "premium_pct": 0.45, "description": "Gaming content acquisition to strengthen Xbox and Game Pass ecosystem." },
+      { "acquirer": "Cisco", "target": "Splunk", "date": "2024", "deal_value_usd": 28000000000, "ev_to_revenue": 7.4, "ev_to_ebitda": null, "premium_pct": 0.31, "description": "Security and observability platform acquisition." }
+    ],
+    "median_ev_revenue": 7.4,
+    "median_ev_ebitda": 23.65,
+    "median_premium": 0.44,
+    "implied_value_from_revenue": 198.50,
+    "implied_value_from_ebitda": 185.20,
+    "narrative": "Recent mega-cap tech M&A deals show premium multiples driven by AI and cloud consolidation themes."
   }
 }

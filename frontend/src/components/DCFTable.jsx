@@ -19,11 +19,11 @@ function DCFTable({ dcfModel }) {
   return (
     <div className="space-y-6">
       {/* Fair Value Banner */}
-      <div className={`rounded-xl p-6 border-2 ${isUndervalued ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+      <div className={`rounded-xl p-6 border-2 ${isUndervalued ? 'bg-accent-success-light border-accent-success' : 'bg-accent-danger-light border-accent-danger'}`}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-slate-600">DCF Fair Value</p>
-            <p className={`text-3xl font-bold ${isUndervalued ? 'text-green-700' : 'text-red-700'}`}>
+            <p className={`text-3xl font-bold ${isUndervalued ? 'text-accent-success-dark' : 'text-accent-danger-dark'}`}>
               ${fair_value_per_share?.toFixed(2)}
             </p>
           </div>
@@ -31,8 +31,8 @@ function DCFTable({ dcfModel }) {
             <p className="text-sm font-medium text-slate-600">Current Price</p>
             <p className="text-2xl font-semibold text-slate-800">${current_price?.toFixed(2)}</p>
           </div>
-          <div className={`px-4 py-2 rounded-lg ${isUndervalued ? 'bg-green-100' : 'bg-red-100'}`}>
-            <p className={`text-lg font-bold ${isUndervalued ? 'text-green-700' : 'text-red-700'}`}>
+          <div className={`px-4 py-2 rounded-lg ${isUndervalued ? 'bg-accent-success-light' : 'bg-accent-danger-light'}`}>
+            <p className={`text-lg font-bold ${isUndervalued ? 'text-accent-success-dark' : 'text-accent-danger-dark'}`}>
               {isUndervalued ? '+' : ''}{upside_downside_pct?.toFixed(1)}%
             </p>
             <p className="text-xs text-slate-600">{isUndervalued ? 'Upside' : 'Downside'}</p>
@@ -136,10 +136,10 @@ function DCFTable({ dcfModel }) {
           ].map((item, i) => (
             <div
               key={i}
-              className={`rounded-lg p-3 border ${item.highlight ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}`}
+              className={`rounded-lg p-3 border ${item.highlight ? 'bg-accent-warning-light border-accent-warning' : 'bg-slate-50 border-slate-200'}`}
             >
               <p className="text-xs text-slate-500">{item.label}</p>
-              <p className={`text-sm font-semibold mt-1 ${item.highlight ? 'text-amber-700' : 'text-slate-800'}`}>{item.value}</p>
+              <p className={`text-sm font-semibold mt-1 ${item.highlight ? 'text-accent-warning-dark' : 'text-slate-800'}`}>{item.value}</p>
             </div>
           ))}
         </div>

@@ -257,7 +257,7 @@ export default function SettingsModal({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4 flex-shrink-0">
+        <div className="bg-brand-gradient px-6 py-4 flex-shrink-0">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-white">Settings</h2>
             <button
@@ -275,20 +275,20 @@ export default function SettingsModal({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
             </div>
           ) : error && !formState ? (
-            <div className="text-center py-8 text-red-600">{error}</div>
+            <div className="text-center py-8 text-accent-danger">{error}</div>
           ) : (
             <div className="space-y-8">
               {/* Success/Error Messages */}
               {successMessage && (
-                <div className="bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-accent-success-light text-accent-success-dark px-4 py-3 rounded-lg text-sm">
                   {successMessage}
                 </div>
               )}
               {error && (
-                <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-accent-danger-light text-accent-danger-dark px-4 py-3 rounded-lg text-sm">
                   {error}
                 </div>
               )}
@@ -305,7 +305,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                   value={formState.master_system_prompt}
                   onChange={(e) => updateField('master_system_prompt', e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand resize-none"
                   placeholder="e.g., 'Focus on cash flow metrics. Be concise. Highlight regulatory risks. Write in a skeptical tone.'"
                 />
               </section>
@@ -324,7 +324,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     <select
                       value={formState.llm_model}
                       onChange={(e) => updateField('llm_model', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
                     >
                       {MODELS.map((model) => (
                         <option key={model.id} value={model.id}>
@@ -349,7 +349,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                       step="0.1"
                       value={formState.temperature}
                       onChange={(e) => updateField('temperature', parseFloat(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand"
                     />
                     <div className="flex justify-between text-xs text-slate-500 mt-1">
                       <span>Precise</span>
@@ -376,7 +376,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                         onClick={() => updateField('theme', 'light')}
                         className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                           formState.theme === 'light'
-                            ? 'bg-amber-100 border-amber-500 text-amber-700'
+                            ? 'bg-brand-surface border-brand text-brand'
                             : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'
                         }`}
                       >
@@ -386,7 +386,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                         onClick={() => updateField('theme', 'dark')}
                         className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                           formState.theme === 'dark'
-                            ? 'bg-amber-100 border-amber-500 text-amber-700'
+                            ? 'bg-brand-surface border-brand text-brand'
                             : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'
                         }`}
                       >
@@ -401,7 +401,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                       type="checkbox"
                       checked={formState.show_cost_tracking}
                       onChange={(e) => updateField('show_cost_tracking', e.target.checked)}
-                      className="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500"
+                      className="w-4 h-4 text-brand border-slate-300 rounded focus:ring-brand"
                     />
                     <span className="text-sm text-slate-700">
                       Show cost tracking in analysis view
@@ -424,7 +424,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     <select
                       value={formState.default_chart_timeframe}
                       onChange={(e) => updateField('default_chart_timeframe', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
                     >
                       {CHART_TIMEFRAMES.map((tf) => (
                         <option key={tf.value} value={tf.value}>
@@ -442,7 +442,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     <select
                       value={formState.analysis_depth}
                       onChange={(e) => updateField('analysis_depth', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-brand focus:border-brand"
                     >
                       {ANALYSIS_DEPTHS.map((depth) => (
                         <option key={depth.value} value={depth.value}>
@@ -459,7 +459,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                     type="checkbox"
                     checked={formState.auto_run_analysis}
                     onChange={(e) => updateField('auto_run_analysis', e.target.checked)}
-                    className="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500"
+                    className="w-4 h-4 text-brand border-slate-300 rounded focus:ring-brand"
                   />
                   <span className="text-sm text-slate-700">
                     Auto-run analysis when ticker is selected
@@ -489,7 +489,7 @@ export default function SettingsModal({ isOpen, onClose }) {
             <button
               onClick={handleSave}
               disabled={saving || !hasChanges}
-              className="px-4 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Settings'}
             </button>

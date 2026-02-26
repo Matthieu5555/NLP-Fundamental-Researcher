@@ -18,6 +18,8 @@ import json
 import os
 import logging
 
+from .colors import PALETTE, hex_to_rgb
+
 logger = logging.getLogger(__name__)
 
 # Default config file path
@@ -41,7 +43,7 @@ class FirmConfig:
         return cls(
             firm_id=data.get('firm_id', 'default'),
             name=data.get('name', 'Research Firm'),
-            primary_color=data.get('primary_color', '#C87A23'),
+            primary_color=data.get('primary_color', PALETTE.brand.primary),
             tool_branding=data.get('tool_branding', 'Research Platform'),
             logo_path=data.get('logo_path')
         )
@@ -149,7 +151,7 @@ def get_default_config() -> ReportBrandingConfig:
     firm = FirmConfig(
         firm_id='constance',
         name='Constance Associes',
-        primary_color='#C87A23',
+        primary_color=PALETTE.brand.primary,
         tool_branding='Research Platform'
     )
 
@@ -165,23 +167,4 @@ def get_default_config() -> ReportBrandingConfig:
     return ReportBrandingConfig(firm=firm, analyst=analyst)
 
 
-def hex_to_rgb(hex_color: str) -> tuple:
-    """
-    Convert hex color string to RGB tuple.
-
-    Args:
-        hex_color: Color in format "#RRGGBB" or "RRGGBB"
-
-    Returns:
-        Tuple of (R, G, B) values 0-255
-    """
-    hex_color = hex_color.lstrip('#')
-    if len(hex_color) != 6:
-        logger.warning(f"Invalid hex color: {hex_color}, using default")
-        return (200, 122, 35)  # Default orange
-
-    try:
-        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-    except ValueError:
-        logger.warning(f"Invalid hex color: {hex_color}, using default")
-        return (200, 122, 35)
+# hex_to_rgb is now imported from .colors and re-exported for backwards compatibility

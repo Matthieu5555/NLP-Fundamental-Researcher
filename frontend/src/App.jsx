@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useReducer, useEffect } from 'react'
 import StockPicker from './components/StockPicker'
 import AnalysisView from './components/AnalysisView'
 import ChatInterface from './components/ChatInterface'
@@ -11,20 +11,90 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import api from './utils/api'
 import './index.css'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+// State machine for the analysis session and UI modals
+const initialState = {
+  sessionId: null,
+  ticker: null,
+  analysisComplete: false,
+  reportVersion: 0,
+  beliefs: [],
+  isResumed: false,
+  reportDirty: false,
+  isUpdatingReport: false,
+  chatCost: 0,
+  showAuthModal: false,
+  showSessionBrowser: false,
+  showUsageStats: false,
+  showSettings: false,
+  showWatchlist: false,
+}
+
+function appReducer(state, action) {
+  switch (action.type) {
+    case 'ANALYSIS_START':
+      return {
+        ...state,
+        sessionId: action.sessionId,
+        ticker: action.ticker,
+        analysisComplete: false,
+        beliefs: [],
+        isResumed: false,
+        reportDirty: false,
+        chatCost: 0,
+      }
+    case 'ANALYSIS_COMPLETE':
+      return { ...state, analysisComplete: true }
+    case 'RESET':
+      return {
+        ...initialState,
+        showAuthModal: state.showAuthModal,
+      }
+    case 'NEW_BELIEFS':
+      return {
+        ...state,
+        beliefs: [...state.beliefs, ...action.beliefs],
+        reportDirty: true,
+      }
+    case 'SET_BELIEFS':
+      return { ...state, beliefs: action.beliefs }
+    case 'REPORT_UPDATED':
+      return {
+        ...state,
+        reportVersion: state.reportVersion + 1,
+        reportDirty: false,
+      }
+    case 'REPORT_VERSION_BUMP':
+      return { ...state, reportVersion: state.reportVersion + 1 }
+    case 'SET_UPDATING_REPORT':
+      return { ...state, isUpdatingReport: action.value }
+    case 'SET_COST':
+      return { ...state, chatCost: action.cost }
+    case 'RESUME_SESSION':
+      return {
+        ...state,
+        sessionId: action.sessionId,
+        ticker: action.ticker,
+        analysisComplete: true,
+        isResumed: true,
+        reportVersion: state.reportVersion + 1,
+        showSessionBrowser: false,
+      }
+    case 'TOGGLE_MODAL':
+      return { ...state, [action.modal]: action.value ?? !state[action.modal] }
+    default:
+      return state
+  }
+}
 
 function AppContent() {
   const { isAuthenticated, user, logout, loading: authLoading } = useAuth()
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [sessionId, setSessionId] = useState(null)
-  const [ticker, setTicker] = useState(null)
-  const [analysisComplete, setAnalysisComplete] = useState(false)
-  const [reportVersion, setReportVersion] = useState(0)
-  const [showSessionBrowser, setShowSessionBrowser] = useState(false)
-  const [showUsageStats, setShowUsageStats] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showWatchlist, setShowWatchlist] = useState(false)
-  const [beliefs, setBeliefs] = useState([])
+  const [state, dispatch] = useReducer(appReducer, initialState)
+
+  const {
+    sessionId, ticker, analysisComplete, reportVersion, beliefs,
+    isResumed, reportDirty, isUpdatingReport, chatCost,
+    showAuthModal, showSessionBrowser, showUsageStats, showSettings, showWatchlist,
+  } = state
 
   // Load user theme on startup
   useEffect(() => {
@@ -46,108 +116,48 @@ function AppContent() {
 
     loadTheme()
   }, [isAuthenticated])
-  const [isResumed, setIsResumed] = useState(false)
-  const [reportDirty, setReportDirty] = useState(false)
-  const [isUpdatingReport, setIsUpdatingReport] = useState(false)
-  const [chatCost, setChatCost] = useState(0)
 
   const handleAnalysisStart = (newSessionId, newTicker) => {
-    setSessionId(newSessionId)
-    setTicker(newTicker)
-    setAnalysisComplete(false)
-    setBeliefs([])
-    setIsResumed(false)  // New analysis, not resumed
-  }
-
-  const handleAnalysisComplete = () => {
-    setAnalysisComplete(true)
-  }
-
-  const handleReset = () => {
-    setSessionId(null)
-    setTicker(null)
-    setAnalysisComplete(false)
-    setReportVersion(0)
-    setBeliefs([])
-    setIsResumed(false)
-    setReportDirty(false)
-    setIsUpdatingReport(false)
-    setChatCost(0)
-  }
-
-  const handleReportUpdated = () => {
-    setReportVersion(prev => prev + 1)
-  }
-
-  const handleNewBeliefs = (newBeliefs) => {
-    if (newBeliefs && newBeliefs.length > 0) {
-      setBeliefs(prev => [...prev, ...newBeliefs])
-      setReportDirty(true)  // Mark report as needing update
-    }
+    dispatch({ type: 'ANALYSIS_START', sessionId: newSessionId, ticker: newTicker })
   }
 
   const handleUpdateReport = async () => {
     if (!sessionId || isUpdatingReport) return
 
-    setIsUpdatingReport(true)
+    dispatch({ type: 'SET_UPDATING_REPORT', value: true })
     try {
-      const response = await api.post(`/api/sessions/${sessionId}/regenerate-report`)
-      console.log('Report updated:', response.data)
-
-      // Refresh sections and clear dirty flag
-      setReportVersion(prev => prev + 1)
-      setReportDirty(false)
+      await api.post(`/api/sessions/${sessionId}/regenerate-report`)
+      dispatch({ type: 'REPORT_UPDATED' })
     } catch (err) {
       console.error('Update report error:', err)
       alert('Failed to update report. Please try again.')
     } finally {
-      setIsUpdatingReport(false)
-    }
-  }
-
-  const handleCostUpdate = (cost) => {
-    setChatCost(cost)
-  }
-
-  const handleSourcesAdded = (newSources) => {
-    // Trigger a report refresh to show new sources in Sources tab
-    if (newSources && newSources.length > 0) {
-      console.log('New sources added:', newSources.length)
-      setReportVersion(prev => prev + 1)
+      dispatch({ type: 'SET_UPDATING_REPORT', value: false })
     }
   }
 
   const handleResumeSession = async (sessionData) => {
-    setSessionId(sessionData.session_id)
-    setTicker(sessionData.ticker)
-    setAnalysisComplete(true)
-    setIsResumed(true)  // Mark as resumed session
-    setReportVersion(prev => prev + 1)
-    setShowSessionBrowser(false)
+    dispatch({ type: 'RESUME_SESSION', sessionId: sessionData.session_id, ticker: sessionData.ticker })
 
-    // Load existing beliefs for resumed session
     try {
       const response = await api.get(`/api/sessions/${sessionData.session_id}/beliefs`)
-      const data = response.data
-      // Convert beliefs to frontend format
-      const loadedBeliefs = data.beliefs.map(b => ({
+      const loadedBeliefs = response.data.beliefs.map(b => ({
         content: b.content,
         type: b.source?.split(':')[0] || 'confirmed_fact',
         section: b.source?.split(':')[1] || 'general',
         confidence: b.confidence
       }))
-      setBeliefs(loadedBeliefs)
+      dispatch({ type: 'SET_BELIEFS', beliefs: loadedBeliefs })
     } catch (err) {
       console.error('Failed to load beliefs:', err)
     }
   }
 
-  // Show loading spinner while checking auth
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand mx-auto"></div>
           <p className="mt-4 text-slate-600">Loading...</p>
         </div>
       </div>
@@ -161,32 +171,31 @@ function AppContent() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">
-              <span style={{ color: '#C87A23' }}>Constant</span>
+              <span className="text-brand">Constant</span>
               <span className="text-slate-700"> - Your LLM Intern</span>
             </h1>
             {ticker && isAuthenticated && (
               <p className="mt-1 text-sm text-slate-600">
-                Currently analyzing: <span className="font-semibold" style={{ color: '#C87A23' }}>{ticker}</span>
+                Currently analyzing: <span className="font-semibold text-brand">{ticker}</span>
               </p>
             )}
           </div>
           <div className="flex gap-2 items-center">
             {isAuthenticated ? (
               <>
-                {/* Action Buttons (left side) */}
                 {!sessionId && (
                   <>
                     <button
-                      onClick={() => setShowSessionBrowser(true)}
+                      onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showSessionBrowser', value: true })}
                       className="px-4 py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-lg transition-all"
                     >
                       Resume Analysis
                     </button>
                     <button
-                      onClick={() => setShowWatchlist(!showWatchlist)}
+                      onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showWatchlist' })}
                       className={`px-4 py-2 text-sm font-medium rounded-lg transition-all border ${
                         showWatchlist
-                          ? 'text-blue-700 bg-blue-50 border-blue-300'
+                          ? 'text-accent-info-dark bg-accent-info-light border-accent-info'
                           : 'text-slate-700 bg-white hover:bg-slate-50 border-slate-300 hover:border-slate-400'
                       }`}
                     >
@@ -196,18 +205,16 @@ function AppContent() {
                 )}
                 {sessionId && (
                   <button
-                    onClick={handleReset}
-                    className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all" style={{ background: 'linear-gradient(to right, #C87A23, #B06A1A)' }}
+                    onClick={() => dispatch({ type: 'RESET' })}
+                    className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all bg-brand-gradient"
                   >
                     New Analysis
                   </button>
                 )}
-                {/* Divider */}
                 <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                {/* User Info & Usage Stats */}
                 <button
-                  onClick={() => setShowUsageStats(true)}
-                  className="px-3 py-2 text-sm text-slate-600 hover:text-amber-600 hover:bg-slate-50 rounded-lg transition-all flex items-center gap-2"
+                  onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showUsageStats', value: true })}
+                  className="px-3 py-2 text-sm text-slate-600 hover:text-brand hover:bg-slate-50 rounded-lg transition-all flex items-center gap-2"
                   title="View usage statistics"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,10 +222,9 @@ function AppContent() {
                   </svg>
                   <span className="max-w-[120px] truncate">{user?.display_name || user?.email}</span>
                 </button>
-                {/* Settings Button */}
                 <button
-                  onClick={() => setShowSettings(true)}
-                  className="p-2 text-slate-500 hover:text-amber-600 hover:bg-slate-50 rounded-lg transition-all"
+                  onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showSettings', value: true })}
+                  className="p-2 text-slate-500 hover:text-brand hover:bg-slate-50 rounded-lg transition-all"
                   title="Settings"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,9 +241,8 @@ function AppContent() {
               </>
             ) : (
               <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-5 py-2.5 text-sm font-medium text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-                style={{ background: 'linear-gradient(to right, #C87A23, #B06A1A)' }}
+                onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showAuthModal', value: true })}
+                className="px-5 py-2.5 text-sm font-medium text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 bg-brand-gradient"
               >
                 Sign In
               </button>
@@ -250,19 +255,17 @@ function AppContent() {
       <main className="flex-grow overflow-y-auto">
         {isAuthenticated ? (
           <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
-            {/* Watchlist Dashboard */}
             {showWatchlist && !sessionId && (
               <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
                 <WatchlistDashboard
                   onNavigateToSession={(sid, t) => {
-                    setShowWatchlist(false)
+                    dispatch({ type: 'TOGGLE_MODAL', modal: 'showWatchlist', value: false })
                     handleResumeSession({ session_id: sid, ticker: t })
                   }}
                 />
               </div>
             )}
 
-            {/* Stock Picker */}
             <div className={sessionId ? 'opacity-50 pointer-events-none' : ''}>
               <StockPicker
                 onAnalysisStart={handleAnalysisStart}
@@ -270,12 +273,11 @@ function AppContent() {
               />
             </div>
 
-            {/* Analysis Results */}
             {sessionId && (
               <AnalysisView
                 sessionId={sessionId}
                 ticker={ticker}
-                onAnalysisComplete={handleAnalysisComplete}
+                onAnalysisComplete={() => dispatch({ type: 'ANALYSIS_COMPLETE' })}
                 reportVersion={reportVersion}
                 beliefs={beliefs}
                 isResumed={isResumed}
@@ -286,22 +288,25 @@ function AppContent() {
               />
             )}
 
-            {/* Chat Interface */}
             {sessionId && analysisComplete && (
               <ChatInterface
                 sessionId={sessionId}
                 ticker={ticker}
-                onReportUpdated={handleReportUpdated}
-                onNewBeliefs={handleNewBeliefs}
-                onCostUpdate={handleCostUpdate}
-                onSourcesAdded={handleSourcesAdded}
+                onReportUpdated={() => dispatch({ type: 'REPORT_VERSION_BUMP' })}
+                onNewBeliefs={(newBeliefs) => {
+                  if (newBeliefs?.length > 0) dispatch({ type: 'NEW_BELIEFS', beliefs: newBeliefs })
+                }}
+                onCostUpdate={(cost) => dispatch({ type: 'SET_COST', cost })}
+                onSourcesAdded={(sources) => {
+                  if (sources?.length > 0) dispatch({ type: 'REPORT_VERSION_BUMP' })
+                }}
               />
             )}
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center max-w-md px-8">
-              <div className="text-6xl mb-6" style={{ color: '#C87A23' }}>
+              <div className="text-6xl mb-6 text-brand">
                 <svg className="w-24 h-24 mx-auto" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
@@ -313,9 +318,8 @@ function AppContent() {
                 Your AI-powered equity research assistant. Get comprehensive stock analysis with multi-agent debate, moat analysis, and strategy.
               </p>
               <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-8 py-3 text-lg font-medium text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-                style={{ background: 'linear-gradient(to right, #C87A23, #B06A1A)' }}
+                onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showAuthModal', value: true })}
+                className="px-8 py-3 text-lg font-medium text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 bg-brand-gradient"
               >
                 Get Started
               </button>
@@ -324,43 +328,37 @@ function AppContent() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="bg-slate-50 border-t border-slate-100 py-0.5">
         <p className="text-center text-[9px] text-slate-400">
           Verify important information, LLMs can make mistakes, This analysis should not be considered financial advice
         </p>
       </footer>
 
-      {/* Session Browser Modal */}
       {showSessionBrowser && (
         <SessionBrowser
           onResumeSession={handleResumeSession}
-          onClose={() => setShowSessionBrowser(false)}
+          onClose={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showSessionBrowser', value: false })}
         />
       )}
 
-      {/* Auth Modal */}
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showAuthModal', value: false })}
       />
 
-      {/* Usage Stats Modal */}
       <UsageStats
         isOpen={showUsageStats}
-        onClose={() => setShowUsageStats(false)}
+        onClose={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showUsageStats', value: false })}
       />
 
-      {/* Settings Modal */}
       <SettingsModal
         isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
+        onClose={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showSettings', value: false })}
       />
     </div>
   )
 }
 
-// Main App wrapper with AuthProvider
 function App() {
   return (
     <AuthProvider>

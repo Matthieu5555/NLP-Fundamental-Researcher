@@ -7,6 +7,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List
 
+from .analysis.shared.source_link import SourceLink
 from .data_fetchers.stock_data import StockInfo, TechnicalIndicators, format_stock_info
 from .llm import call_llm
 from .analysis.shared.parsing import extract_json_from_llm_response
@@ -23,8 +24,8 @@ from .prompts import (
 
 logger = logging.getLogger(__name__)
 
-# Use Haiku for cheap classification tasks
-HAIKU_MODEL = "moonshotai/kimi-k2.5"
+# Cheap model for classification tasks (topic identification, JSON extraction)
+CLASSIFICATION_MODEL = "moonshotai/kimi-k2.5"
 
 # =============================================================================
 # CONTEXT LIMITS FOR LLM PROMPTS
@@ -158,7 +159,7 @@ Return ONLY a JSON array of search queries, no other text:
     try:
         response = call_llm(
             api_key=api_key,
-            model=HAIKU_MODEL,
+            model=CLASSIFICATION_MODEL,
             system_prompt="You identify research topics. Respond only with a JSON array.",
             user_prompt=prompt,
             temperature=0.0,
@@ -250,16 +251,21 @@ Volume Ratio: {fmt(technicals.volume_ratio)}x{sentiment_context}"""
     )
 
 
-def generate_bull_thesis(context: AnalysisContext) -> AnalysisResult:
+def _generate_thesis(context: AnalysisContext, direction: str) -> AnalysisResult:
     """
-    Generate bullish investment thesis with full context.
+    Generate an investment thesis (bull or bear) with full context.
 
     Args:
         context: AnalysisContext containing all analysis data and LLM config.
+        direction: "bull" or "bear" — determines the system prompt and framing.
 
     Returns:
-        AnalysisResult with bull thesis content.
+        AnalysisResult with thesis content.
     """
+    is_bull = direction == "bull"
+    system_prompt = BULL_CASE_SYSTEM if is_bull else BEAR_CASE_SYSTEM
+    section_name = "Bull Thesis" if is_bull else "Bear Thesis"
+
     stock_info = context.stock_info
     sentiment_context = (
         f"\n\nNEWS SENTIMENT:\n{context.sentiment_report[:SENTIMENT_LIMIT]}"
@@ -269,12 +275,13 @@ def generate_bull_thesis(context: AnalysisContext) -> AnalysisResult:
     price = f"${stock_info.current_price:.2f}" if stock_info.current_price else "N/A"
     mcap = f"${stock_info.market_cap/1e9:.1f}B" if stock_info.market_cap else "N/A"
     pe = f"{stock_info.pe_ratio:.1f}" if stock_info.pe_ratio else "N/A"
+
+    counter_label = "bear" if is_bull else "bull"
     counter = (
-        f"\n\nAddress the bear argument: {context.counter_argument[:COUNTER_ARGUMENT_LIMIT]}"
+        f"\n\nAddress the {counter_label} argument: {context.counter_argument[:COUNTER_ARGUMENT_LIMIT]}"
         if context.counter_argument else ""
     )
 
-    # Build context sections
     technicals_section = (
         f"\n\nTechnical Analysis:\n{context.technicals_analysis[:TECHNICALS_CONTEXT_LIMIT]}"
         if context.technicals_analysis else ""
@@ -288,7 +295,13 @@ def generate_bull_thesis(context: AnalysisContext) -> AnalysisResult:
         if context.moat_analysis else ""
     )
 
-    user_prompt = f"""Compile the bull case for {stock_info.symbol}:
+    closing_question = (
+        "Based on ALL the above analyses, what arguments would bulls make for this investment?"
+        if is_bull else
+        "Based on ALL the above analyses (especially weaknesses and threats from Strategy analysis, moat vulnerabilities), what arguments would bears/short-sellers make?"
+    )
+
+    user_prompt = f"""Compile the {direction} case for {stock_info.symbol}:
 
 Company: {stock_info.name}
 Sector: {stock_info.sector}
@@ -299,83 +312,28 @@ P/E: {pe}
 Fundamentals Analysis:
 {context.fundamentals_analysis[:FUNDAMENTALS_CONTEXT_LIMIT]}{technicals_section}{strategy_section}{moat_section}{sentiment_context}{counter}
 
-Based on ALL the above analyses, what arguments would bulls make for this investment?"""
+{closing_question}"""
 
-    response = call_llm(context.api_key, context.model, BULL_CASE_SYSTEM, user_prompt, temperature=0.3)
+    response = call_llm(context.api_key, context.model, system_prompt, user_prompt, temperature=0.3)
 
     return AnalysisResult(
-        section="Bull Thesis",
+        section=section_name,
         content=response.content if response.success else f"Error: {response.error}",
         tokens_used=response.tokens_used,
         success=response.success,
         error=response.error,
         cost_usd=response.cost_usd,
     )
+
+
+def generate_bull_thesis(context: AnalysisContext) -> AnalysisResult:
+    """Generate bullish investment thesis with full context."""
+    return _generate_thesis(context, "bull")
 
 
 def generate_bear_thesis(context: AnalysisContext) -> AnalysisResult:
-    """
-    Generate bearish investment thesis with full context.
-
-    Uses Strategy weaknesses/threats and moat vulnerabilities to build bear case.
-
-    Args:
-        context: AnalysisContext containing all analysis data and LLM config.
-
-    Returns:
-        AnalysisResult with bear thesis content.
-    """
-    stock_info = context.stock_info
-    sentiment_context = (
-        f"\n\nNEWS SENTIMENT:\n{context.sentiment_report[:SENTIMENT_LIMIT]}"
-        if context.sentiment_report else ""
-    )
-
-    price = f"${stock_info.current_price:.2f}" if stock_info.current_price else "N/A"
-    mcap = f"${stock_info.market_cap/1e9:.1f}B" if stock_info.market_cap else "N/A"
-    pe = f"{stock_info.pe_ratio:.1f}" if stock_info.pe_ratio else "N/A"
-    counter = (
-        f"\n\nAddress the bull argument: {context.counter_argument[:COUNTER_ARGUMENT_LIMIT]}"
-        if context.counter_argument else ""
-    )
-
-    # Build context sections
-    technicals_section = (
-        f"\n\nTechnical Analysis:\n{context.technicals_analysis[:TECHNICALS_CONTEXT_LIMIT]}"
-        if context.technicals_analysis else ""
-    )
-    strategy_section = (
-        f"\n\nStrategy Analysis:\n{context.strategy_analysis[:STRATEGY_CONTEXT_LIMIT]}"
-        if context.strategy_analysis else ""
-    )
-    moat_section = (
-        f"\n\nMoat Analysis:\n{context.moat_analysis[:MOAT_CONTEXT_LIMIT]}"
-        if context.moat_analysis else ""
-    )
-
-    user_prompt = f"""Compile the bear case for {stock_info.symbol}:
-
-Company: {stock_info.name}
-Sector: {stock_info.sector}
-Price: {price}
-Market Cap: {mcap}
-P/E: {pe}
-
-Fundamentals Analysis:
-{context.fundamentals_analysis[:FUNDAMENTALS_CONTEXT_LIMIT]}{technicals_section}{strategy_section}{moat_section}{sentiment_context}{counter}
-
-Based on ALL the above analyses (especially weaknesses and threats from Strategy analysis, moat vulnerabilities), what arguments would bears/short-sellers make?"""
-
-    response = call_llm(context.api_key, context.model, BEAR_CASE_SYSTEM, user_prompt, temperature=0.3)
-
-    return AnalysisResult(
-        section="Bear Thesis",
-        content=response.content if response.success else f"Error: {response.error}",
-        tokens_used=response.tokens_used,
-        success=response.success,
-        error=response.error,
-        cost_usd=response.cost_usd,
-    )
+    """Generate bearish investment thesis with full context."""
+    return _generate_thesis(context, "bear")
 
 
 def analyze_moat(
@@ -521,7 +479,7 @@ Provide a research summary for the analyst."""
 
 def generate_full_report(
     context: AnalysisContext,
-    sources: list = None,
+    sources: List[SourceLink] = None,
     analyst_notes: list = None,
     analyst_citations: str = "",
 ) -> AnalysisResult:
@@ -533,7 +491,7 @@ def generate_full_report(
 
     Args:
         context: AnalysisContext with all analysis data.
-        sources: List of source dicts for citations.
+        sources: List of SourceLink instances for citations.
         analyst_notes: List of analyst belief dicts.
         analyst_citations: Pre-formatted [A1], [A2] analyst belief citations.
 
@@ -553,9 +511,7 @@ def generate_full_report(
     if sources:
         sources_section = "\n\nAVAILABLE SOURCES (use [N] for inline citations):\n"
         for i, src in enumerate(sources, 1):
-            title = src.get('title', 'Unknown Source') if isinstance(src, dict) else str(src)
-            source_type = src.get('source_type', '') if isinstance(src, dict) else ''
-            sources_section += f"[{i}] {title} ({source_type})\n"
+            sources_section += f"[{i}] {src.title} ({src.source_type})\n"
 
     # Add analyst citations section if available
     analyst_section = ""

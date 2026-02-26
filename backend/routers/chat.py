@@ -26,7 +26,6 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -192,7 +191,6 @@ def _extract_and_store_beliefs(
     cost_tracker: CostTracker,
 ) -> List[Any]:
     """Extract beliefs from conversation and store in session."""
-    load_dotenv()
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         return []
@@ -285,7 +283,6 @@ async def stream_chat(
                     {"status": f"Editing {intent.target_section or 'report'}..."}
                 )
 
-                load_dotenv()
                 api_key = os.getenv("OPENROUTER_API_KEY")
                 model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 

@@ -195,6 +195,21 @@ export const authAPI = {
   },
 }
 
+/**
+ * Fetch wrapper that adds auth headers automatically.
+ * Use for SSE/streaming endpoints that can't use the axios instance.
+ */
+export const authFetch = (url, options = {}) => {
+  const token = getAccessToken()
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  })
+}
+
 // Export the configured axios instance as default
 export default api
 

@@ -526,7 +526,7 @@
 {% if full_analysis %}
 <div class="section-page">
     <h1 class="section-header">Investment Analysis (continued)</h1>
-    <div class="analysis-content two-column-text">
+    <div class="analysis-content">
         {{ full_analysis | safe }}
     </div>
 </div>
@@ -535,7 +535,7 @@
 <!-- ===== BULL/BEAR CASE ===== -->
 {% if bull_case or bear_case %}
 <div class="section-page">
-    <h1 class="section-header">Investment Cases</h1>
+    <h1 class="section-header">Appendix - Investment Cases</h1>
 
     {% if bull_case %}
     <div class="case-section bull">
@@ -556,7 +556,7 @@
 <!-- ===== FINANCIAL STATEMENTS (US Companies Only) ===== -->
 {% if financial_statements and financial_statements.is_available %}
 <div class="section-page">
-    <h1 class="section-header">Financial Statements</h1>
+    <h1 class="section-header">Appendix - Financial Statements</h1>
 
     <!-- Key Findings/Highlights -->
     {% if financial_statements.highlights %}
@@ -706,7 +706,7 @@
 
 <!-- ===== SOURCES & REFERENCES ===== -->
 <div class="section-page sources-section">
-    <h1 class="section-header">Sources & References</h1>
+    <h1 class="section-header">Appendix - Sources & References</h1>
 
     {% if research_sources %}
     <h3>Research Sources</h3>
@@ -729,13 +729,13 @@
     {% endif %}
 </div>
 
-<!-- ===== APPENDIX ===== -->
+<!-- ===== APPENDIX: STRATEGY ANALYSIS ===== -->
 <div class="section-page">
-    <h1 class="section-header">Appendix</h1>
+    <h1 class="section-header">Appendix - Strategy Analysis</h1>
 
-    <!-- Strategy Analysis (SWOT + Future Outlook) -->
+    <!-- SWOT Analysis -->
     {% if swot %}
-    <div class="appendix-header">Strategy Analysis</div>
+    <h2>SWOT Analysis</h2>
     <div class="swot-grid">
         <div class="swot-box strengths">
             <h4>Strengths</h4>
@@ -758,7 +758,7 @@
 
     <!-- Moat Analysis -->
     {% if moat_analysis %}
-    <div class="appendix-header">Competitive Moat</div>
+    <h2>Competitive Moat</h2>
     {{ moat_analysis | safe }}
     {% endif %}
 </div>
@@ -766,7 +766,7 @@
 <!-- ===== VALUATION: DCF MODEL ===== -->
 {% if dcf_valuation %}
 <div class="section-page">
-    <h1 class="section-header">DCF Valuation</h1>
+    <h1 class="section-header">Appendix - DCF Valuation</h1>
     {{ dcf_valuation | safe }}
 </div>
 {% endif %}
@@ -774,7 +774,7 @@
 <!-- ===== VALUATION: COMPARABLE COMPANIES ===== -->
 {% if comp_table %}
 <div class="section-page">
-    <h1 class="section-header">Comparable Company Analysis</h1>
+    <h1 class="section-header">Appendix - Comparable Company Analysis</h1>
     {{ comp_table | safe }}
 </div>
 {% endif %}
@@ -782,7 +782,7 @@
 <!-- ===== VALUATION: EARNINGS MODEL ===== -->
 {% if earnings_model %}
 <div class="section-page">
-    <h1 class="section-header">Earnings Model Summary</h1>
+    <h1 class="section-header">Appendix - Earnings Model Summary</h1>
     {{ earnings_model | safe }}
 </div>
 {% endif %}
@@ -790,7 +790,7 @@
 <!-- ===== VALUATION: SCENARIO ANALYSIS ===== -->
 {% if scenario_analysis %}
 <div class="section-page">
-    <h1 class="section-header">Scenario Analysis</h1>
+    <h1 class="section-header">Appendix - Scenario Analysis</h1>
     {{ scenario_analysis | safe }}
 </div>
 {% endif %}
@@ -798,7 +798,7 @@
 <!-- ===== VALUATION: PRECEDENT TRANSACTIONS ===== -->
 {% if precedent_transactions %}
 <div class="section-page">
-    <h1 class="section-header">Precedent Transactions</h1>
+    <h1 class="section-header">Appendix - Precedent Transactions</h1>
     {{ precedent_transactions | safe }}
 </div>
 {% endif %}
@@ -806,7 +806,7 @@
 <!-- ===== VALUATION: SENSITIVITY ANALYSIS ===== -->
 {% if sensitivity %}
 <div class="section-page">
-    <h1 class="section-header">Sensitivity Analysis</h1>
+    <h1 class="section-header">Appendix - Sensitivity Analysis</h1>
     {{ sensitivity | safe }}
 </div>
 {% endif %}
@@ -814,7 +814,7 @@
 <!-- ===== VALUATION SUMMARY: FOOTBALL FIELD ===== -->
 {% if football_field %}
 <div class="section-page">
-    <h1 class="section-header">Valuation Summary</h1>
+    <h1 class="section-header">Appendix - Valuation Summary</h1>
     {{ football_field | safe }}
 </div>
 {% endif %}
@@ -822,8 +822,8 @@
 <!-- ===== EXTERNAL FORCES ===== -->
 {% if strategic_assessment %}
 <div class="section-page">
-    <h1 class="section-header">External Forces</h1>
-    <div class="two-column-text">
+    <h1 class="section-header">Appendix - External Forces</h1>
+    <div class="analysis-content">
         {{ strategic_assessment | safe }}
     </div>
 </div>
@@ -832,7 +832,7 @@
 <!-- ===== VALUATION: CONVICTION SCORE ===== -->
 {% if conviction %}
 <div class="section-page">
-    <h1 class="section-header">Conviction Score</h1>
+    <h1 class="section-header">Appendix - Conviction Score</h1>
     {{ conviction | safe }}
 </div>
 {% endif %}
@@ -840,7 +840,7 @@
 <!-- ===== APPENDIX CONTINUED: FUNDAMENTALS ===== -->
 {% if fundamentals %}
 <div class="section-page">
-    <h1 class="section-header">Appendix: Fundamental Analysis</h1>
+    <h1 class="section-header">Appendix - Fundamental Analysis</h1>
     {{ fundamentals | safe }}
 </div>
 {% endif %}
@@ -848,7 +848,7 @@
 <!-- ===== APPENDIX: TECHNICAL ANALYSIS ===== -->
 {% if technicals %}
 <div class="section-page">
-    <h1 class="section-header">Appendix: Technical Analysis</h1>
+    <h1 class="section-header">Appendix - Technical Analysis</h1>
 
     {% if technical_chart %}
     <div class="chart-container">

@@ -18,7 +18,6 @@ import logging
 import os
 from datetime import datetime
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Depends
 
 from backend.core.session import session_manager, AnalysisSession
@@ -174,7 +173,6 @@ async def finalize_session(
             )
         )
 
-    load_dotenv()
     api_key = os.getenv("OPENROUTER_API_KEY")
     model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 
@@ -243,7 +241,6 @@ async def regenerate_report(
     moat_analysis = sections.get("moat_analysis", {})
     strategy = sections.get("strategy", {})
 
-    load_dotenv()
     api_key = os.getenv("OPENROUTER_API_KEY")
     model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
 

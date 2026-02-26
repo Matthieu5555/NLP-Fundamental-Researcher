@@ -13,18 +13,11 @@ from typing import List, Optional, Dict
 import markdown
 
 from .report_builder import ReportState
+from .colors import PALETTE, get_rating_color
 
 
-# Rating badge colors (CSS hex)
-RATING_COLORS = {
-    'BUY': '#16a34a',       # Green
-    'STRONG BUY': '#16a34a',
-    'SELL': '#dc2626',      # Red
-    'STRONG SELL': '#dc2626',
-    'HOLD': '#d97706',      # Amber
-    'NEUTRAL': '#d97706',
-    'N/A': '#6b7280',       # Gray
-}
+# Rating badge colors sourced from shared/colors.json via colors.py
+RATING_COLORS = PALETTE.ratings
 
 # Exchange code to readable name mapping
 EXCHANGE_NAMES = {

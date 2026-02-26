@@ -2,16 +2,6 @@
 @import "./theme.css";
 @plugin "@tailwindcss/typography";
 
-/* Legacy aliases for backward compatibility */
-:root {
-  --amber-bg-light: var(--brand-surface);
-  --amber-bg-dark: var(--brand-surface-dark);
-  --amber-border: var(--brand-border);
-  --amber-text: var(--brand-primary);
-  --amber-text-dark: var(--brand-primary-dark);
-  --amber-gradient-from: var(--brand-gradient-from);
-  --amber-gradient-to: var(--brand-gradient-to);
-}
 
 html, body, #root {
   height: 100%;
@@ -31,26 +21,33 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
+  background: linear-gradient(to bottom right, var(--surface-secondary), var(--surface-tertiary));
+  color: var(--text-primary);
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode styles */
+/* ==========================================
+ * DARK MODE OVERRIDES
+ *
+ * These override Tailwind's slate-* utility classes for dark mode.
+ * Ideally components would use dark: variants or CSS-variable-based
+ * classes (bg-surface, text-primary, etc.) instead. Migrate components
+ * incrementally and remove overrides as they're no longer needed.
+ * ========================================== */
+
 html.dark,
 html.dark body {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--surface-primary);
 }
 
-/* Override gradient backgrounds */
 html.dark .bg-gradient-to-br,
 html.dark [class*="bg-gradient"] {
-  background: linear-gradient(to bottom right, #0f172a, #1e293b) !important;
+  background: linear-gradient(to bottom right, var(--surface-primary), var(--surface-secondary)) !important;
 }
 
 html.dark header {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+  background: var(--surface-secondary) !important;
+  border-color: var(--border-light) !important;
 }
 
 html.dark main {
@@ -58,59 +55,59 @@ html.dark main {
 }
 
 html.dark .bg-white {
-  background-color: #1e293b !important;
+  background-color: var(--surface-secondary) !important;
 }
 
 html.dark .bg-slate-50 {
-  background-color: #0f172a !important;
+  background-color: var(--surface-primary) !important;
 }
 
 html.dark .bg-slate-100 {
-  background-color: #1e293b !important;
+  background-color: var(--surface-secondary) !important;
 }
 
 html.dark .bg-slate-200 {
-  background-color: #334155 !important;
+  background-color: var(--surface-tertiary) !important;
 }
 
 html.dark .text-slate-700,
 html.dark .text-slate-800,
 html.dark .text-slate-900 {
-  color: #e2e8f0 !important;
+  color: var(--text-primary) !important;
 }
 
 html.dark .text-slate-600 {
-  color: #94a3b8 !important;
+  color: var(--text-tertiary) !important;
 }
 
 html.dark .text-slate-500 {
-  color: #64748b !important;
+  color: var(--text-muted) !important;
 }
 
 html.dark .text-slate-400 {
-  color: #94a3b8 !important;
+  color: var(--text-tertiary) !important;
 }
 
 html.dark .border-slate-200,
 html.dark .border-slate-100 {
-  border-color: #334155 !important;
+  border-color: var(--border-light) !important;
 }
 
 html.dark .border-slate-300 {
-  border-color: #475569 !important;
+  border-color: var(--border-medium) !important;
 }
 
 html.dark input,
 html.dark textarea,
 html.dark select {
-  background-color: #0f172a !important;
-  border-color: #475569 !important;
-  color: #e2e8f0 !important;
+  background-color: var(--surface-primary) !important;
+  border-color: var(--border-medium) !important;
+  color: var(--text-primary) !important;
 }
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: #64748b !important;
+  color: var(--text-muted) !important;
 }
 
 html.dark .shadow-sm {
@@ -128,45 +125,41 @@ html.dark .shadow-2xl {
 }
 
 html.dark footer {
-  background-color: #0f172a !important;
-  border-color: #1e293b !important;
+  background-color: var(--surface-primary) !important;
+  border-color: var(--surface-secondary) !important;
 }
 
-/* Hover states in dark mode */
 html.dark .hover\:bg-slate-50:hover {
-  background-color: #334155 !important;
+  background-color: var(--surface-tertiary) !important;
 }
 
 html.dark .hover\:bg-slate-100:hover {
-  background-color: #334155 !important;
+  background-color: var(--surface-tertiary) !important;
 }
 
-/* Tabs and cards */
 html.dark [role="tablist"],
 html.dark .rounded-lg,
 html.dark .rounded-xl {
-  border-color: #334155;
+  border-color: var(--border-light);
 }
 
-/* Buttons with borders */
 html.dark button.border-slate-300 {
-  border-color: #475569 !important;
-  background-color: #1e293b !important;
+  border-color: var(--border-medium) !important;
+  background-color: var(--surface-secondary) !important;
 }
 
 html.dark button.border-slate-300:hover {
-  border-color: #64748b !important;
-  background-color: #334155 !important;
+  border-color: var(--border-dark) !important;
+  background-color: var(--surface-tertiary) !important;
 }
 
-/* Analysis view and chat cards */
 html.dark .overflow-hidden.rounded-xl {
-  background-color: #1e293b !important;
+  background-color: var(--surface-secondary) !important;
 }
 
 /* Prose / Markdown content */
 html.dark .prose {
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 html.dark .prose h1,
@@ -174,31 +167,29 @@ html.dark .prose h2,
 html.dark .prose h3,
 html.dark .prose h4,
 html.dark .prose strong {
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 html.dark .prose p,
 html.dark .prose li {
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }
 
 html.dark .prose code {
-  background-color: #334155;
-  color: #e2e8f0;
+  background-color: var(--surface-tertiary);
+  color: var(--text-primary);
 }
 
 html.dark .prose pre {
-  background-color: #0f172a;
+  background-color: var(--surface-primary);
 }
 
-/* Loading spinner area */
 html.dark .from-slate-50,
 html.dark .to-slate-100 {
-  --tw-gradient-from: #0f172a !important;
-  --tw-gradient-to: #1e293b !important;
+  --tw-gradient-from: var(--surface-primary) !important;
+  --tw-gradient-to: var(--surface-secondary) !important;
 }
 
-/* Modal overlays - keep dark backdrop */
 html.dark .bg-black\/50 {
   background-color: rgba(0, 0, 0, 0.7) !important;
 }
@@ -210,7 +201,7 @@ code {
 
 /* Citation links styling */
 .prose a {
-  color: #C87A23;
+  color: var(--brand-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -219,108 +210,20 @@ code {
   text-decoration: underline;
 }
 
-/* SessionBrowser dark mode hover fix */
-html.dark .hover\:bg-\[\#FEF3E2\]:hover {
-  background-color: var(--amber-bg-light) !important;
-}
-
-html.dark .hover\:border-\[\#E8C4A0\]:hover {
-  border-color: var(--amber-border) !important;
-}
-
-/* Dark mode fixes for AnalysisView sections */
-/* Further Research - Key Disagreements cards */
-html.dark .bg-green-50\/50 {
-  background-color: rgba(34, 197, 94, 0.15) !important;
-}
-
-html.dark .bg-red-50\/50 {
-  background-color: rgba(239, 68, 68, 0.15) !important;
-}
-
-html.dark .bg-purple-50\/50 {
-  background-color: rgba(168, 85, 247, 0.15) !important;
-}
-
-html.dark .bg-blue-50\/50 {
-  background-color: rgba(59, 130, 246, 0.15) !important;
-}
 
 /* Financials table alternating rows */
 html.dark .bg-slate-50\/50 {
   background-color: rgba(51, 65, 85, 0.3) !important;
 }
 
-/* Key Findings highlight cards */
-html.dark .bg-green-50 {
-  background-color: rgba(34, 197, 94, 0.15) !important;
-}
-
-html.dark .bg-red-50 {
-  background-color: rgba(239, 68, 68, 0.15) !important;
-}
-
-html.dark .bg-amber-50 {
-  background-color: rgba(245, 158, 11, 0.15) !important;
-}
-
 /* Chart container background */
 html.dark .bg-white.rounded-lg {
-  background-color: #1e293b !important;
+  background-color: var(--surface-secondary) !important;
 }
 
-/* Card section backgrounds - use this class instead of inline styles */
+/* Card section backgrounds */
 .card-section-bg {
-  background-color: #F8FAFC;
+  background-color: var(--surface-card);
 }
 
-html.dark .card-section-bg {
-  background-color: #1e293b !important;
-}
-
-/* Dark mode overrides for Tailwind color-100 classes (badges, highlights) */
-html.dark .bg-red-100 {
-  background-color: rgba(239, 68, 68, 0.2) !important;
-}
-
-html.dark .text-red-700 {
-  color: #f87171 !important;
-}
-
-html.dark .bg-green-100 {
-  background-color: rgba(34, 197, 94, 0.2) !important;
-}
-
-html.dark .text-green-700,
-html.dark .text-green-800 {
-  color: #4ade80 !important;
-}
-
-html.dark .bg-amber-100 {
-  background-color: rgba(245, 158, 11, 0.2) !important;
-}
-
-html.dark .text-amber-600,
-html.dark .text-amber-700 {
-  color: #fbbf24 !important;
-}
-
-html.dark .bg-yellow-100 {
-  background-color: rgba(234, 179, 8, 0.2) !important;
-}
-
-html.dark .text-yellow-700,
-html.dark .text-yellow-800 {
-  color: #facc15 !important;
-}
-
-/* Belief badge (Analyst Notes) */
-.belief-badge {
-  background-color: #FEF3C7;
-  color: #D97706;
-}
-
-html.dark .belief-badge {
-  background-color: rgba(245, 158, 11, 0.25) !important;
-  color: #fbbf24 !important;
-}
+/* Belief badge — defined in theme.css via CSS variables, dark mode handled there */

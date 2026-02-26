@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Any, Callable
 from datetime import datetime
 
+from .analysis.shared.source_link import SourceLink
 from .config import Config, load_config, validate_config, ensure_directories
 from .data_fetchers.stock_data import (
     StockInfo,
@@ -44,7 +45,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def filter_relevant_sources(sources: list, symbol: str, company_name: str, api_key: str = None, model: str = None) -> tuple[list, float]:
+def filter_relevant_sources(sources: List[SourceLink], symbol: str, company_name: str, api_key: str = None, model: str = None) -> tuple[List[SourceLink], float]:
     """
     Use LLM as a judge to filter sources for relevance to the target company.
     Falls back to basic filtering if LLM call fails.
@@ -62,11 +63,7 @@ def filter_relevant_sources(sources: list, symbol: str, company_name: str, api_k
     # Build prompt for LLM judge
     sources_text = ""
     for i, src in enumerate(sources):
-        title = src.get('title', 'Unknown')
-        snippet = src.get('snippet', '')
-        sources_text += f"[{i}] {title}\n"
-        if snippet:
-            sources_text += f"    {snippet[:200]}\n"
+        sources_text += f"[{i}] {src.title}\n"
 
     user_prompt = f"""Target company: {company_name} ({symbol})
 
@@ -106,7 +103,7 @@ Return ONLY the JSON array of relevant source indices (e.g., [0, 1, 3]):"""
         return _basic_filter(sources, symbol, company_name), 0.0
 
 
-def _basic_filter(sources: list, symbol: str, company_name: str) -> list:
+def _basic_filter(sources: List[SourceLink], symbol: str, company_name: str) -> List[SourceLink]:
     """Basic string-matching filter as fallback."""
     symbol_lower = symbol.lower()
     name_lower = company_name.lower()
@@ -114,7 +111,7 @@ def _basic_filter(sources: list, symbol: str, company_name: str) -> list:
 
     filtered = []
     for src in sources:
-        text = f"{src.get('title', '')} {src.get('snippet', '')}".lower()
+        text = src.title.lower()
         if symbol_lower in text or name_lower in text or (name_first_word and name_first_word in text):
             filtered.append(src)
 
@@ -130,7 +127,7 @@ class FetchedData:
     web_research: Optional[GeminiSearchResults] = None
     sentiment_report: str = ""
     errors: List[str] = field(default_factory=list)
-    sources: List[Any] = field(default_factory=list)
+    sources: List[SourceLink] = field(default_factory=list)
     total_cost_usd: float = 0.0
 
 
@@ -169,7 +166,7 @@ class FullAnalysis:
     total_cost_usd: float
     success: bool
     errors: list[str]
-    sources_collected: list = None  # List of source dicts: {title, url, source_type, date}
+    sources_collected: List[SourceLink] = None
 
 
 def _fetch_all_data_sources(
@@ -200,12 +197,12 @@ def _fetch_all_data_sources(
 
     # Collect Yahoo Finance as source
     if stock_info:
-        fetched.sources.append({
-            "title": f"Yahoo Finance - {stock_info.name or symbol}",
-            "url": f"https://finance.yahoo.com/quote/{symbol}",
-            "source_type": "api",
-            "date": datetime.now().strftime("%Y-%m-%d"),
-        })
+        fetched.sources.append(SourceLink(
+            title=f"Yahoo Finance - {stock_info.name or symbol}",
+            url=f"https://finance.yahoo.com/quote/{symbol}",
+            source_type="api",
+            date=datetime.now().strftime("%Y-%m-%d"),
+        ))
 
     # Fetch technicals (no API cost)
     technicals, tech_error = calculate_technical_indicators(symbol)
@@ -229,12 +226,12 @@ def _fetch_all_data_sources(
     if news_sentiment:
         fetched.sentiment_report = format_sentiment_report(news_sentiment)
         for i, article in enumerate(news_sentiment.articles[:5], 1):
-            fetched.sources.append({
-                "title": article.title[:100] if article.title else f"News Article {i}",
-                "url": article.url,
-                "source_type": "news",
-                "date": article.published,
-            })
+            fetched.sources.append(SourceLink(
+                title=article.title[:100] if article.title else f"News Article {i}",
+                url=article.url,
+                source_type="news",
+                date=article.published,
+            ))
 
     # Fetch breaking news via Gemini Search Grounding (Round 1)
     report_progress("Searching web for breaking news...", 4)
@@ -260,12 +257,12 @@ def _fetch_all_data_sources(
             )
             if hasattr(web_search, 'grounding_chunks') and web_search.grounding_chunks:
                 for chunk in web_search.grounding_chunks:
-                    fetched.sources.append({
-                        "title": chunk.get('title', 'Web Search Result'),
-                        "url": chunk.get('uri', chunk.get('url', '')),
-                        "source_type": "search",
-                        "date": "recent",
-                    })
+                    fetched.sources.append(SourceLink(
+                        title=chunk.get('title', 'Web Search Result'),
+                        url=chunk.get('uri', chunk.get('url', '')),
+                        source_type="search",
+                        date="recent",
+                    ))
 
     # Follow-up research based on initial findings (Round 2)
     if fetched.sentiment_report and config.google_api_key and stock_info:
@@ -295,12 +292,12 @@ def _fetch_all_data_sources(
                         logger.info(f"Added follow-up research: {topic[:50]}...")
                         if hasattr(topic_results, 'grounding_chunks') and topic_results.grounding_chunks:
                             for chunk in topic_results.grounding_chunks[:2]:
-                                fetched.sources.append({
-                                    "title": chunk.get('title', f'Research: {topic[:30]}'),
-                                    "url": chunk.get('uri', chunk.get('url', '')),
-                                    "source_type": "research",
-                                    "date": "recent",
-                                })
+                                fetched.sources.append(SourceLink(
+                                    title=chunk.get('title', f'Research: {topic[:30]}'),
+                                    url=chunk.get('uri', chunk.get('url', '')),
+                                    source_type="research",
+                                    date="recent",
+                                ))
         except Exception as e:
             logger.warning(f"Follow-up research failed: {e}")
             fetched.errors.append(f"Follow-up research: {str(e)}")

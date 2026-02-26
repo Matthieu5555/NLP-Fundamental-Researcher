@@ -67,3 +67,5 @@ _bmad-output/
 # Project Specific
 reference_repos/
 archive/
+*.pdf
+data/*.csv

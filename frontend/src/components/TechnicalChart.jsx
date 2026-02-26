@@ -1,20 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createChart, ColorType, CrosshairMode, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts'
-import { getAccessToken } from '../utils/api'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
-
-// Helper for authenticated fetch requests
-const authFetch = (url, options = {}) => {
-  const token = getAccessToken()
-  return fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    },
-  })
-}
+import { authFetch, API_URL } from '../utils/api'
 
 // Timeframes available
 const TIMEFRAMES = ['1W', '1M', '3M', '6M', 'YTD', '1Y', '2Y', '5Y', '10Y']
@@ -30,16 +16,16 @@ const getChartColors = () => {
     grid: styles.getPropertyValue('--chart-grid').trim() || (isDark ? '#334155' : '#e2e8f0'),
     bullish: styles.getPropertyValue('--chart-bullish').trim() || '#22c55e',
     bearish: styles.getPropertyValue('--chart-bearish').trim() || '#ef4444',
-    sma20: '#3b82f6',
-    sma50: '#8b5cf6',
-    sma200: '#f59e0b',
+    sma20: styles.getPropertyValue('--chart-sma20').trim() || '#3b82f6',
+    sma50: styles.getPropertyValue('--chart-sma50').trim() || '#8b5cf6',
+    sma200: styles.getPropertyValue('--chart-sma200').trim() || '#f59e0b',
     bollingerFill: isDark ? 'rgba(156, 163, 175, 0.1)' : 'rgba(156, 163, 175, 0.15)',
-    bollingerLine: '#9ca3af',
-    rsiLine: '#6366f1',
-    rsiOverbought: '#ef4444',
-    rsiOversold: '#22c55e',
-    macdLine: '#3b82f6',
-    macdSignal: '#f59e0b',
+    bollingerLine: styles.getPropertyValue('--chart-bollinger-line').trim() || '#9ca3af',
+    rsiLine: styles.getPropertyValue('--chart-rsi-line').trim() || '#6366f1',
+    rsiOverbought: styles.getPropertyValue('--chart-rsi-overbought').trim() || '#ef4444',
+    rsiOversold: styles.getPropertyValue('--chart-rsi-oversold').trim() || '#22c55e',
+    macdLine: styles.getPropertyValue('--chart-macd-line').trim() || '#3b82f6',
+    macdSignal: styles.getPropertyValue('--chart-macd-signal').trim() || '#f59e0b',
     volume: isDark ? 'rgba(100, 116, 139, 0.3)' : 'rgba(100, 116, 139, 0.5)',
   }
 }
@@ -373,7 +359,7 @@ function TechnicalChart({ ticker }) {
   }, [chartData, loading, isDark])
 
   // Price change styling
-  const priceChangeColor = chartData?.price_change >= 0 ? 'text-green-600' : 'text-red-600'
+  const priceChangeColor = chartData?.price_change >= 0 ? 'text-accent-success' : 'text-accent-danger'
   const priceChangeSign = chartData?.price_change >= 0 ? '+' : ''
 
   return (
@@ -394,8 +380,8 @@ function TechnicalChart({ ticker }) {
           </div>
           {chartData?.summary && (
             <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-500">
-              <span>RSI: <span className={chartData.summary.rsi > 70 ? 'text-red-600 font-medium' : chartData.summary.rsi < 30 ? 'text-green-600 font-medium' : ''}>{chartData.summary.rsi?.toFixed(1) || '--'}</span></span>
-              <span>Trend: <span className={`font-medium ${chartData.summary.trend === 'bullish' ? 'text-green-600' : chartData.summary.trend === 'bearish' ? 'text-red-600' : ''}`}>{chartData.summary.trend}</span></span>
+              <span>RSI: <span className={chartData.summary.rsi > 70 ? 'text-accent-danger font-medium' : chartData.summary.rsi < 30 ? 'text-accent-success font-medium' : ''}>{chartData.summary.rsi?.toFixed(1) || '--'}</span></span>
+              <span>Trend: <span className={`font-medium ${chartData.summary.trend === 'bullish' ? 'text-accent-success' : chartData.summary.trend === 'bearish' ? 'text-accent-danger' : ''}`}>{chartData.summary.trend}</span></span>
               <span>Vol: {chartData.summary.volume_ratio?.toFixed(2)}x avg</span>
             </div>
           )}
@@ -409,7 +395,7 @@ function TechnicalChart({ ticker }) {
               onClick={() => setTimeframe(tf)}
               className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
                 timeframe === tf
-                  ? 'bg-[#C87A23] text-white'
+                  ? 'bg-brand text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -422,19 +408,19 @@ function TechnicalChart({ ticker }) {
       {/* Loading state */}
       {loading && (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#C87A23', borderTopColor: 'transparent' }}></div>
+          <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--brand-primary)', borderTopColor: 'transparent' }}></div>
           <span className="ml-3 text-slate-600">Loading chart data...</span>
         </div>
       )}
 
       {/* Error state */}
       {error && !loading && (
-        <div className="text-center py-12 text-red-600">
+        <div className="text-center py-12 text-accent-danger">
           <p className="font-medium">Failed to load chart</p>
           <p className="text-sm mt-1">{error}</p>
           <button
             onClick={fetchData}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+            className="mt-4 px-4 py-2 bg-accent-danger text-white rounded-lg hover:bg-accent-danger-dark text-sm"
           >
             Retry
           </button>
@@ -447,13 +433,13 @@ function TechnicalChart({ ticker }) {
           {/* Legend */}
           <div className="flex flex-wrap gap-4 text-xs text-slate-500 mb-2">
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-blue-500"></span> SMA 20
+              <span className="w-3 h-0.5" style={{ backgroundColor: 'var(--chart-sma20)' }}></span> SMA 20
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-purple-500"></span> SMA 50
+              <span className="w-3 h-0.5" style={{ backgroundColor: 'var(--chart-sma50)' }}></span> SMA 50
             </span>
             <span className="flex items-center gap-1">
-              <span className="w-3 h-0.5 bg-amber-500"></span> SMA 200
+              <span className="w-3 h-0.5" style={{ backgroundColor: 'var(--chart-sma200)' }}></span> SMA 200
             </span>
             <span className="flex items-center gap-1">
               <span className="w-3 h-0.5 bg-gray-400" style={{ borderStyle: 'dashed' }}></span> Bollinger Bands

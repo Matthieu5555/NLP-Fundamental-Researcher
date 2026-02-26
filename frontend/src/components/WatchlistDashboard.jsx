@@ -1,18 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAccessToken } from '../utils/api'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
-
-const authFetch = (url, options = {}) => {
-  const token = getAccessToken()
-  return fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    },
-  })
-}
+import { authFetch, API_URL } from '../utils/api'
 
 function WatchlistDashboard({ onNavigateToSession }) {
   const [items, setItems] = useState([])
@@ -46,16 +33,16 @@ function WatchlistDashboard({ onNavigateToSession }) {
 
   const getGapColor = (gap) => {
     if (gap === null || gap === undefined) return 'text-slate-500'
-    if (gap > 20) return 'text-green-700 bg-green-50'
-    if (gap > 0) return 'text-green-600'
-    if (gap > -20) return 'text-red-600'
-    return 'text-red-700 bg-red-50'
+    if (gap > 20) return 'text-accent-success-dark bg-accent-success-light'
+    if (gap > 0) return 'text-accent-success'
+    if (gap > -20) return 'text-accent-danger'
+    return 'text-accent-danger-dark bg-accent-danger-light'
   }
 
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: '#C87A23', borderTopColor: 'transparent' }}></div>
+        <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto"></div>
         <p className="text-sm text-slate-500 mt-3">Loading watchlist...</p>
       </div>
     )
@@ -127,7 +114,7 @@ function WatchlistDashboard({ onNavigateToSession }) {
                     )}
                     <button
                       onClick={() => removeItem(item.ticker)}
-                      className="text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600"
+                      className="text-xs px-2 py-1 rounded bg-accent-danger-light hover:opacity-80 text-accent-danger"
                       title="Remove from watchlist"
                     >
                       Remove

@@ -126,6 +126,16 @@ def run_full_analysis(
                 if result.football_field_result:
                     session.metadata["football_field_data"] = result.football_field_result.to_dict()
 
+                if result.precedent_result:
+                    session.metadata["precedent_data"] = result.precedent_result.to_dict()
+
+                if result.earnings_rows:
+                    from src_george_researcher.valuation.earnings_model import earnings_rows_to_dict
+                    session.metadata["earnings_model_data"] = earnings_rows_to_dict(result.earnings_rows)
+
+                if result.growth_margin_sensitivity:
+                    session.metadata["growth_margin_sensitivity_data"] = result.growth_margin_sensitivity.to_dict()
+
         # Include fair value in result for async watchlist update by the worker
         if result.dcf_result:
             analysis_dict["_fair_value_per_share"] = result.dcf_result.fair_value_per_share
@@ -188,7 +198,7 @@ def _convert_us_result(result: USFullAnalysis) -> dict:
         "total_tokens": result.total_tokens,
         "total_cost_usd": result.total_cost_usd,
         "cost_breakdown": result.cost_breakdown.to_display_dict(),
-        "sources": result.sources_collected,
+        "sources": [s.to_dict() for s in result.sources_collected] if result.sources_collected else [],
         "is_us": True,
         # Include analysis content for report building
         "fundamentals": result.fundamentals_analysis.content if result.fundamentals_analysis else None,
@@ -222,7 +232,7 @@ def _convert_non_us_result(result: Any) -> dict:
         "total_tokens": result.total_tokens,
         "total_cost_usd": result.total_cost_usd,
         "cost_breakdown": result.cost_breakdown.to_display_dict() if hasattr(result, 'cost_breakdown') and result.cost_breakdown else {},
-        "sources": result.sources_collected or [],
+        "sources": [s.to_dict() for s in result.sources_collected] if result.sources_collected else [],
         "is_us": False,
         # Include analysis content
         "fundamentals": result.fundamentals_analysis.content if result.fundamentals_analysis else None,
@@ -293,9 +303,9 @@ def _populate_report_us(report: Any, result: USFullAnalysis):
     # Add sources
     for source in result.sources_collected:
         report.add_source(
-            title=source.get("title", "Unknown"),
-            url=source.get("url", ""),
-            source_type=source.get("source_type", "unknown"),
+            title=source.title,
+            url=source.url,
+            source_type=source.source_type,
         )
 
 
@@ -326,7 +336,7 @@ def _populate_report_non_us(report: Any, result: Any):
     if result.sources_collected:
         for source in result.sources_collected:
             report.add_source(
-                title=source.get("title", "Unknown"),
-                url=source.get("url", ""),
-                source_type=source.get("source_type", "unknown"),
+                title=source.title,
+                url=source.url,
+                source_type=source.source_type,
             )

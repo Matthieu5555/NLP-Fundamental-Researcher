@@ -72,8 +72,7 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
         {/* Logo/Brand */}
         <div className="text-center mb-6">
           <div
-            className="inline-block text-3xl font-bold"
-            style={{ color: '#C87A23' }}
+            className="inline-block text-3xl font-bold text-brand"
           >
             Constant
           </div>

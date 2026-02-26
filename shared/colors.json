@@ -1,0 +1,209 @@
+{
+  "_comment": "Single source of truth for all colors. Frontend theme.css and backend colors.py derive from this file.",
+
+  "brand": {
+    "primary": "#C87A23",
+    "primaryDark": "#B06A1A",
+    "primaryLight": "#E8A040",
+    "gradientFrom": "#C87A23",
+    "gradientTo": "#B06A1A",
+    "surface": "#FEF3E2",
+    "surfaceDark": "#FDE8D0",
+    "border": "#E8C4A0",
+    "dark": "#302011",
+    "darkLight": "#4A3520"
+  },
+
+  "surface": {
+    "primary": "#ffffff",
+    "secondary": "#f8fafc",
+    "tertiary": "#f1f5f9",
+    "elevated": "#ffffff",
+    "card": "#F8FAFC",
+    "cardHover": "#f1f5f9"
+  },
+
+  "text": {
+    "primary": "#1e293b",
+    "secondary": "#475569",
+    "tertiary": "#64748b",
+    "muted": "#94a3b8",
+    "onBrand": "#ffffff",
+    "onBrandSurface": "#C87A23"
+  },
+
+  "border": {
+    "light": "#e2e8f0",
+    "medium": "#cbd5e1",
+    "dark": "#94a3b8"
+  },
+
+  "semantic": {
+    "success": "#22c55e",
+    "successLight": "#dcfce7",
+    "successMuted": "#4ade80",
+    "successDark": "#16a34a",
+    "danger": "#ef4444",
+    "dangerLight": "#fee2e2",
+    "dangerMuted": "#f87171",
+    "dangerDark": "#dc2626",
+    "warning": "#f59e0b",
+    "warningLight": "#fef3c7",
+    "warningMuted": "#fbbf24",
+    "warningDark": "#d97706",
+    "info": "#3b82f6",
+    "infoLight": "#dbeafe",
+    "infoMuted": "#60a5fa",
+    "infoDark": "#2563eb"
+  },
+
+  "chart": {
+    "background": "#ffffff",
+    "grid": "#e2e8f0",
+    "text": "#1e293b",
+    "bullish": "#22c55e",
+    "bearish": "#ef4444",
+    "sma20": "#3b82f6",
+    "sma50": "#8b5cf6",
+    "sma200": "#f59e0b",
+    "bollingerLine": "#9ca3af",
+    "rsiLine": "#6366f1",
+    "rsiOverbought": "#ef4444",
+    "rsiOversold": "#22c55e",
+    "rsiCenter": "#9CA3AF",
+    "macdLine": "#3b82f6",
+    "macdSignal": "#f59e0b",
+    "macdPositive": "#22C55E",
+    "macdNegative": "#EF4444",
+    "volumePositive": "#22C55E",
+    "volumeNegative": "#EF4444",
+    "axisLabel": "#666666",
+    "title": "#333333",
+    "spine": "#CCCCCC",
+    "spineTechnical": "#DDDDDD",
+    "gridLine": "#E5E5E5",
+    "dimmedText": "#888888"
+  },
+
+  "ratings": {
+    "buy": "#16a34a",
+    "strongBuy": "#16a34a",
+    "sell": "#dc2626",
+    "strongSell": "#dc2626",
+    "hold": "#d97706",
+    "neutral": "#d97706",
+    "na": "#6b7280"
+  },
+
+  "insights": {
+    "confirmed": { "label": "CONFIRMED", "color": "#059669", "bg": "#D1FAE5" },
+    "insight": { "label": "INSIGHT", "color": "#7C3AED", "bg": "#EDE9FE" },
+    "risk": { "label": "RISK", "color": "#DC2626", "bg": "#FEE2E2" },
+    "opportunity": { "label": "OPPORTUNITY", "color": "#D97706", "bg": "#FEF3C7" },
+    "valuation": { "label": "VALUATION", "color": "#2563EB", "bg": "#DBEAFE" },
+    "competitive": { "label": "COMPETITIVE", "color": "#0891B2", "bg": "#CFFAFE" },
+    "default": { "label": "NOTE", "color": "#6B7280", "bg": "#F3F4F6" }
+  },
+
+  "pdf": {
+    "bodyText": "#1a1a1a",
+    "darkText": "#333333",
+    "contentText": "#444444",
+    "labelText": "#555555",
+    "secondaryText": "#666666",
+    "dimmedText": "#888888",
+    "borderLight": "#dddddd",
+    "borderDotted": "#e0e0e0",
+    "rowSeparator": "#eeeeee",
+    "sectionBg": "#f5f5f5",
+    "highlightBg": "#f8f9fa",
+    "tableAltRow": "#fafafa",
+    "bullCase": { "bg": "#dcfce7", "border": "#16a34a", "text": "#16a34a" },
+    "bearCase": { "bg": "#fee2e2", "border": "#dc2626", "text": "#dc2626" },
+    "swot": {
+      "strengths": { "bg": "#dcfce7", "border": "#16a34a" },
+      "weaknesses": { "bg": "#fee2e2", "border": "#dc2626" },
+      "opportunities": { "bg": "#dbeafe", "border": "#2563eb" },
+      "threats": { "bg": "#fef3c7", "border": "#d97706" }
+    },
+    "financials": {
+      "marginHighlight": { "bg": "#e0f2fe", "text": "#0369a1" },
+      "debtHighlight": { "bg": "#dcfce7", "text": "#16a34a" },
+      "fcfHighlight": { "bg": "#f3e8ff", "text": "#7c3aed" }
+    },
+    "positive": "#16a34a",
+    "negative": "#dc2626"
+  },
+
+  "badges": {
+    "high": { "bg": "#fee2e2", "text": "#dc2626" },
+    "medium": { "bg": "#fef3c7", "text": "#d97706" },
+    "low": { "bg": "#e2e8f0", "text": "#475569" }
+  },
+
+  "darkMode": {
+    "brand": {
+      "primary": "#F5A623",
+      "primaryDark": "#E8941A",
+      "primaryLight": "#FFB84D",
+      "gradientFrom": "#F5A623",
+      "gradientTo": "#E8941A",
+      "surface": "#3D2814",
+      "surfaceDark": "#2D1E0E",
+      "border": "#5C4A2A",
+      "dark": "#1a1208",
+      "darkLight": "#302011"
+    },
+    "surface": {
+      "primary": "#0f172a",
+      "secondary": "#1e293b",
+      "tertiary": "#334155",
+      "elevated": "#1e293b",
+      "card": "#1e293b",
+      "cardHover": "#334155"
+    },
+    "text": {
+      "primary": "#f1f5f9",
+      "secondary": "#cbd5e1",
+      "tertiary": "#94a3b8",
+      "muted": "#64748b",
+      "onBrand": "#ffffff",
+      "onBrandSurface": "#F5A623"
+    },
+    "border": {
+      "light": "#334155",
+      "medium": "#475569",
+      "dark": "#64748b"
+    },
+    "semantic": {
+      "success": "#22c55e",
+      "successLight": "rgba(34, 197, 94, 0.2)",
+      "successMuted": "rgba(34, 197, 94, 0.4)",
+      "successDark": "#16a34a",
+      "danger": "#ef4444",
+      "dangerLight": "rgba(239, 68, 68, 0.2)",
+      "dangerMuted": "rgba(239, 68, 68, 0.4)",
+      "dangerDark": "#dc2626",
+      "warning": "#f59e0b",
+      "warningLight": "rgba(245, 158, 11, 0.2)",
+      "warningMuted": "rgba(245, 158, 11, 0.4)",
+      "warningDark": "#d97706",
+      "info": "#3b82f6",
+      "infoLight": "rgba(59, 130, 246, 0.2)",
+      "infoMuted": "rgba(59, 130, 246, 0.4)",
+      "infoDark": "#2563eb"
+    },
+    "chart": {
+      "background": "#1e293b",
+      "grid": "#334155",
+      "text": "#e2e8f0",
+      "bullish": "#22c55e",
+      "bearish": "#ef4444"
+    },
+    "badges": {
+      "high": { "bg": "rgba(239, 68, 68, 0.2)", "text": "#f87171" },
+      "medium": { "bg": "rgba(245, 158, 11, 0.2)", "text": "#fbbf24" },
+      "low": { "bg": "rgba(100, 116, 139, 0.3)", "text": "#94a3b8" }
+    }
+  }
+}

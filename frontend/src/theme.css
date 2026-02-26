@@ -1,112 +1,98 @@
 /**
  * George Researcher Theme System
  *
+ * AUTO-GENERATED from shared/colors.json — do not edit manually.
+ * Run: node scripts/generate-theme.js
+ *
  * All brand colors are defined here. To rebrand:
- * 1. Change the color values in :root (light mode)
- * 2. Change the color values in html.dark (dark mode)
- * 3. That's it - the entire app will update
+ * 1. Edit shared/colors.json
+ * 2. Run this script
+ * 3. That's it — the entire app will update
  *
  * Color naming convention:
  * - brand-*: Primary brand colors (amber/orange family)
  * - surface-*: Background colors
  * - text-*: Text colors
  * - accent-*: Semantic accent colors (success, danger, etc.)
+ * - chart-*: Chart-specific colors
  */
 
 :root {
-  /* ========================================
-   * BRAND COLORS (Orange/Amber family)
-   * Change these to rebrand the app
-   * ======================================== */
-
-  /* Primary brand - buttons, links, highlights */
+  /* BRAND COLORS — buttons, links, highlights */
   --brand-primary: #C87A23;
   --brand-primary-dark: #B06A1A;
   --brand-primary-light: #E8A040;
-
-  /* Brand gradients */
   --brand-gradient-from: #C87A23;
   --brand-gradient-to: #B06A1A;
-
-  /* Brand surfaces (light backgrounds with brand tint) */
   --brand-surface: #FEF3E2;
   --brand-surface-dark: #FDE8D0;
   --brand-border: #E8C4A0;
-
-  /* Dark brand (for headers, dark sections) */
   --brand-dark: #302011;
   --brand-dark-light: #4A3520;
-
-  /* ========================================
-   * SURFACE COLORS (Backgrounds)
-   * ======================================== */
-
+  /* SURFACE COLORS — backgrounds */
   --surface-primary: #ffffff;
   --surface-secondary: #f8fafc;
   --surface-tertiary: #f1f5f9;
   --surface-elevated: #ffffff;
-
-  /* Card backgrounds */
   --surface-card: #F8FAFC;
   --surface-card-hover: #f1f5f9;
-
-  /* ========================================
-   * TEXT COLORS
-   * ======================================== */
-
+  /* TEXT COLORS */
   --text-primary: #1e293b;
   --text-secondary: #475569;
   --text-tertiary: #64748b;
   --text-muted: #94a3b8;
   --text-on-brand: #ffffff;
   --text-on-brand-surface: #C87A23;
-
-  /* ========================================
-   * BORDER COLORS
-   * ======================================== */
-
+  /* BORDER COLORS */
   --border-light: #e2e8f0;
   --border-medium: #cbd5e1;
   --border-dark: #94a3b8;
 
-  /* ========================================
-   * SEMANTIC ACCENT COLORS
-   * ======================================== */
-
-  /* Success (green) */
+  /* SEMANTIC ACCENT COLORS */
   --accent-success: #22c55e;
   --accent-success-light: #dcfce7;
+  --accent-success-muted: #4ade80;
   --accent-success-dark: #16a34a;
-
-  /* Danger (red) */
   --accent-danger: #ef4444;
   --accent-danger-light: #fee2e2;
+  --accent-danger-muted: #f87171;
   --accent-danger-dark: #dc2626;
-
-  /* Warning (amber) */
   --accent-warning: #f59e0b;
   --accent-warning-light: #fef3c7;
+  --accent-warning-muted: #fbbf24;
   --accent-warning-dark: #d97706;
-
-  /* Info (blue) */
   --accent-info: #3b82f6;
   --accent-info-light: #dbeafe;
+  --accent-info-muted: #60a5fa;
   --accent-info-dark: #2563eb;
-
-  /* ========================================
-   * CHART COLORS
-   * ======================================== */
-
+  /* CHART COLORS */
   --chart-background: #ffffff;
   --chart-grid: #e2e8f0;
   --chart-text: #1e293b;
   --chart-bullish: #22c55e;
   --chart-bearish: #ef4444;
+  --chart-sma20: #3b82f6;
+  --chart-sma50: #8b5cf6;
+  --chart-sma200: #f59e0b;
+  --chart-bollinger-line: #9ca3af;
+  --chart-rsi-line: #6366f1;
+  --chart-rsi-overbought: #ef4444;
+  --chart-rsi-oversold: #22c55e;
+  --chart-rsi-center: #9CA3AF;
+  --chart-macd-line: #3b82f6;
+  --chart-macd-signal: #f59e0b;
+  --chart-macd-positive: #22C55E;
+  --chart-macd-negative: #EF4444;
+  --chart-volume-positive: #22C55E;
+  --chart-volume-negative: #EF4444;
+  --chart-axis-label: #666666;
+  --chart-title: #333333;
+  --chart-spine: #CCCCCC;
+  --chart-spine-technical: #DDDDDD;
+  --chart-grid-line: #E5E5E5;
+  --chart-dimmed-text: #888888;
 
-  /* ========================================
-   * PRIORITY BADGES
-   * ======================================== */
-
+  /* PRIORITY BADGES */
   --badge-high-bg: #fee2e2;
   --badge-high-text: #dc2626;
   --badge-medium-bg: #fef3c7;
@@ -120,32 +106,24 @@
  * ========================================== */
 
 html.dark {
-  /* Brand colors - slightly brighter for dark mode */
+  /* Brand colors — brighter for dark backgrounds */
   --brand-primary: #F5A623;
   --brand-primary-dark: #E8941A;
   --brand-primary-light: #FFB84D;
-
   --brand-gradient-from: #F5A623;
   --brand-gradient-to: #E8941A;
-
-  /* Brand surfaces (dark versions) */
   --brand-surface: #3D2814;
   --brand-surface-dark: #2D1E0E;
   --brand-border: #5C4A2A;
-
-  /* Dark brand */
   --brand-dark: #1a1208;
   --brand-dark-light: #302011;
-
   /* Surfaces */
   --surface-primary: #0f172a;
   --surface-secondary: #1e293b;
   --surface-tertiary: #334155;
   --surface-elevated: #1e293b;
-
   --surface-card: #1e293b;
   --surface-card-hover: #334155;
-
   /* Text */
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
@@ -153,29 +131,28 @@ html.dark {
   --text-muted: #64748b;
   --text-on-brand: #ffffff;
   --text-on-brand-surface: #F5A623;
-
   /* Borders */
   --border-light: #334155;
   --border-medium: #475569;
   --border-dark: #64748b;
 
-  /* Semantic accents (slightly muted for dark) */
+  /* Semantic accents (adjusted for dark) */
   --accent-success: #22c55e;
   --accent-success-light: rgba(34, 197, 94, 0.2);
+  --accent-success-muted: rgba(34, 197, 94, 0.4);
   --accent-success-dark: #16a34a;
-
   --accent-danger: #ef4444;
   --accent-danger-light: rgba(239, 68, 68, 0.2);
+  --accent-danger-muted: rgba(239, 68, 68, 0.4);
   --accent-danger-dark: #dc2626;
-
   --accent-warning: #f59e0b;
   --accent-warning-light: rgba(245, 158, 11, 0.2);
+  --accent-warning-muted: rgba(245, 158, 11, 0.4);
   --accent-warning-dark: #d97706;
-
   --accent-info: #3b82f6;
   --accent-info-light: rgba(59, 130, 246, 0.2);
+  --accent-info-muted: rgba(59, 130, 246, 0.4);
   --accent-info-dark: #2563eb;
-
   /* Charts */
   --chart-background: #1e293b;
   --chart-grid: #334155;
@@ -230,4 +207,27 @@ html.dark {
 .badge-low {
   background-color: var(--badge-low-bg);
   color: var(--badge-low-text);
+}
+
+/* Belief badge (Analyst Notes) */
+.belief-badge {
+  background-color: var(--accent-warning-light);
+  color: var(--accent-warning-dark);
+}
+
+/* Accent gradient utilities */
+.bg-accent-success-gradient {
+  background: linear-gradient(to right, var(--accent-success), var(--accent-success-dark));
+}
+
+.bg-accent-danger-gradient {
+  background: linear-gradient(to right, var(--accent-danger), var(--accent-danger-dark));
+}
+
+.bg-accent-warning-gradient {
+  background: linear-gradient(to right, var(--accent-warning), var(--accent-warning-dark));
+}
+
+.bg-accent-info-gradient {
+  background: linear-gradient(to right, var(--accent-info), var(--accent-info-dark));
 }

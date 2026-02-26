@@ -89,7 +89,7 @@ function SessionBrowser({ onResumeSession, onClose }) {
             placeholder="Search by ticker..."
             value={searchTicker}
             onChange={(e) => setSearchTicker(e.target.value)}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C87A23] focus:border-transparent"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
           />
         </div>
 
@@ -97,14 +97,14 @@ function SessionBrowser({ onResumeSession, onClose }) {
         <div className="flex-grow overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#C87A23' }}></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--brand-primary)' }}></div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-600 mb-4">{error}</p>
+              <p className="text-accent-danger mb-4">{error}</p>
               <button
                 onClick={fetchSessions}
-                className="px-4 py-2 text-white rounded-lg transition-colors" style={{ backgroundColor: '#C87A23' }}
+                className="px-4 py-2 text-white rounded-lg transition-colors" style={{ backgroundColor: 'var(--brand-primary)' }}
               >
                 Retry
               </button>
@@ -124,12 +124,12 @@ function SessionBrowser({ onResumeSession, onClose }) {
                 <div
                   key={session.session_id}
                   onClick={() => handleResume(session.session_id)}
-                  className="bg-slate-50 border border-slate-200 rounded-lg p-4 cursor-pointer transition-all duration-200 group hover:bg-[#FEF3E2] hover:border-[#E8C4A0]"
+                  className="bg-slate-50 border border-slate-200 rounded-lg p-4 cursor-pointer transition-all duration-200 group hover:bg-brand-surface hover:border-brand-border"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-grow">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-bold" style={{ color: '#C87A23' }}>
+                        <h3 className="text-lg font-bold" style={{ color: 'var(--brand-primary)' }}>
                           {session.ticker}
                         </h3>
                         <span className="text-xs text-slate-500">
@@ -146,7 +146,7 @@ function SessionBrowser({ onResumeSession, onClose }) {
                     </div>
                     <button
                       onClick={(e) => handleDelete(session.session_id, e)}
-                      className="ml-4 text-slate-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      className="ml-4 text-slate-400 hover:text-accent-danger transition-colors opacity-0 group-hover:opacity-100"
                       title="Delete session"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

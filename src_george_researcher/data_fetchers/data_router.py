@@ -200,7 +200,7 @@ class DataRouter:
     ) -> Tuple[Optional[Any], Optional[str]]:
         """Fetch news using existing combined news fetcher."""
         from .news import fetch_combined_news
-        return fetch_combined_news(ticker, max_results=limit)
+        return fetch_combined_news(ticker, limit=limit)
 
     # =========================================================================
     # US-Only Data Methods (FinancialDatasets.ai)

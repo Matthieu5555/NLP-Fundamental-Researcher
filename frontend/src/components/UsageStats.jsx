@@ -48,7 +48,7 @@ export default function UsageStats({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
+        <div className="bg-brand-gradient px-6 py-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-white">Usage Statistics</h2>
             <button
@@ -66,10 +66,10 @@ export default function UsageStats({ isOpen, onClose }) {
         <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
             </div>
           ) : error ? (
-            <div className="text-center py-8 text-red-600">{error}</div>
+            <div className="text-center py-8 text-accent-danger">{error}</div>
           ) : stats ? (
             <div className="space-y-6">
               {/* Current Month Summary */}
@@ -85,7 +85,7 @@ export default function UsageStats({ isOpen, onClose }) {
                     <p className="text-sm text-slate-600">API Requests</p>
                   </div>
                   <div className="bg-slate-50 rounded-lg p-4">
-                    <p className="text-2xl font-bold text-amber-600">
+                    <p className="text-2xl font-bold text-brand">
                       ${stats.current_month.cost_usd.toFixed(2)}
                     </p>
                     <p className="text-sm text-slate-600">Total Cost</p>
@@ -97,7 +97,7 @@ export default function UsageStats({ isOpen, onClose }) {
                     <p className="text-sm text-slate-600">Tokens Used</p>
                   </div>
                   <div className="bg-slate-50 rounded-lg p-4">
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-2xl font-bold text-accent-success">
                       {stats.current_month.cache_hit_rate}%
                     </p>
                     <p className="text-sm text-slate-600">Cache Hit Rate</p>
@@ -127,7 +127,7 @@ export default function UsageStats({ isOpen, onClose }) {
                           {stats.all_time.top_tickers.slice(0, 3).map((ticker) => (
                             <span
                               key={ticker}
-                              className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded"
+                              className="px-2 py-0.5 text-xs font-medium bg-accent-warning-light text-accent-warning-dark rounded"
                             >
                               {ticker}
                             </span>
@@ -162,7 +162,7 @@ export default function UsageStats({ isOpen, onClose }) {
                           <span className="text-slate-800">
                             {day.requests} requests
                           </span>
-                          <span className="text-amber-600 font-medium">
+                          <span className="text-brand font-medium">
                             ${day.cost_usd.toFixed(2)}
                           </span>
                         </div>

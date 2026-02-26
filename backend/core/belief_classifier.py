@@ -19,6 +19,8 @@ from typing import Optional, List, Callable, Any
 from dataclasses import dataclass
 from enum import Enum
 
+from .colors import PALETTE, get_insight_badge
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,27 +39,26 @@ class InsightType(Enum):
     COMPETITIVE_INSIGHT = "competitive"    # Moat durability or competition analysis
 
 
-# UI badge styling for insight types
-# Colors follow semantic meaning:
-#   Green (#059669) = positive/confirmed
-#   Purple (#7C3AED) = insight/discovery
-#   Red (#DC2626) = risk/warning
-#   Amber (#D97706) = opportunity
-#   Blue (#2563EB) = valuation
-#   Cyan (#0891B2) = competitive
+# UI badge styling for insight types — sourced from shared/colors.json via colors.py
+# Maps InsightType enum values to their keys in the shared palette
+_INSIGHT_TYPE_TO_KEY = {
+    InsightType.CONFIRMED_FACT: "confirmed",
+    InsightType.NEW_INSIGHT: "insight",
+    InsightType.RISK_IDENTIFIED: "risk",
+    InsightType.OPPORTUNITY: "opportunity",
+    InsightType.VALUATION_VIEW: "valuation",
+    InsightType.COMPETITIVE_INSIGHT: "competitive",
+}
+
 INSIGHT_BADGES = {
-    InsightType.CONFIRMED_FACT: {"label": "CONFIRMED", "color": "#059669", "bg": "#D1FAE5"},  # Green
-    InsightType.NEW_INSIGHT: {"label": "INSIGHT", "color": "#7C3AED", "bg": "#EDE9FE"},       # Purple
-    InsightType.RISK_IDENTIFIED: {"label": "RISK", "color": "#DC2626", "bg": "#FEE2E2"},      # Red
-    InsightType.OPPORTUNITY: {"label": "OPPORTUNITY", "color": "#D97706", "bg": "#FEF3C7"},   # Amber
-    InsightType.VALUATION_VIEW: {"label": "VALUATION", "color": "#2563EB", "bg": "#DBEAFE"},  # Blue
-    InsightType.COMPETITIVE_INSIGHT: {"label": "COMPETITIVE", "color": "#0891B2", "bg": "#CFFAFE"},  # Cyan
+    itype: get_insight_badge(key)
+    for itype, key in _INSIGHT_TYPE_TO_KEY.items()
 }
 
 
 def get_badge_for_belief(insight_type: InsightType) -> dict:
     """Get badge configuration for an insight type."""
-    return INSIGHT_BADGES.get(insight_type, {"label": "NOTE", "color": "#6B7280", "bg": "#F3F4F6"})
+    return INSIGHT_BADGES.get(insight_type, get_insight_badge("default"))
 
 
 @dataclass

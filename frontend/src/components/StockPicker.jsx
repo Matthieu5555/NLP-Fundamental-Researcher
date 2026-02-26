@@ -74,7 +74,7 @@ function StockPicker({ onAnalysisStart, disabled }) {
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
               disabled={disabled || loading}
               placeholder="e.g., AAPL, MSFT, GOOGL"
-              className="flex-1 px-5 py-4 text-lg border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-[#C87A23] focus:border-[#C87A23] disabled:bg-slate-100 disabled:cursor-not-allowed transition-all"
+              className="flex-1 px-5 py-4 text-lg border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand disabled:bg-slate-100 disabled:cursor-not-allowed transition-all"
               maxLength={10}
             />
             <button
@@ -93,8 +93,8 @@ function StockPicker({ onAnalysisStart, disabled }) {
         </div>
 
         {error && (
-          <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-700 font-medium">{error}</p>
+          <div className="bg-accent-danger-light border-2 border-accent-danger rounded-lg p-4">
+            <p className="text-sm text-accent-danger-dark font-medium">{error}</p>
           </div>
         )}
       </form>

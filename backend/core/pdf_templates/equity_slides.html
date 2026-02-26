@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ company_name }} ({{ ticker }}) - Equity Slides</title>
+    <style>
+        /* ===== SLIDE PAGE SETUP (16:9 landscape) ===== */
+        @page {
+            size: 338mm 190mm;  /* 16:9 ratio */
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 14pt;
+            line-height: 1.4;
+            color: #333333;
+        }
+
+        /* ===== SLIDE BASE ===== */
+        .slide {
+            width: 338mm;
+            height: 190mm;
+            position: relative;
+            overflow: hidden;
+            page-break-after: always;
+            page-break-inside: avoid;
+            padding: 0;
+        }
+
+        .slide:last-child {
+            page-break-after: auto;
+        }
+
+        /* Brand stripe across top */
+        .stripe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3mm;
+            background: {{ primary_color }};
+        }
+
+        /* Slide content area (below stripe) */
+        .slide-body {
+            padding: 14mm 20mm 12mm 20mm;
+        }
+
+        /* Slide title */
+        .slide-title {
+            font-size: 22pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            margin-bottom: 10mm;
+            border-bottom: 0.5pt solid #e0e0e0;
+            padding-bottom: 4mm;
+        }
+
+        /* Slide number */
+        .slide-number {
+            position: absolute;
+            bottom: 5mm;
+            right: 8mm;
+            font-size: 8pt;
+            color: #aaa;
+        }
+
+        /* Firm watermark */
+        .slide-firm {
+            position: absolute;
+            bottom: 5mm;
+            left: 8mm;
+            font-size: 7pt;
+            color: #ccc;
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h2 {
+            font-size: 18pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            margin: 6mm 0 4mm 0;
+        }
+
+        h3 {
+            font-size: 15pt;
+            font-weight: 700;
+            color: #444;
+            margin: 4mm 0 3mm 0;
+        }
+
+        p {
+            margin-bottom: 3mm;
+            text-align: left;
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+
+        ul, ol {
+            margin-left: 8mm;
+            margin-bottom: 4mm;
+        }
+
+        li {
+            margin-bottom: 2mm;
+            font-size: 12pt;
+            line-height: 1.45;
+        }
+
+        /* ===== TITLE SLIDE ===== */
+        .title-slide {
+            padding: 0;
+        }
+
+        .title-bg {
+            background: {{ primary_color }};
+            height: 110mm;
+            padding: 28mm 24mm 0 24mm;
+            color: white;
+        }
+
+        .title-company {
+            font-size: 36pt;
+            font-weight: 700;
+            margin-bottom: 3mm;
+        }
+
+        .title-sub {
+            font-size: 16pt;
+            opacity: 0.9;
+            margin-bottom: 2mm;
+        }
+
+        .title-type {
+            font-size: 13pt;
+            opacity: 0.75;
+        }
+
+        .title-rating {
+            position: absolute;
+            top: 34mm;
+            right: 28mm;
+            background: white;
+            padding: 6mm 12mm;
+            border-radius: 3mm;
+            text-align: center;
+        }
+
+        .title-rating-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 1mm;
+        }
+
+        .title-rating-value {
+            font-size: 26pt;
+            font-weight: 700;
+            color: {{ rating_color }};
+        }
+
+        .title-bottom {
+            padding: 10mm 24mm;
+        }
+
+        .title-analyst {
+            font-size: 14pt;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .title-analyst-info {
+            font-size: 11pt;
+            color: #666;
+        }
+
+        .title-firm {
+            position: absolute;
+            bottom: 14mm;
+            right: 24mm;
+            text-align: right;
+        }
+
+        .title-firm-name {
+            font-size: 18pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        .title-firm-tool {
+            font-size: 9pt;
+            color: #aaa;
+        }
+
+        /* ===== EXECUTIVE SUMMARY ===== */
+        .headline {
+            font-size: 20pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            margin-bottom: 8mm;
+            line-height: 1.3;
+        }
+
+        .highlights-list {
+            margin-left: 0;
+            list-style: none;
+        }
+
+        .highlights-list li {
+            font-size: 13pt;
+            padding: 2.5mm 0 2.5mm 6mm;
+            border-left: 2pt solid {{ primary_color }};
+            margin-bottom: 3mm;
+        }
+
+        .rating-badge {
+            position: absolute;
+            bottom: 16mm;
+            right: 24mm;
+            background: {{ rating_color }};
+            color: white;
+            padding: 4mm 10mm;
+            border-radius: 3mm;
+            text-align: center;
+        }
+
+        .rating-badge-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .rating-badge-value {
+            font-size: 22pt;
+            font-weight: 700;
+        }
+
+        /* ===== BULL / BEAR ===== */
+        .two-col {
+            display: flex;
+            gap: 10mm;
+        }
+
+        .two-col > div {
+            flex: 1;
+        }
+
+        .case-box {
+            padding: 6mm 8mm;
+            border-radius: 2mm;
+        }
+
+        .case-box.bull {
+            background: linear-gradient(to right, #dcfce7, #fff);
+            border-left: 3pt solid #16a34a;
+        }
+
+        .case-box.bear {
+            background: linear-gradient(to right, #fee2e2, #fff);
+            border-left: 3pt solid #dc2626;
+        }
+
+        .case-box h3 {
+            margin-top: 0;
+        }
+
+        .case-box.bull h3 { color: #16a34a; }
+        .case-box.bear h3 { color: #dc2626; }
+
+        .case-box li {
+            font-size: 11pt;
+        }
+
+        /* ===== SWOT GRID ===== */
+        .swot-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6mm;
+        }
+
+        .swot-box {
+            padding: 5mm 7mm;
+            border-radius: 2mm;
+        }
+
+        .swot-box.strengths { background: #dcfce7; border-left: 3pt solid #16a34a; }
+        .swot-box.weaknesses { background: #fee2e2; border-left: 3pt solid #dc2626; }
+        .swot-box.opportunities { background: #dbeafe; border-left: 3pt solid #2563eb; }
+        .swot-box.threats { background: #fef3c7; border-left: 3pt solid #d97706; }
+
+        .swot-box h4 {
+            font-size: 12pt;
+            margin-bottom: 2mm;
+        }
+
+        .swot-box.strengths h4 { color: #16a34a; }
+        .swot-box.weaknesses h4 { color: #dc2626; }
+        .swot-box.opportunities h4 { color: #2563eb; }
+        .swot-box.threats h4 { color: #d97706; }
+
+        .swot-box ul {
+            font-size: 10pt;
+            margin: 0 0 0 5mm;
+        }
+
+        .swot-box li {
+            font-size: 10pt;
+            margin-bottom: 1mm;
+        }
+
+        /* ===== DATA TABLE ===== */
+        .data-table {
+            border-collapse: collapse;
+            font-size: 11pt;
+            margin-bottom: 5mm;
+        }
+
+        .data-table th {
+            background: {{ primary_color }};
+            color: white;
+            padding: 3mm 5mm;
+            text-align: left;
+            font-size: 10pt;
+            font-weight: 600;
+        }
+
+        .data-table th:last-child,
+        .data-table td:last-child {
+            text-align: right;
+        }
+
+        .data-table td {
+            padding: 2.5mm 5mm;
+            border-bottom: 0.5pt solid #e0e0e0;
+        }
+
+        .data-table tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        /* Returns row styling */
+        .returns-table {
+            border-collapse: collapse;
+            font-size: 11pt;
+            margin-top: 4mm;
+        }
+
+        .returns-table th {
+            background: {{ primary_color }};
+            color: white;
+            padding: 2.5mm 6mm;
+            text-align: center;
+            font-size: 10pt;
+        }
+
+        .returns-table td {
+            padding: 3mm 6mm;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12pt;
+        }
+
+        .positive { color: #16a34a; }
+        .negative { color: #dc2626; }
+
+        /* ===== SOURCES ===== */
+        .source-item {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 1.5mm;
+        }
+
+        .source-id {
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        /* ===== DISCLAIMER ===== */
+        .disclaimer-text {
+            font-size: 10pt;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .disclaimer-text p {
+            font-size: 10pt;
+            margin-bottom: 4mm;
+        }
+
+        .attribution {
+            text-align: center;
+            margin-top: 10mm;
+            padding-top: 6mm;
+            border-top: 0.5pt solid #ddd;
+        }
+
+        .attribution .name {
+            font-size: 13pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        .attribution .firm {
+            font-size: 16pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+            margin-top: 4mm;
+        }
+
+        .attribution .meta {
+            font-size: 8pt;
+            color: #aaa;
+            margin-top: 3mm;
+        }
+
+        /* ===== CONTENT PROSE (for thesis/moat/external forces) ===== */
+        .prose {
+            font-size: 12pt;
+            line-height: 1.55;
+        }
+
+        .prose p {
+            font-size: 12pt;
+        }
+
+        .prose h3 {
+            font-size: 14pt;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== SLIDE 1: TITLE ===== -->
+<div class="slide title-slide">
+    <div class="title-bg">
+        <div class="title-company">{{ company_name }}</div>
+        <div class="title-sub">{{ ticker }} | {{ exchange }} | {{ sector }}</div>
+        <div class="title-type">Equity Research  |  {{ report_date }}</div>
+    </div>
+    <div class="title-rating">
+        <div class="title-rating-label">Our Rating</div>
+        <div class="title-rating-value">{{ rating }}</div>
+    </div>
+    <div class="title-bottom">
+        <div class="title-analyst">{{ analyst_name }}</div>
+        <div class="title-analyst-info">{{ analyst_email }}  |  {{ analyst_sector }}</div>
+    </div>
+    <div class="title-firm">
+        <div class="title-firm-name">{{ firm_name }}</div>
+        <div class="title-firm-tool">{{ tool_branding }}</div>
+    </div>
+</div>
+
+<!-- ===== SLIDE 2: EXECUTIVE SUMMARY ===== -->
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Executive Summary</div>
+
+        {% if report_headline %}
+        <div class="headline">{{ report_headline }}</div>
+        {% endif %}
+
+        {% if highlights %}
+        <ul class="highlights-list">
+            {% for h in highlights %}
+            <li>{{ h | safe }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <div class="rating-badge">
+            <div class="rating-badge-label">Rating</div>
+            <div class="rating-badge-value">{{ rating }}</div>
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">2</div>
+</div>
+
+<!-- ===== SLIDE 3: INVESTMENT THESIS ===== -->
+{% if thesis_content %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Investment Thesis</div>
+        <div class="prose">
+            {{ thesis_content | safe }}
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">3</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 4: BULL / BEAR CASES ===== -->
+{% if bull_case or bear_case %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Investment Cases</div>
+        <div class="two-col">
+            {% if bull_case %}
+            <div>
+                <div class="case-box bull">
+                    <h3>Bull Case</h3>
+                    {{ bull_case | safe }}
+                </div>
+            </div>
+            {% endif %}
+            {% if bear_case %}
+            <div>
+                <div class="case-box bear">
+                    <h3>Bear Case</h3>
+                    {{ bear_case | safe }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">4</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 5: SWOT ANALYSIS ===== -->
+{% if swot %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">SWOT Analysis</div>
+        <div class="swot-grid">
+            <div class="swot-box strengths">
+                <h4>Strengths</h4>
+                {{ swot.strengths | safe }}
+            </div>
+            <div class="swot-box weaknesses">
+                <h4>Weaknesses</h4>
+                {{ swot.weaknesses | safe }}
+            </div>
+            <div class="swot-box opportunities">
+                <h4>Opportunities</h4>
+                {{ swot.opportunities | safe }}
+            </div>
+            <div class="swot-box threats">
+                <h4>Threats</h4>
+                {{ swot.threats | safe }}
+            </div>
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">5</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 6: FINANCIAL OVERVIEW ===== -->
+{% if key_data or statistics %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Financial Overview</div>
+        <div class="two-col">
+            {% if key_data %}
+            <div>
+                <h3>Key Data</h3>
+                <table class="data-table">
+                    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                        {% for item in key_data %}
+                        <tr><td>{{ item.label }}</td><td>{{ item.value }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if statistics %}
+            <div>
+                <h3>Valuation</h3>
+                <table class="data-table">
+                    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+                    <tbody>
+                        {% for item in statistics %}
+                        <tr><td>{{ item.label }}</td><td>{{ item.value }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if returns %}
+        <h3 style="margin-top: 6mm;">Period Returns</h3>
+        <table class="returns-table">
+            <thead>
+                <tr>
+                    {% for r in returns %}
+                    <th>{{ r.period }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {% for r in returns %}
+                    <td class="{{ 'positive' if r.value is not none and r.value >= 0 else 'negative' }}">{{ r.display }}</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">6</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 7: VALUATION SUMMARY ===== -->
+{% if dcf_valuation or comp_table or scenario_analysis %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Valuation Summary</div>
+
+        {% if dcf_valuation %}
+        <h3>DCF Valuation</h3>
+        <div class="prose">{{ dcf_valuation | safe }}</div>
+        {% endif %}
+
+        {% if comp_table %}
+        <h3>Comparable Companies</h3>
+        <div class="prose">{{ comp_table | safe }}</div>
+        {% endif %}
+
+        {% if scenario_analysis %}
+        <h3>Scenario Analysis</h3>
+        <div class="prose">{{ scenario_analysis | safe }}</div>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">7</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 8: COMPETITIVE MOAT ===== -->
+{% if moat_analysis %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Competitive Moat</div>
+        <div class="prose">
+            {{ moat_analysis | safe }}
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">8</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 9: EXTERNAL FORCES ===== -->
+{% if strategic_assessment %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">External Forces</div>
+        <div class="prose">
+            {{ strategic_assessment | safe }}
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">9</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 10: CONVICTION & RATING ===== -->
+{% if conviction %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Conviction & Rating</div>
+        <div class="prose">
+            {{ conviction | safe }}
+        </div>
+        <div class="rating-badge" style="bottom: 20mm;">
+            <div class="rating-badge-label">Recommendation</div>
+            <div class="rating-badge-value">{{ rating }}</div>
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">10</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 11: SOURCES ===== -->
+{% if research_sources or analyst_sources %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Sources & References</div>
+
+        {% if research_sources %}
+        {% for source in research_sources %}
+        <div class="source-item">
+            <span class="source-id">[{{ source.id }}]</span> {{ source.title }}
+            {% if source.date %} ({{ source.date }}){% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if analyst_sources %}
+        <h3 style="margin-top: 5mm;">Analyst Notes</h3>
+        {% for source in analyst_sources %}
+        <div class="source-item">
+            <span class="source-id">[{{ source.id }}]</span> {{ source.content }}
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">11</div>
+</div>
+{% endif %}
+
+<!-- ===== SLIDE 12: DISCLAIMER ===== -->
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Important Disclosures</div>
+        <div class="disclaimer-text">
+            <p><strong>This analysis is generated by AI and should not be considered financial advice.</strong></p>
+            <p>The information contained in this report is based on publicly available data and sources believed to be reliable. However, we make no representation or warranty as to its accuracy or completeness.</p>
+            <p>This report is for informational purposes only and does not constitute financial, investment, or trading advice. Always conduct your own research before making investment decisions. Consult with qualified financial advisors before investing. Past performance does not guarantee future results. All investments carry risk, including the potential loss of principal.</p>
+        </div>
+
+        <div class="attribution">
+            <div class="name">{{ analyst_name }}</div>
+            <div style="font-size: 10pt; color: #666;">{{ analyst_sector }} | {{ analyst_email }}</div>
+            <div class="firm">{{ firm_name }}</div>
+            <div class="meta">{{ tool_branding }}  |  Generated: {{ generation_time }}</div>
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">12</div>
+</div>
+
+</body>
+</html>

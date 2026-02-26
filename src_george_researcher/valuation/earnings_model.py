@@ -5,7 +5,7 @@ Combines historical financials with analyst estimates into a unified table.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 # Number of historical and forecast years in the earnings model table.
 MAX_ACTUAL_YEARS = 3
@@ -140,18 +140,37 @@ def format_earnings_model_markdown(rows: List[EarningsModelRow]) -> str:
     return "\n".join(lines)
 
 
+def earnings_rows_to_dict(rows: List[EarningsModelRow]) -> Dict:
+    """Serialize earnings model rows for frontend consumption."""
+    return {
+        "rows": [
+            {
+                "fiscal_year": r.fiscal_year,
+                "is_estimate": r.is_estimate,
+                "revenue": r.revenue,
+                "revenue_growth": r.revenue_growth,
+                "ebitda": r.ebitda,
+                "ebitda_margin": r.ebitda_margin,
+                "eps": r.eps,
+            }
+            for r in rows
+        ]
+    }
+
+
 def run_earnings_model(
     enriched_financials: Optional[EnrichedFinancials],
     analyst_estimates: Optional[List[AnalystEstimate]],
-) -> AnalysisResult:
-    """Build earnings model and return as AnalysisResult."""
+) -> Tuple[List[EarningsModelRow], AnalysisResult]:
+    """Build earnings model and return rows + AnalysisResult."""
     rows = build_earnings_model(enriched_financials, analyst_estimates)
     content = format_earnings_model_markdown(rows)
 
-    return AnalysisResult(
+    result = AnalysisResult(
         section="Earnings Model",
         content=content,
         tokens_used=0,
         success=len(rows) > 0,
         cost_usd=0.0,
     )
+    return rows, result

@@ -1,11 +1,12 @@
 """
 Reports API router.
 
-Handles report retrieval and export (markdown, PDF).
+Handles report retrieval and export (markdown, PDF, slides).
 
 Endpoints:
     GET  /{session_id}                  - Get full report
     POST /{session_id}/export/pdf       - Export as PDF
+    POST /{session_id}/export/slides    - Export as slide deck (PDF)
     GET  /{session_id}/sections         - List all sections
     GET  /{session_id}/sections/{id}    - Get specific section
     PUT  /{session_id}/sections/{id}    - Update section content
@@ -157,6 +158,88 @@ async def export_pdf(
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {error_msg}")
 
 
+@router.post("/{session_id}/export/slides")
+async def export_slides(
+    request: ExportPdfRequest = None,
+    session: AnalysisSession = Depends(get_user_session_with_report),
+):
+    """
+    Export report as a McKinsey-style slide deck (PDF, landscape 16:9).
+
+    User must own the session. Uses the same data pipeline as PDF export
+    but renders a slide-per-page layout.
+    """
+    import traceback
+
+    request = request or ExportPdfRequest()
+
+    try:
+        from backend.core.slides_generator import generate_slides
+        from backend.core.branding_config import load_branding_config
+        from src_george_researcher.data_fetchers.stock_data import fetch_stock_info
+
+        branding = load_branding_config(request.firm_id, request.analyst_id)
+        logger.info(f"Slides using branding: {branding.firm.name} / {branding.analyst.full_name}")
+
+        stock_info, stock_error = fetch_stock_info(session.ticker)
+        if stock_error:
+            logger.warning(f"Could not fetch stock info: {stock_error}")
+            stock_info = None
+
+        financial_statements = session.metadata.get("financial_statements", None)
+
+        slides_bytes = generate_slides(
+            session.report_state,
+            session.ticker,
+            stock_info=stock_info,
+            branding=branding,
+            analyst_sources=session.analyst_sources,
+            financial_statements=financial_statements,
+        )
+
+        logger.info(f"Slides generated: {len(slides_bytes)} bytes")
+
+        filename = f"{session.ticker}_slides_{datetime.now().strftime('%Y%m%d')}.pdf"
+
+        return Response(
+            content=slides_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    except (ImportError, OSError) as e:
+        logger.warning(f"Slides dependency missing, falling back to markdown: {e}")
+        markdown = session.report_state.to_markdown()
+        filename = f"{session.ticker}_slides_{datetime.now().strftime('%Y%m%d')}.md"
+        return Response(
+            content=markdown,
+            media_type="text/markdown",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "X-Slides-Fallback": "true",
+                "X-Slides-Error": str(e)[:100],
+            },
+        )
+    except Exception as e:
+        logger.error(f"Slides generation failed: {e}")
+        logger.error(traceback.format_exc())
+        error_msg = str(e)
+        if "libgobject" in error_msg or "cannot load library" in error_msg or "weasyprint" in error_msg.lower():
+            logger.warning("Slides library error, falling back to markdown")
+            markdown = session.report_state.to_markdown()
+            filename = f"{session.ticker}_slides_{datetime.now().strftime('%Y%m%d')}.md"
+            return Response(
+                content=markdown,
+                media_type="text/markdown",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}",
+                    "X-Slides-Fallback": "true",
+                    "X-Slides-Error": error_msg[:100],
+                },
+            )
+        raise HTTPException(status_code=500, detail=f"Slides generation failed: {error_msg}")
+
+
 @router.get("/{session_id}/sections")
 async def get_sections(
     session: AnalysisSession = Depends(get_user_session_with_report),
@@ -238,6 +321,9 @@ async def get_valuation_data(
         "conviction_data": session.metadata.get("conviction_data"),
         "scenario_data": session.metadata.get("scenario_data"),
         "football_field_data": session.metadata.get("football_field_data"),
+        "earnings_model_data": session.metadata.get("earnings_model_data"),
+        "precedent_data": session.metadata.get("precedent_data"),
+        "growth_margin_sensitivity_data": session.metadata.get("growth_margin_sensitivity_data"),
     }
 
 

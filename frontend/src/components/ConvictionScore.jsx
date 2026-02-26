@@ -10,18 +10,19 @@ function ConvictionScore({ convictionData }) {
 
   const getRecommendationColor = (rec) => {
     switch (rec) {
-      case 'BUY': return { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' }
-      case 'SELL': return { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' }
-      default: return { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' }
+      case 'BUY': return { bg: 'bg-accent-success-light', text: 'text-accent-success-dark', border: 'border-accent-success' }
+      case 'SELL': return { bg: 'bg-accent-danger-light', text: 'text-accent-danger-dark', border: 'border-accent-danger' }
+      case 'HOLD': return { bg: 'bg-accent-warning-light', text: 'text-accent-warning-dark', border: 'border-accent-warning' }
+      default: return { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' }
     }
   }
 
   const getScoreColor = (score) => {
-    if (score >= 70) return 'bg-green-500'
-    if (score >= 55) return 'bg-green-400'
-    if (score >= 40) return 'bg-amber-400'
-    if (score >= 25) return 'bg-red-400'
-    return 'bg-red-500'
+    if (score >= 70) return 'bg-accent-success'
+    if (score >= 55) return 'bg-accent-success-muted'
+    if (score >= 40) return 'bg-accent-warning-muted'
+    if (score >= 25) return 'bg-accent-danger-muted'
+    return 'bg-accent-danger'
   }
 
   const recColor = getRecommendationColor(recommendation)

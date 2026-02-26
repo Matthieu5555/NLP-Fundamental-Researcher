@@ -54,7 +54,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          <div className="bg-accent-danger-light border border-accent-danger text-accent-danger-dark px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
@@ -69,7 +69,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             autoComplete="name"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-colors"
             placeholder="Your name"
           />
         </div>
@@ -85,7 +85,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-colors"
             placeholder="you@example.com"
           />
         </div>
@@ -102,7 +102,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             required
             autoComplete="new-password"
             minLength={8}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-colors"
             placeholder="At least 8 characters"
           />
         </div>
@@ -118,7 +118,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             autoComplete="new-password"
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-colors"
+            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-colors"
             placeholder="Confirm your password"
           />
         </div>
@@ -126,8 +126,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: loading ? '#B06A1A' : '#C87A23' }}
+          className={`w-full py-2.5 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${loading ? 'bg-brand-dark' : 'bg-brand'}`}
         >
           {loading ? 'Creating account...' : 'Create Account'}
         </button>
@@ -137,8 +136,7 @@ function RegisterForm({ onSuccess, onSwitchToLogin }) {
         Already have an account?{' '}
         <button
           onClick={onSwitchToLogin}
-          className="font-medium hover:underline"
-          style={{ color: '#C87A23' }}
+          className="font-medium hover:underline text-brand"
         >
           Sign in
         </button>

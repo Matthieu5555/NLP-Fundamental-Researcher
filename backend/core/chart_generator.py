@@ -2,7 +2,8 @@
 Chart Generator for PDF Reports using Matplotlib.
 
 Generates static price charts styled with firm's branding colors
-for embedding in PDF reports.
+for embedding in PDF reports. All colors are sourced from the unified
+color palette (shared/colors.json) via core.colors.
 """
 
 import io
@@ -16,19 +17,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.ticker import FuncFormatter
 
+from .colors import PALETTE, hex_to_rgb_normalized
+
 logger = logging.getLogger(__name__)
 
-
-def hex_to_rgb_normalized(hex_color: str) -> Tuple[float, float, float]:
-    """Convert hex color to normalized RGB tuple (0-1 range for matplotlib)."""
-    hex_color = hex_color.lstrip('#')
-    if len(hex_color) != 6:
-        return (0.78, 0.48, 0.14)  # Default orange
-    try:
-        r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-        return (r / 255, g / 255, b / 255)
-    except ValueError:
-        return (0.78, 0.48, 0.14)
+# Chart color shortcuts from the unified palette
+_C = PALETTE.chart
 
 
 def format_price(x: float, pos: int) -> str:
@@ -43,7 +37,7 @@ def format_price(x: float, pos: int) -> str:
 
 def generate_price_chart(
     ticker: str,
-    primary_color: str = '#C87A23',
+    primary_color: str = PALETTE.brand.primary,
     period: str = '15y',
     figsize: Tuple[int, int] = (10, 4)
 ) -> Optional[bytes]:
@@ -87,7 +81,7 @@ def generate_price_chart(
 
     # Style the axes
     ax.set_xlabel('')
-    ax.set_ylabel('Price', fontsize=10, color='#666666')
+    ax.set_ylabel('Price', fontsize=10, color=_C.axis_label)
 
     # Format y-axis as currency
     ax.yaxis.set_major_formatter(FuncFormatter(format_price))
@@ -97,17 +91,17 @@ def generate_price_chart(
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
 
     # Grid styling
-    ax.grid(True, alpha=0.3, linestyle='-', color='#E5E5E5')
+    ax.grid(True, alpha=0.3, linestyle='-', color=_C.grid_line)
     ax.set_axisbelow(True)
 
     # Remove top and right spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#CCCCCC')
-    ax.spines['bottom'].set_color('#CCCCCC')
+    ax.spines['left'].set_color(_C.spine)
+    ax.spines['bottom'].set_color(_C.spine)
 
     # Tick styling
-    ax.tick_params(axis='both', colors='#666666', labelsize=9)
+    ax.tick_params(axis='both', colors=_C.axis_label, labelsize=9)
 
     # Title
     years = '15' if period == '15y' else period.replace('y', '')
@@ -115,7 +109,7 @@ def generate_price_chart(
         f'{ticker} - {years}-Year Price History',
         fontsize=12,
         fontweight='bold',
-        color='#333333',
+        color=_C.title,
         pad=10
     )
 
@@ -148,7 +142,7 @@ def generate_price_chart(
 
 def generate_mini_chart(
     ticker: str,
-    primary_color: str = '#C87A23',
+    primary_color: str = PALETTE.brand.primary,
     period: str = '1y',
     figsize: Tuple[int, int] = (4, 2)
 ) -> Optional[bytes]:
@@ -196,7 +190,7 @@ def generate_mini_chart(
 
 def generate_sidebar_chart(
     ticker: str,
-    primary_color: str = '#2563EB',
+    primary_color: str = PALETTE.semantic.info,
     period: str = '10y',
     figsize: Tuple[float, float] = (3.5, 1.8)
 ) -> Optional[bytes]:
@@ -256,7 +250,7 @@ def generate_sidebar_chart(
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
 
     # Light grid
-    ax.grid(True, alpha=0.2, linestyle='-', color='#E5E5E5')
+    ax.grid(True, alpha=0.2, linestyle='-', color=_C.grid_line)
     ax.set_axisbelow(True)
 
     # Remove all spines for cleaner look
@@ -264,7 +258,7 @@ def generate_sidebar_chart(
         spine.set_visible(False)
 
     # Smaller tick labels
-    ax.tick_params(axis='both', colors='#888888', labelsize=7, length=0)
+    ax.tick_params(axis='both', colors=_C.dimmed_text, labelsize=7, length=0)
 
     # Very tight layout
     plt.tight_layout(pad=0.2)
@@ -280,7 +274,7 @@ def generate_sidebar_chart(
 
 def generate_technical_chart(
     ticker: str,
-    primary_color: str = '#2563EB',
+    primary_color: str = PALETTE.semantic.info,
     period: str = '1y',
     figsize: Tuple[float, float] = (10, 8)
 ) -> Optional[bytes]:
@@ -348,33 +342,33 @@ def generate_technical_chart(
     ax1.plot(df.index, close, color=line_color, linewidth=1.5, label='Close')
 
     # SMA 50
-    ax1.plot(df.index, sma_50, color='#F59E0B', linewidth=1,
+    ax1.plot(df.index, sma_50, color=_C.sma200, linewidth=1,
              linestyle='--', label='SMA 50', alpha=0.8)
 
-    ax1.set_ylabel('Price', fontsize=9, color='#666666')
+    ax1.set_ylabel('Price', fontsize=9, color=_C.axis_label)
     ax1.yaxis.set_major_formatter(FuncFormatter(format_price))
     ax1.legend(loc='upper left', fontsize=7, framealpha=0.9)
-    ax1.grid(True, alpha=0.2, color='#E5E5E5')
+    ax1.grid(True, alpha=0.2, color=_C.grid_line)
     ax1.set_xticklabels([])
 
     # Title
     ax1.set_title(f'{ticker} - Technical Analysis', fontsize=12,
-                  fontweight='bold', color='#333333', pad=10)
+                  fontweight='bold', color=_C.title, pad=10)
 
     # Panel 2: RSI
     ax2 = fig.add_subplot(gs[1], sharex=ax1)
     ax2.set_facecolor('white')
     ax2.plot(df.index, rsi, color=line_color, linewidth=1)
-    ax2.axhline(y=70, color='#EF4444', linestyle='--', linewidth=0.8, alpha=0.7)
-    ax2.axhline(y=30, color='#22C55E', linestyle='--', linewidth=0.8, alpha=0.7)
-    ax2.axhline(y=50, color='#9CA3AF', linestyle='--', linewidth=0.5, alpha=0.5)
+    ax2.axhline(y=70, color=_C.rsi_overbought, linestyle='--', linewidth=0.8, alpha=0.7)
+    ax2.axhline(y=30, color=_C.rsi_oversold, linestyle='--', linewidth=0.8, alpha=0.7)
+    ax2.axhline(y=50, color=_C.rsi_center, linestyle='--', linewidth=0.5, alpha=0.5)
     ax2.fill_between(df.index, rsi, 50, where=(rsi >= 50),
                      alpha=0.2, color=line_color)
     ax2.fill_between(df.index, rsi, 50, where=(rsi < 50),
-                     alpha=0.2, color='#EF4444')
-    ax2.set_ylabel('RSI', fontsize=9, color='#666666')
+                     alpha=0.2, color=_C.rsi_overbought)
+    ax2.set_ylabel('RSI', fontsize=9, color=_C.axis_label)
     ax2.set_ylim(0, 100)
-    ax2.grid(True, alpha=0.2, color='#E5E5E5')
+    ax2.grid(True, alpha=0.2, color=_C.grid_line)
     ax2.set_xticklabels([])
 
     # Panel 3: MACD
@@ -382,17 +376,17 @@ def generate_technical_chart(
     ax3.set_facecolor('white')
     ax3.plot(df.index, macd_data['macd'], color=line_color,
              linewidth=1, label='MACD')
-    ax3.plot(df.index, macd_data['signal'], color='#F59E0B',
+    ax3.plot(df.index, macd_data['signal'], color=_C.macd_signal,
              linewidth=1, label='Signal')
 
     # Histogram
-    colors = ['#22C55E' if v >= 0 else '#EF4444' for v in macd_data['histogram']]
+    colors = [_C.macd_positive if v >= 0 else _C.macd_negative for v in macd_data['histogram']]
     ax3.bar(df.index, macd_data['histogram'], color=colors, alpha=0.5, width=0.8)
 
-    ax3.axhline(y=0, color='#9CA3AF', linestyle='-', linewidth=0.5)
-    ax3.set_ylabel('MACD', fontsize=9, color='#666666')
+    ax3.axhline(y=0, color=_C.rsi_center, linestyle='-', linewidth=0.5)
+    ax3.set_ylabel('MACD', fontsize=9, color=_C.axis_label)
     ax3.legend(loc='upper left', fontsize=7, framealpha=0.9)
-    ax3.grid(True, alpha=0.2, color='#E5E5E5')
+    ax3.grid(True, alpha=0.2, color=_C.grid_line)
     ax3.set_xticklabels([])
 
     # Panel 4: Volume
@@ -401,16 +395,16 @@ def generate_technical_chart(
 
     # Color bars based on price direction
     price_change = close.diff()
-    colors = ['#22C55E' if c >= 0 else '#EF4444' for c in price_change]
+    colors = [_C.volume_positive if c >= 0 else _C.volume_negative for c in price_change]
     ax4.bar(df.index, volume, color=colors, alpha=0.6, width=0.8)
 
     # Volume moving average
     vol_ma = volume.rolling(window=20).mean()
     ax4.plot(df.index, vol_ma, color=line_color, linewidth=1, alpha=0.7)
 
-    ax4.set_ylabel('Volume', fontsize=9, color='#666666')
+    ax4.set_ylabel('Volume', fontsize=9, color=_C.axis_label)
     ax4.yaxis.set_major_formatter(FuncFormatter(lambda x, p: f'{x/1e6:.0f}M'))
-    ax4.grid(True, alpha=0.2, color='#E5E5E5')
+    ax4.grid(True, alpha=0.2, color=_C.grid_line)
 
     # Format x-axis on bottom panel
     ax4.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
@@ -419,8 +413,8 @@ def generate_technical_chart(
     # Style all axes
     for ax in [ax1, ax2, ax3, ax4]:
         for spine in ax.spines.values():
-            spine.set_color('#DDDDDD')
-        ax.tick_params(axis='both', colors='#666666', labelsize=8)
+            spine.set_color(_C.spine_technical)
+        ax.tick_params(axis='both', colors=_C.axis_label, labelsize=8)
 
     plt.tight_layout()
 

@@ -41,6 +41,7 @@ from src_george_researcher.data_fetchers.stock_data import (
     calculate_technical_indicators,
 )
 from src_george_researcher.analysis.shared.cost_tracking import CostBreakdown
+from src_george_researcher.analysis.shared.source_link import SourceLink
 from src_george_researcher.analysis.shared.growth_metrics import (
     compute_growth_metrics,
     EnrichedFinancials,
@@ -64,6 +65,7 @@ from src_george_researcher.valuation.sensitivity import SensitivityResult, Growt
 from src_george_researcher.valuation.scenarios import ScenarioResult
 from src_george_researcher.valuation.precedent_transactions import PrecedentTransactionResult
 from src_george_researcher.valuation.football_field import FootballFieldResult
+from src_george_researcher.valuation.earnings_model import EarningsModelRow
 from src_george_researcher.analysis.strategic_assessment import (
     StrategicAssessment,
     run_strategic_assessment,
@@ -146,7 +148,7 @@ class USFetchedData:
     web_research: Optional[Any] = None
     sentiment_report: str = ""
     errors: List[str] = field(default_factory=list)
-    sources: List[dict] = field(default_factory=list)
+    sources: List[SourceLink] = field(default_factory=list)
     cost: CostBreakdown = field(default_factory=CostBreakdown)
 
 
@@ -170,6 +172,7 @@ class USAnalysisResults:
     comp_analysis: Optional[AnalysisResult] = None
     comp_result: Optional[CompTableResult] = None
     earnings_model: Optional[AnalysisResult] = None
+    earnings_rows: Optional[List[EarningsModelRow]] = None
     sensitivity_analysis: Optional[AnalysisResult] = None
     sensitivity_result: Optional[SensitivityResult] = None
     growth_margin_sensitivity: Optional[GrowthMarginSensitivityResult] = None
@@ -207,7 +210,7 @@ class USFullAnalysis:
     cost_breakdown: CostBreakdown
     success: bool
     errors: List[str]
-    sources_collected: List[dict]
+    sources_collected: List[SourceLink]
 
     # Optional fields (with defaults)
     strategic_assessment_analysis: Optional[AnalysisResult] = None
@@ -222,6 +225,7 @@ class USFullAnalysis:
     comp_analysis: Optional[AnalysisResult] = None
     comp_result: Optional[CompTableResult] = None
     earnings_model: Optional[AnalysisResult] = None
+    earnings_rows: Optional[List[EarningsModelRow]] = None
     sensitivity_analysis: Optional[AnalysisResult] = None
     sensitivity_result: Optional[SensitivityResult] = None
     growth_margin_sensitivity: Optional[GrowthMarginSensitivityResult] = None
@@ -270,12 +274,12 @@ def _fetch_all_data_us(
     else:
         fetched.company_facts = company_facts
         fetched.cost.add_fds_cost("company_facts")
-        fetched.sources.append({
-            "title": f"FinancialDatasets.ai - {company_facts.name}",
-            "url": f"https://financialdatasets.ai/company/{symbol}",
-            "source_type": "api",
-            "date": datetime.now().strftime("%Y-%m-%d"),
-        })
+        fetched.sources.append(SourceLink(
+            title=f"FinancialDatasets.ai - {company_facts.name}",
+            url=f"https://financialdatasets.ai/company/{symbol}",
+            source_type="api",
+            date=datetime.now().strftime("%Y-%m-%d"),
+        ))
 
     company_name = company_facts.name if company_facts else symbol
 
@@ -350,12 +354,12 @@ def _fetch_all_data_us(
                 title = article.title[:100]
                 url = article.url
                 date = article.published_at
-            fetched.sources.append({
-                "title": title,
-                "url": url,
-                "source_type": "news",
-                "date": date,
-            })
+            fetched.sources.append(SourceLink(
+                title=title,
+                url=url,
+                source_type="news",
+                date=date,
+            ))
 
     # Step 7: Gemini Search - Web Research (Round 1)
     report_progress("Searching web for recent developments...", USStep.WEB_SEARCH_1)
@@ -376,12 +380,12 @@ def _fetch_all_data_us(
 
             if hasattr(web_search, 'grounding_chunks') and web_search.grounding_chunks:
                 for chunk in web_search.grounding_chunks:
-                    fetched.sources.append({
-                        "title": chunk.get('title', 'Web Search Result'),
-                        "url": chunk.get('uri', chunk.get('url', '')),
-                        "source_type": "search",
-                        "date": "recent",
-                    })
+                    fetched.sources.append(SourceLink(
+                        title=chunk.get('title', 'Web Search Result'),
+                        url=chunk.get('uri', chunk.get('url', '')),
+                        source_type="search",
+                        date="recent",
+                    ))
 
     # Step 8: Follow-up Research (Round 2)
     if fetched.sentiment_report and config.google_api_key:
@@ -935,10 +939,11 @@ def run_us_analysis(
 
     # Step 12: Earnings Model (no LLM)
     earnings_model_result = None
+    earnings_rows_obj = None
     report_progress("Building earnings model...", USStep.EARNINGS_MODEL)
     try:
         from src_george_researcher.valuation.earnings_model import run_earnings_model
-        earnings_model_result = run_earnings_model(
+        earnings_rows_obj, earnings_model_result = run_earnings_model(
             enriched_financials=fetched.enriched_financials,
             analyst_estimates=fetched.analyst_estimates,
         )
@@ -1208,6 +1213,7 @@ def run_us_analysis(
         comp_analysis=comp_analysis_result,
         comp_result=comp_result_obj,
         earnings_model=earnings_model_result,
+        earnings_rows=earnings_rows_obj,
         sensitivity_analysis=sensitivity_analysis_result,
         sensitivity_result=sensitivity_result_obj,
         growth_margin_sensitivity=growth_margin_sensitivity_obj,
