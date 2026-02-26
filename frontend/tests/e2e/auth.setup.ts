@@ -1,6 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
 
-const TEST_EMAIL = 'e2e-test@constant.dev';
+const TEST_EMAIL = 'e2e-test@george-research.dev';
 const TEST_PASSWORD = 'TestPassword123!';
 
 setup('authenticate', async ({ page }) => {

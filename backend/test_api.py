@@ -133,7 +133,7 @@ def test_list_sessions():
 def run_all_tests():
     """Run all API tests."""
     print("=" * 60)
-    print("Constant - Your Intern - API Test Suite")
+    print("George Research - API Test Suite")
     print("=" * 60)
 
     try:

@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const API_URL = 'http://localhost:5001';
-const TEST_EMAIL = 'e2e-test@constant.dev';
+const TEST_EMAIL = 'e2e-test@george-research.dev';
 const TEST_PASSWORD = 'TestPassword123!';
 const TEST_DISPLAY_NAME = 'E2E Test User';
 

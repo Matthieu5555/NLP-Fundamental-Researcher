@@ -1,4 +1,4 @@
-# Constant - Your LLM Intern (Financial Analyst)
+# George - AI Equity Research (Financial Analyst)
 
 A full-stack financial analysis platform powered by multi-agent LLM architecture. Analyzes stocks using fundamentals, technicals, bull/bear debate, moat analysis, and SWOT then lets you chat with the analysis.
 

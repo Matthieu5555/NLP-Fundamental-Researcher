@@ -1,7 +1,7 @@
 [project]
-name = "constant-intern"
+name = "george-research"
 version = "0.1.0"
-description = "Constant - Your Intern: AI-powered strategic company analysis with multi-agent debate, moat analysis, and SWOT"
+description = "George Research: AI-powered strategic company analysis with multi-agent debate, moat analysis, and SWOT"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

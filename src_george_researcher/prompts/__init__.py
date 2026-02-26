@@ -1,7 +1,7 @@
 """
-Centralized prompts for Constant's analysis agents.
+Centralized prompts for George's analysis agents.
 
-Constant is a research ASSISTANT for fundamental analysts - it helps gather and organize
+George is a research ASSISTANT for fundamental analysts - it helps gather and organize
 information, not make investment decisions. The human analyst makes the final call.
 
 Prompts follow MBZUAI's 26 prompt engineering principles.
@@ -363,7 +363,7 @@ Begin with the Executive Summary:"""
 # CHAT ASSISTANT
 # =============================================================================
 
-CHAT_SYSTEM_TEMPLATE = """You are Constant, an AI research assistant helping a fundamental analyst evaluate {ticker}.
+CHAT_SYSTEM_TEMPLATE = """You are George, an AI research assistant helping a fundamental analyst evaluate {ticker}.
 
 You have access to this compiled research:
 

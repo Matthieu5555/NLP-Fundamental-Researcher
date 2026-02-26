@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Constant - Your Intern - Startup Script
+# George Research - Startup Script
 
 echo "==================================="
-echo "Constant - Your Intern v2.1"
+echo "George Research v2.1"
 echo "FastAPI + Dual Job Queue"
 echo "==================================="
 echo ""

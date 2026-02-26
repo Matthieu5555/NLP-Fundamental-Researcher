@@ -17,7 +17,7 @@ async function globalTeardown(config: FullConfig) {
   const csvPath = path.resolve(__dirname, '../../../data/authorized_users.csv');
   if (fs.existsSync(csvPath)) {
     const lines = fs.readFileSync(csvPath, 'utf-8').split('\n');
-    const filtered = lines.filter(line => line.trim() !== 'e2e-test@constant.dev');
+    const filtered = lines.filter(line => line.trim() !== 'e2e-test@george-research.dev');
     fs.writeFileSync(csvPath, filtered.join('\n'));
   }
 

@@ -1,5 +1,5 @@
 """
-FastAPI application entry point for Constant - Your Intern.
+FastAPI application entry point for George Research.
 
 This module sets up the FastAPI server with CORS support, SSE streaming,
 background job queue workers, and routes for stock analysis and chat.
@@ -112,7 +112,7 @@ async def lifespan(app: FastAPI):
     from backend.core.usage_db import usage_db
     from backend.core.settings_db import settings_db
 
-    logger.info("Starting Constant - Your Intern API")
+    logger.info("Starting George Research API")
 
     # Validate configuration
     config_status = validate_config()
@@ -173,7 +173,7 @@ def create_app() -> FastAPI:
         FastAPI: Configured FastAPI application instance
     """
     app = FastAPI(
-        title="Constant - Your Intern API",
+        title="George Research API",
         description="AI-powered strategic company analysis with multi-agent debate",
         version="2.1.0",
         lifespan=lifespan,
@@ -207,7 +207,7 @@ def create_app() -> FastAPI:
     @app.get("/")
     async def root():
         """Root endpoint - basic status."""
-        return {"status": "ok", "message": "Constant - Your Intern API"}
+        return {"status": "ok", "message": "George Research API"}
 
     @app.get("/health")
     async def health():

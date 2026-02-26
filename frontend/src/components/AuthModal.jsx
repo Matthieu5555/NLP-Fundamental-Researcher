@@ -74,7 +74,7 @@ function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
           <div
             className="inline-block text-3xl font-bold text-brand"
           >
-            Constant
+            George
           </div>
           <p className="text-slate-500 text-sm mt-1">Your LLM Intern</p>
         </div>

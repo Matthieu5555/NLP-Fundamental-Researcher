@@ -74,7 +74,7 @@ class ExtractedBelief:
 
 
 # Prompt for LLM to extract beliefs from conversation
-BELIEF_EXTRACTION_PROMPT = """You are analyzing a conversation between a financial analyst (USER) and an AI assistant (CONSTANT) about {ticker}.
+BELIEF_EXTRACTION_PROMPT = """You are analyzing a conversation between a financial analyst (USER) and an AI assistant (GEORGE) about {ticker}.
 
 Your task: Detect ONLY when the analyst EXPLICITLY states their own opinion, conclusion, or judgment.
 ALSO detect whether they provided REASONING (rationale) for their belief.
@@ -108,7 +108,7 @@ CRITICAL: If the analyst only asks questions, there is NO belief to extract.
 
 Conversation:
 Analyst: {user_message}
-Constant: {ai_response}
+George: {ai_response}
 
 Respond in JSON:
 {{
@@ -119,7 +119,7 @@ Respond in JSON:
             "type": "confirmed_fact|new_insight|risk_identified|opportunity|valuation_view|competitive",
             "section": "fundamentals|technicals|bull_case|bear_case|moat_analysis|strategy|recommendation",
             "confidence": 0.0-1.0,
-            "quote": "Exact words from the analyst (NOT from Constant's response)",
+            "quote": "Exact words from the analyst (NOT from George's response)",
             "has_rationale": true/false,
             "rationale": "The reasoning provided (or null if none)"
         }}
@@ -128,7 +128,7 @@ Respond in JSON:
 
 Rules:
 - Be VERY conservative - when in doubt, return no beliefs
-- The quote MUST come from the analyst's message, never from Constant's response
+- The quote MUST come from the analyst's message, never from George's response
 - Questions = NO belief, even if the AI's answer contains useful information
 - Maximum 1 belief per exchange (only the clearest, most explicit one)
 - has_rationale should be true ONLY if the analyst explicitly explained their reasoning"""

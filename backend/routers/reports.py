@@ -41,7 +41,7 @@ class UpdateSectionRequest(BaseModel):
 class ExportPdfRequest(BaseModel):
     """Request body for PDF export."""
 
-    firm_id: Optional[str] = "constance"
+    firm_id: Optional[str] = "george"
     analyst_id: Optional[str] = "default"
 
 

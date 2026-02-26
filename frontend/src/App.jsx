@@ -171,7 +171,7 @@ function AppContent() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold">
-              <span className="text-brand">Constant</span>
+              <span className="text-brand">George</span>
               <span className="text-slate-700"> - Your LLM Intern</span>
             </h1>
             {ticker && isAuthenticated && (
@@ -312,7 +312,7 @@ function AppContent() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-slate-800 mb-4">
-                Welcome to Constant
+                Welcome to George
               </h2>
               <p className="text-slate-600 mb-8">
                 Your AI-powered equity research assistant. Get comprehensive stock analysis with multi-agent debate, moat analysis, and strategy.

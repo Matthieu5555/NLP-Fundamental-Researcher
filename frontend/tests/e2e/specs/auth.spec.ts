@@ -8,7 +8,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Authentication', () => {
   test('shows welcome page for unauthenticated user', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('Welcome to Constant')).toBeVisible();
+    await expect(page.getByText('Welcome to George')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Get Started' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('button', { name: 'Sign In' })).toBeVisible();
   });
@@ -43,7 +43,7 @@ test.describe('Authentication', () => {
     await page.goto('/');
     await page.getByRole('banner').getByRole('button', { name: 'Sign In' }).click();
 
-    await page.getByLabel('Email').fill('e2e-test@constant.dev');
+    await page.getByLabel('Email').fill('e2e-test@george-research.dev');
     await page.getByLabel('Password').fill('TestPassword123!');
     await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
 
@@ -56,7 +56,7 @@ test.describe('Authentication', () => {
     await page.goto('/');
     await page.getByRole('banner').getByRole('button', { name: 'Sign In' }).click();
 
-    await page.getByLabel('Email').fill('e2e-test@constant.dev');
+    await page.getByLabel('Email').fill('e2e-test@george-research.dev');
     await page.getByLabel('Password').fill('wrongpassword');
     await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
 
@@ -83,7 +83,7 @@ test.describe('Authentication', () => {
     await page.getByRole('banner').getByRole('button', { name: 'Sign In' }).click();
     await page.getByRole('button', { name: 'Create one' }).click();
 
-    await page.locator('#registerEmail').fill('e2e-test@constant.dev');
+    await page.locator('#registerEmail').fill('e2e-test@george-research.dev');
     await page.locator('#registerPassword').fill('TestPassword123!');
     await page.getByLabel('Confirm Password').fill('DifferentPassword!');
     await page.getByRole('button', { name: 'Create Account' }).click();
@@ -95,7 +95,7 @@ test.describe('Authentication', () => {
     // First, login
     await page.goto('/');
     await page.getByRole('banner').getByRole('button', { name: 'Sign In' }).click();
-    await page.getByLabel('Email').fill('e2e-test@constant.dev');
+    await page.getByLabel('Email').fill('e2e-test@george-research.dev');
     await page.getByLabel('Password').fill('TestPassword123!');
     await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
     await expect(page.getByText('Analyze a Stock')).toBeVisible({ timeout: 10_000 });
@@ -104,7 +104,7 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: 'Sign Out' }).click();
 
     // Should return to welcome page
-    await expect(page.getByText('Welcome to Constant')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Welcome to George')).toBeVisible({ timeout: 5_000 });
   });
 
   test('closing auth modal with Escape key', async ({ page }) => {
@@ -116,7 +116,7 @@ test.describe('Authentication', () => {
 
     // Modal should close, welcome page still visible
     await expect(page.getByRole('heading', { name: 'Sign In' })).not.toBeVisible();
-    await expect(page.getByText('Welcome to Constant')).toBeVisible();
+    await expect(page.getByText('Welcome to George')).toBeVisible();
   });
 
   test('unauthenticated user clicking Get Started opens auth modal', async ({ page }) => {

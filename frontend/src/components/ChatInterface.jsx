@@ -209,7 +209,7 @@ function ChatInterface({ sessionId, ticker, onReportUpdated, onNewBeliefs, onCos
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="font-medium">
-                    {message.acknowledgment === 'noted' ? 'Constant took note of that' : 'I get your point'}
+                    {message.acknowledgment === 'noted' ? 'George took note of that' : 'I get your point'}
                   </span>
                 </div>
               </div>
@@ -270,7 +270,7 @@ function ChatInterface({ sessionId, ticker, onReportUpdated, onNewBeliefs, onCos
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span className="font-medium">
-                {acknowledgment === 'noted' ? 'Constant took note of that' : 'I get your point'}
+                {acknowledgment === 'noted' ? 'George took note of that' : 'I get your point'}
               </span>
             </div>
           </div>
@@ -336,7 +336,7 @@ function ChatInterface({ sessionId, ticker, onReportUpdated, onNewBeliefs, onCos
       {beliefNotice && (
         <div className="px-6 py-3 border-t" style={{ backgroundColor: 'var(--brand-surface)', borderColor: 'var(--brand-border)' }}>
           <p className="text-sm font-medium text-center" style={{ color: 'var(--brand-primary)' }}>
-            Constant took note of that
+            George took note of that
           </p>
         </div>
       )}

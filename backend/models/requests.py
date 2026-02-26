@@ -33,7 +33,7 @@ class UpdateSectionRequest(BaseModel):
 class ExportPdfRequest(BaseModel):
     """Request body for PDF export with branding options."""
 
-    firm_id: Optional[str] = Field(default="constance", description="Firm branding ID")
+    firm_id: Optional[str] = Field(default="george", description="Firm branding ID")
     analyst_id: Optional[str] = Field(default="default", description="Analyst attribution ID")
 
 

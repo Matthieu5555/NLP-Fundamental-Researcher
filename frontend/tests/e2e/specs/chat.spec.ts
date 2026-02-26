@@ -71,7 +71,7 @@ test.describe('Chat Interface', () => {
     await page.getByRole('button', { name: 'Send' }).click();
 
     // Should show belief notice
-    await expect(page.getByText('Constant took note of that')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('George took note of that')).toBeVisible({ timeout: 10_000 });
   });
 
   test('send button is disabled while streaming', async ({ page }) => {

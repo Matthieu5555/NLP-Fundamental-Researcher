@@ -1,6 +1,6 @@
-# Constant - Your Intern - Frontend
+# George Research - Frontend
 
-React + Vite frontend for the Constant - Your Intern platform.
+React + Vite frontend for the George Research platform.
 
 ## Development
 

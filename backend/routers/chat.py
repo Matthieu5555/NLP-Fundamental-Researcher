@@ -362,11 +362,11 @@ async def stream_chat(
 
             if rag_context.search_performed:
                 yield _sse_json(
-                    {"status": "Constant is looking up some new information..."}
+                    {"status": "George is looking up some new information..."}
                 )
 
             # Build system prompt
-            system_prompt = f"""You are a financial analyst assistant named Constant, analyzing {current_session.ticker}.
+            system_prompt = f"""You are a financial analyst assistant named George, analyzing {current_session.ticker}.
 
 Be concise, factual, and cite specific numbers when possible.
 
@@ -601,7 +601,7 @@ async def send_message(
     report_rag_context = _execute_report_rag(request.message, current_session)
 
     # Build system prompt
-    system_prompt = f"""You are a financial analyst assistant named Constant, analyzing {current_session.ticker}.
+    system_prompt = f"""You are a financial analyst assistant named George, analyzing {current_session.ticker}.
 
 Be concise, factual, and cite specific numbers when possible.
 

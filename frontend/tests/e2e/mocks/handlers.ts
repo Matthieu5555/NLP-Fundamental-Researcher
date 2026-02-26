@@ -84,7 +84,7 @@ export async function mockChatStream(page: Page, opts?: { withBeliefs?: boolean 
     ];
 
     const events: string[] = [
-      JSON.stringify({ status: 'Constant is thinking...' }),
+      JSON.stringify({ status: 'George is thinking...' }),
     ];
 
     // Text chunks (non-JSON data lines)
@@ -373,7 +373,7 @@ export async function mockAuthMe(page: Page) {
       contentType: 'application/json',
       body: JSON.stringify({
         id: 'test-user-id',
-        email: 'e2e-test@constant.dev',
+        email: 'e2e-test@george-research.dev',
         display_name: 'E2E Test User',
         created_at: '2025-01-01T00:00:00Z',
       }),

@@ -5,7 +5,7 @@ Supports white-labeling for multiple firms, each with multiple analysts.
 Configuration is loaded from JSON files, designed for future database integration.
 
 Architecture:
-    Firm (e.g., Constance Associes)
+    Firm (e.g., George Research LTD)
     ├── name, primary_color, tool_branding
     └── Analysts
         ├── Analyst 1 (first_name, last_name, email, sector)
@@ -33,7 +33,7 @@ DEFAULT_CONFIG_PATH = os.path.join(
 class FirmConfig:
     """Firm-level branding configuration."""
     firm_id: str
-    name: str                    # "Constance Associes"
+    name: str                    # "George Research LTD"
     primary_color: str           # "#C87A23" (hex color)
     tool_branding: str           # "Research Platform"
     logo_path: Optional[str] = None  # Path to logo PNG (future)
@@ -144,13 +144,13 @@ def load_branding_config(
 
 def get_default_config() -> ReportBrandingConfig:
     """
-    Get default branding configuration (Constance Associes).
+    Get default branding configuration (George Research LTD).
 
     Used as fallback when config file is not available.
     """
     firm = FirmConfig(
-        firm_id='constance',
-        name='Constance Associes',
+        firm_id='george',
+        name='George Research LTD',
         primary_color=PALETTE.brand.primary,
         tool_branding='Research Platform'
     )
@@ -159,9 +159,9 @@ def get_default_config() -> ReportBrandingConfig:
         analyst_id='default',
         first_name='Research',
         last_name='Team',
-        email='research@constance.com',
+        email='research@george-research.com',
         sector='Multi-Sector',
-        firm_id='constance'
+        firm_id='george'
     )
 
     return ReportBrandingConfig(firm=firm, analyst=analyst)

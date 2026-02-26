@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from backend.main import app
 
-TEST_EMAIL = "integration-test@constant.dev"
+TEST_EMAIL = "integration-test@george-research.dev"
 TEST_PASSWORD = "testpass123!"
 
 

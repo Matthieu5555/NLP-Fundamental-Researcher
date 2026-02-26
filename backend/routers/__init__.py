@@ -1,5 +1,5 @@
 """
-FastAPI routers for Constant - Your Intern API.
+FastAPI routers for George Research API.
 
 Each router handles a specific domain of functionality:
 - analysis: Stock analysis initiation and job queue management
