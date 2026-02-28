@@ -6,7 +6,7 @@
     <style>
         /* ===== SLIDE PAGE SETUP (16:9 landscape) ===== */
         @page {
-            size: 338mm 190mm;  /* 16:9 ratio */
+            size: 338mm 190mm;
             margin: 0;
         }
 
@@ -20,7 +20,7 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 14pt;
             line-height: 1.4;
-            color: #333333;
+            color: {{ c.dark_text }};
         }
 
         /* ===== SLIDE BASE ===== */
@@ -38,7 +38,6 @@
             page-break-after: auto;
         }
 
-        /* Brand stripe across top */
         .stripe {
             position: absolute;
             top: 0;
@@ -48,37 +47,33 @@
             background: {{ primary_color }};
         }
 
-        /* Slide content area (below stripe) */
         .slide-body {
             padding: 14mm 20mm 12mm 20mm;
         }
 
-        /* Slide title */
         .slide-title {
             font-size: 22pt;
             font-weight: 700;
             color: {{ primary_color }};
-            margin-bottom: 10mm;
-            border-bottom: 0.5pt solid #e0e0e0;
+            margin-bottom: 8mm;
+            border-bottom: 0.5pt solid {{ c.border_dotted }};
             padding-bottom: 4mm;
         }
 
-        /* Slide number */
         .slide-number {
             position: absolute;
             bottom: 5mm;
             right: 8mm;
             font-size: 8pt;
-            color: #aaa;
+            color: {{ c.secondary_text }};
         }
 
-        /* Firm watermark */
         .slide-firm {
             position: absolute;
             bottom: 5mm;
             left: 8mm;
             font-size: 7pt;
-            color: #ccc;
+            color: {{ c.secondary_text }};
         }
 
         /* ===== TYPOGRAPHY ===== */
@@ -86,38 +81,73 @@
             font-size: 18pt;
             font-weight: 700;
             color: {{ primary_color }};
-            margin: 6mm 0 4mm 0;
+            margin: 4mm 0 3mm 0;
         }
 
         h3 {
             font-size: 15pt;
             font-weight: 700;
-            color: #444;
+            color: {{ c.dark_text }};
             margin: 4mm 0 3mm 0;
         }
 
         p {
             margin-bottom: 3mm;
-            text-align: left;
             font-size: 12pt;
             line-height: 1.5;
         }
 
-        ul, ol {
-            margin-left: 8mm;
-            margin-bottom: 4mm;
+        strong { font-weight: 700; }
+        em { font-style: italic; }
+
+        /* Generic tables from markdown content */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11pt;
+            margin: 4mm 0;
         }
 
-        li {
-            margin-bottom: 2mm;
-            font-size: 12pt;
-            line-height: 1.45;
+        table th {
+            background: {{ c.section_bg }};
+            font-weight: 700;
+            text-align: left;
+            padding: 4px 8px;
+            border-bottom: 2px solid {{ c.border_light }};
+            font-size: 10pt;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: {{ c.dark_text }};
         }
+
+        table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid {{ c.border_dotted }};
+            vertical-align: top;
+        }
+
+        table tr:nth-child(even) td {
+            background: {{ c.table_alt_row }};
+        }
+
+        table td:not(:first-child) {
+            text-align: right;
+        }
+
+        /* Blockquotes from markdown */
+        blockquote {
+            border-left: 3px solid {{ c.border_light }};
+            padding: 4px 10px;
+            margin: 4mm 0;
+            color: {{ c.dark_text }};
+            font-style: italic;
+        }
+
+        ul, ol { margin-left: 6mm; margin-bottom: 3mm; }
+        li { margin-bottom: 2mm; font-size: 12pt; }
 
         /* ===== TITLE SLIDE ===== */
-        .title-slide {
-            padding: 0;
-        }
+        .title-slide { padding: 0; }
 
         .title-bg {
             background: {{ primary_color }};
@@ -126,22 +156,9 @@
             color: white;
         }
 
-        .title-company {
-            font-size: 36pt;
-            font-weight: 700;
-            margin-bottom: 3mm;
-        }
-
-        .title-sub {
-            font-size: 16pt;
-            opacity: 0.9;
-            margin-bottom: 2mm;
-        }
-
-        .title-type {
-            font-size: 13pt;
-            opacity: 0.75;
-        }
+        .title-company { font-size: 36pt; font-weight: 700; margin-bottom: 3mm; }
+        .title-sub { font-size: 16pt; opacity: 0.9; margin-bottom: 2mm; }
+        .title-type { font-size: 13pt; opacity: 0.75; }
 
         .title-rating {
             position: absolute;
@@ -157,7 +174,7 @@
             font-size: 8pt;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #888;
+            color: {{ c.secondary_text }};
             margin-bottom: 1mm;
         }
 
@@ -167,20 +184,9 @@
             color: {{ rating_color }};
         }
 
-        .title-bottom {
-            padding: 10mm 24mm;
-        }
-
-        .title-analyst {
-            font-size: 14pt;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .title-analyst-info {
-            font-size: 11pt;
-            color: #666;
-        }
+        .title-bottom { padding: 10mm 24mm; }
+        .title-analyst { font-size: 14pt; font-weight: 700; color: {{ c.dark_text }}; }
+        .title-analyst-info { font-size: 11pt; color: {{ c.label_text }}; }
 
         .title-firm {
             position: absolute;
@@ -189,16 +195,8 @@
             text-align: right;
         }
 
-        .title-firm-name {
-            font-size: 18pt;
-            font-weight: 700;
-            color: {{ primary_color }};
-        }
-
-        .title-firm-tool {
-            font-size: 9pt;
-            color: #aaa;
-        }
+        .title-firm-name { font-size: 18pt; font-weight: 700; color: {{ primary_color }}; }
+        .title-firm-tool { font-size: 9pt; color: {{ c.secondary_text }}; }
 
         /* ===== EXECUTIVE SUMMARY ===== */
         .headline {
@@ -239,115 +237,132 @@
             opacity: 0.9;
         }
 
-        .rating-badge-value {
-            font-size: 22pt;
-            font-weight: 700;
+        .rating-badge-value { font-size: 22pt; font-weight: 700; }
+
+        /* ===== BULLET CARD ===== */
+        .bullet-card {
+            padding: 2mm 0 2mm 6mm;
+            border-left: 2.5pt solid {{ primary_color }};
+            margin-bottom: 3mm;
+            font-size: 12pt;
+            line-height: 1.45;
         }
 
-        /* ===== BULL / BEAR ===== */
+        .bullet-card.green { border-left-color: {{ c.positive }}; }
+        .bullet-card.red { border-left-color: {{ c.negative }}; }
+
+        /* ===== METRIC CARD ===== */
+        .metric-cards {
+            display: flex;
+            gap: 6mm;
+            flex-wrap: wrap;
+        }
+
+        .metric-card {
+            flex: 1;
+            min-width: 55mm;
+            background: {{ c.section_bg }};
+            border: 0.5pt solid {{ c.border_dotted }};
+            border-radius: 2mm;
+            padding: 5mm 6mm;
+            text-align: center;
+        }
+
+        .metric-card-label {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: {{ c.secondary_text }};
+            margin-bottom: 2mm;
+        }
+
+        .metric-card-value {
+            font-size: 18pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        .metric-card-value.positive { color: {{ c.positive }}; }
+        .metric-card-value.negative { color: {{ c.negative }}; }
+
+        /* ===== TWO COLUMN ===== */
         .two-col {
             display: flex;
             gap: 10mm;
         }
 
-        .two-col > div {
-            flex: 1;
-        }
+        .two-col > div { flex: 1; }
 
         .case-box {
-            padding: 6mm 8mm;
-            border-radius: 2mm;
-        }
-
-        .case-box.bull {
-            background: linear-gradient(to right, #dcfce7, #fff);
-            border-left: 3pt solid #16a34a;
-        }
-
-        .case-box.bear {
-            background: linear-gradient(to right, #fee2e2, #fff);
-            border-left: 3pt solid #dc2626;
-        }
-
-        .case-box h3 {
-            margin-top: 0;
-        }
-
-        .case-box.bull h3 { color: #16a34a; }
-        .case-box.bear h3 { color: #dc2626; }
-
-        .case-box li {
-            font-size: 11pt;
-        }
-
-        /* ===== SWOT GRID ===== */
-        .swot-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6mm;
-        }
-
-        .swot-box {
             padding: 5mm 7mm;
             border-radius: 2mm;
         }
 
-        .swot-box.strengths { background: #dcfce7; border-left: 3pt solid #16a34a; }
-        .swot-box.weaknesses { background: #fee2e2; border-left: 3pt solid #dc2626; }
-        .swot-box.opportunities { background: #dbeafe; border-left: 3pt solid #2563eb; }
-        .swot-box.threats { background: #fef3c7; border-left: 3pt solid #d97706; }
-
-        .swot-box h4 {
-            font-size: 12pt;
-            margin-bottom: 2mm;
+        .case-box.bull {
+            background: linear-gradient(to right, {{ c.bull_case_bg }}, #fff);
+            border-left: 3pt solid {{ c.bull_case_border }};
         }
 
-        .swot-box.strengths h4 { color: #16a34a; }
-        .swot-box.weaknesses h4 { color: #dc2626; }
-        .swot-box.opportunities h4 { color: #2563eb; }
-        .swot-box.threats h4 { color: #d97706; }
-
-        .swot-box ul {
-            font-size: 10pt;
-            margin: 0 0 0 5mm;
+        .case-box.bear {
+            background: linear-gradient(to right, {{ c.bear_case_bg }}, #fff);
+            border-left: 3pt solid {{ c.bear_case_border }};
         }
 
-        .swot-box li {
-            font-size: 10pt;
-            margin-bottom: 1mm;
+        .case-box h3 { margin-top: 0; }
+        .case-box.bull h3 { color: {{ c.bull_case_text }}; }
+        .case-box.bear h3 { color: {{ c.bear_case_text }}; }
+
+        /* ===== STRATEGY GRID ===== */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5mm;
         }
+
+        .strategy-box {
+            padding: 4mm 6mm;
+            border-radius: 2mm;
+        }
+
+        .strategy-box.advantages { background: {{ c.swot_strengths_bg }}; border-left: 3pt solid {{ c.swot_strengths_border }}; }
+        .strategy-box.vulnerabilities { background: {{ c.swot_weaknesses_bg }}; border-left: 3pt solid {{ c.swot_weaknesses_border }}; }
+        .strategy-box.tailwinds { background: {{ c.swot_opportunities_bg }}; border-left: 3pt solid {{ c.swot_opportunities_border }}; }
+        .strategy-box.headwinds { background: {{ c.swot_threats_bg }}; border-left: 3pt solid {{ c.swot_threats_border }}; }
+
+        .strategy-box h4 { font-size: 11pt; margin-bottom: 2mm; }
+        .strategy-box.advantages h4 { color: {{ c.swot_strengths_border }}; }
+        .strategy-box.vulnerabilities h4 { color: {{ c.swot_weaknesses_border }}; }
+        .strategy-box.tailwinds h4 { color: {{ c.swot_opportunities_border }}; }
+        .strategy-box.headwinds h4 { color: {{ c.swot_threats_border }}; }
+        .strategy-box ul { font-size: 10pt; margin: 0 0 0 5mm; }
+        .strategy-box li { font-size: 10pt; margin-bottom: 1mm; }
 
         /* ===== DATA TABLE ===== */
         .data-table {
             border-collapse: collapse;
             font-size: 11pt;
-            margin-bottom: 5mm;
+            margin-bottom: 4mm;
         }
 
         .data-table th {
             background: {{ primary_color }};
             color: white;
-            padding: 3mm 5mm;
+            padding: 2.5mm 5mm;
             text-align: left;
             font-size: 10pt;
             font-weight: 600;
         }
 
         .data-table th:last-child,
-        .data-table td:last-child {
-            text-align: right;
-        }
+        .data-table td:last-child { text-align: right; }
 
         .data-table td {
-            padding: 2.5mm 5mm;
-            border-bottom: 0.5pt solid #e0e0e0;
+            padding: 2mm 5mm;
+            border-bottom: 0.5pt solid {{ c.border_dotted }};
         }
 
-        .data-table tr:nth-child(even) td {
-            background: #fafafa;
-        }
+        .data-table tr:nth-child(even) td { background: {{ c.table_alt_row }}; }
 
-        /* Returns row styling */
         .returns-table {
             border-collapse: collapse;
             font-size: 11pt;
@@ -369,13 +384,156 @@
             font-size: 12pt;
         }
 
-        .positive { color: #16a34a; }
-        .negative { color: #dc2626; }
+        .positive { color: {{ c.positive }}; }
+        .negative { color: {{ c.negative }}; }
+
+        /* ===== FOOTBALL FIELD BAR CHART ===== */
+        .bar-chart {
+            margin-top: 4mm;
+        }
+
+        .bar-chart-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3mm;
+            height: 10mm;
+        }
+
+        .bar-chart-label {
+            width: 50mm;
+            font-size: 10pt;
+            font-weight: 600;
+            text-align: right;
+            padding-right: 4mm;
+            flex-shrink: 0;
+        }
+
+        .bar-chart-track {
+            flex: 1;
+            height: 8mm;
+            background: {{ c.section_bg }};
+            border-radius: 1mm;
+            position: relative;
+        }
+
+        .bar-chart-bar {
+            position: absolute;
+            top: 1mm;
+            height: 6mm;
+            background: linear-gradient(to right, {{ primary_color }}cc, {{ primary_color }});
+            border-radius: 1mm;
+        }
+
+        .bar-chart-mid {
+            position: absolute;
+            top: 0;
+            width: 2pt;
+            height: 8mm;
+            background: {{ c.dark_text }};
+        }
+
+        .bar-chart-price-marker {
+            position: absolute;
+            top: -2mm;
+            width: 0;
+            height: 12mm;
+            border-left: 2pt dashed {{ c.negative }};
+        }
+
+        .bar-chart-values {
+            width: 60mm;
+            font-size: 9pt;
+            color: {{ c.label_text }};
+            padding-left: 3mm;
+            flex-shrink: 0;
+        }
+
+        /* ===== SCORE BAR (Conviction) ===== */
+        .score-bar-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3mm;
+        }
+
+        .score-bar-label {
+            width: 55mm;
+            font-size: 11pt;
+            font-weight: 600;
+            text-align: right;
+            padding-right: 4mm;
+            flex-shrink: 0;
+        }
+
+        .score-bar-track {
+            flex: 1;
+            height: 7mm;
+            background: {{ c.section_bg }};
+            border-radius: 1mm;
+            position: relative;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 1mm;
+            background: {{ primary_color }};
+        }
+
+        .score-bar-value {
+            width: 20mm;
+            font-size: 12pt;
+            font-weight: 700;
+            text-align: center;
+            flex-shrink: 0;
+            color: {{ primary_color }};
+        }
+
+        /* ===== SCENARIO CARDS ===== */
+        .scenario-cards {
+            display: flex;
+            gap: 8mm;
+        }
+
+        .scenario-card {
+            flex: 1;
+            border: 0.5pt solid {{ c.border_dotted }};
+            border-radius: 2mm;
+            padding: 5mm 6mm;
+            text-align: center;
+        }
+
+        .scenario-card.bull { border-top: 3pt solid {{ c.positive }}; }
+        .scenario-card.base { border-top: 3pt solid {{ primary_color }}; }
+        .scenario-card.bear { border-top: 3pt solid {{ c.negative }}; }
+
+        .scenario-card-title {
+            font-size: 11pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3mm;
+        }
+
+        .scenario-card.bull .scenario-card-title { color: {{ c.positive }}; }
+        .scenario-card.base .scenario-card-title { color: {{ primary_color }}; }
+        .scenario-card.bear .scenario-card-title { color: {{ c.negative }}; }
+
+        .scenario-card-fv {
+            font-size: 22pt;
+            font-weight: 700;
+            color: {{ c.dark_text }};
+            margin-bottom: 2mm;
+        }
+
+        .scenario-card-detail {
+            font-size: 10pt;
+            color: {{ c.label_text }};
+            margin-bottom: 1mm;
+        }
 
         /* ===== SOURCES ===== */
         .source-item {
             font-size: 9pt;
-            color: #555;
+            color: {{ c.content_text }};
             margin-bottom: 1.5mm;
         }
 
@@ -387,7 +545,7 @@
         /* ===== DISCLAIMER ===== */
         .disclaimer-text {
             font-size: 10pt;
-            color: #666;
+            color: {{ c.label_text }};
             line-height: 1.6;
         }
 
@@ -400,41 +558,12 @@
             text-align: center;
             margin-top: 10mm;
             padding-top: 6mm;
-            border-top: 0.5pt solid #ddd;
+            border-top: 0.5pt solid {{ c.border_light }};
         }
 
-        .attribution .name {
-            font-size: 13pt;
-            font-weight: 700;
-            color: {{ primary_color }};
-        }
-
-        .attribution .firm {
-            font-size: 16pt;
-            font-weight: 700;
-            color: {{ primary_color }};
-            margin-top: 4mm;
-        }
-
-        .attribution .meta {
-            font-size: 8pt;
-            color: #aaa;
-            margin-top: 3mm;
-        }
-
-        /* ===== CONTENT PROSE (for thesis/moat/external forces) ===== */
-        .prose {
-            font-size: 12pt;
-            line-height: 1.55;
-        }
-
-        .prose p {
-            font-size: 12pt;
-        }
-
-        .prose h3 {
-            font-size: 14pt;
-        }
+        .attribution .name { font-size: 13pt; font-weight: 700; color: {{ primary_color }}; }
+        .attribution .firm { font-size: 16pt; font-weight: 700; color: {{ primary_color }}; margin-top: 4mm; }
+        .attribution .meta { font-size: 8pt; color: {{ c.secondary_text }}; margin-top: 3mm; }
     </style>
 </head>
 <body>
@@ -460,7 +589,26 @@
     </div>
 </div>
 
-<!-- ===== SLIDE 2: EXECUTIVE SUMMARY ===== -->
+<!-- ===== SLIDE 2: TABLE OF CONTENTS ===== -->
+{% if toc_entries is defined and toc_entries %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Table of Contents</div>
+        <div style="columns: 2; column-gap: 12mm; margin-top: 6mm;">
+            {% for entry in toc_entries %}
+            <div style="padding: 3mm 0; border-bottom: 0.5pt solid {{ c.border_light }}; break-inside: avoid; font-size: 11pt; color: {{ c.dark_text }};">
+                {{ entry.title }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+    <div class="slide-number">2</div>
+</div>
+{% endif %}
+
+<!-- ===== EXECUTIVE SUMMARY ===== -->
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
@@ -470,7 +618,84 @@
         <div class="headline">{{ report_headline }}</div>
         {% endif %}
 
-        {% if highlights %}
+        <!-- Metric row: rating + target + current + upside -->
+        {% if exec_summary is defined and exec_summary %}
+        <div class="metric-cards" style="margin-bottom: 5mm;">
+            <div class="metric-card">
+                <div class="metric-card-label">Rating</div>
+                <div class="metric-card-value" style="color: {{ rating_color }};">{{ exec_summary.rating }}</div>
+            </div>
+            {% if exec_summary.target_price is not none %}
+            <div class="metric-card">
+                <div class="metric-card-label">Target Price</div>
+                <div class="metric-card-value">${{ "%.2f"|format(exec_summary.target_price) }}</div>
+            </div>
+            {% endif %}
+            {% if exec_summary.current_price is not none %}
+            <div class="metric-card">
+                <div class="metric-card-label">Current Price</div>
+                <div class="metric-card-value">${{ "%.2f"|format(exec_summary.current_price) }}</div>
+            </div>
+            {% endif %}
+            {% if exec_summary.upside_pct is not none %}
+            <div class="metric-card">
+                <div class="metric-card-label">Upside / Downside</div>
+                <div class="metric-card-value {{ 'positive' if exec_summary.upside_pct >= 0 else 'negative' }}">{{ "%+.1f"|format(exec_summary.upside_pct) }}%</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Forward snapshot + compact scenarios -->
+        <div style="display: flex; gap: 6mm; margin-bottom: 4mm;">
+            {% if forward_snapshot %}
+            <div style="flex: 1;">
+                <table class="data-table" style="font-size: 8pt; width: 100%;">
+                    <thead><tr><th>Year</th><th>Fwd EPS</th><th>Fwd P/E</th><th>EBITDA Margin</th></tr></thead>
+                    <tbody>
+                    {% for row in forward_snapshot %}
+                    <tr>
+                        <td>{{ row.year }}</td>
+                        <td style="text-align: right;">{% if row.eps is not none %}${{ "%.2f"|format(row.eps) }}{% else %}N/A{% endif %}</td>
+                        <td style="text-align: right;">{% if row.forward_pe is not none %}{{ "%.1f"|format(row.forward_pe) }}x{% else %}N/A{% endif %}</td>
+                        <td style="text-align: right;">{% if row.ebitda_margin is not none %}{{ "%.1f"|format(row.ebitda_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if scenario_summary is defined and scenario_summary %}
+            <div style="flex: 0 0 auto;">
+                <table class="data-table" style="font-size: 8pt;">
+                    <thead><tr><th></th><th>Fair Value</th><th>Upside</th><th>Prob</th></tr></thead>
+                    <tbody>
+                    {% for label in ['bull', 'base', 'bear'] %}
+                    {% set case = scenario_summary[label] if label in scenario_summary else none %}
+                    {% if case %}
+                    <tr>
+                        <td style="font-weight: 600; color: {% if label == 'bull' %}{{ c.positive }}{% elif label == 'bear' %}{{ c.negative }}{% else %}{{ primary_color }}{% endif %};">{{ label | title }}</td>
+                        <td style="text-align: right;">${{ "%.2f"|format(case.fair_value) }}</td>
+                        <td style="text-align: right;">{% if case.upside_pct is not none %}{{ "%+.1f"|format(case.upside_pct) }}%{% endif %}</td>
+                        <td style="text-align: center;">{{ case.probability }}%</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Catalysts -->
+        {% if exec_summary is defined and exec_summary.catalysts %}
+        <div style="margin-bottom: 3mm;">
+            {% for cat in exec_summary.catalysts[:3] %}
+            <div class="bullet-card">{{ cat }}</div>
+            {% endfor %}
+        </div>
+        {% elif highlights %}
         <ul class="highlights-list">
             {% for h in highlights %}
             <li>{{ h | safe }}</li>
@@ -478,91 +703,127 @@
         </ul>
         {% endif %}
 
-        <div class="rating-badge">
-            <div class="rating-badge-label">Rating</div>
-            <div class="rating-badge-value">{{ rating }}</div>
+        <!-- Bottom row: key risk -->
+        {% if exec_summary is defined and exec_summary.key_risk %}
+        <div style="font-size: 9pt; color: {{ c.negative }}; border-left: 2px solid {{ c.negative }}; padding-left: 3mm; margin-top: 2mm;">
+            <strong>Key Risk:</strong> {{ exec_summary.key_risk }}
         </div>
+        {% endif %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">2</div>
 </div>
 
-<!-- ===== SLIDE 3: INVESTMENT THESIS ===== -->
-{% if thesis_content %}
+<!-- ===== INVESTMENT THESIS (structured pillars or fallback bullets) ===== -->
+{% if investment_context is defined and investment_context and investment_context.thesis_pillars %}
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
         <div class="slide-title">Investment Thesis</div>
-        <div class="prose">
-            {{ thesis_content | safe }}
+
+        {% for pillar in investment_context.thesis_pillars %}
+        <div style="display: flex; align-items: flex-start; margin-bottom: 4mm;">
+            <div style="background: {{ primary_color }}; color: white; font-weight: 700; font-size: 11pt; width: 7mm; height: 7mm; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 3mm; margin-top: 1mm;">{{ pillar.number }}</div>
+            <div>
+                <div style="font-size: 11pt; font-weight: 600; color: {{ c.dark_text }};">{{ pillar.statement }}</div>
+                {% if pillar.evidence %}<div style="font-size: 8pt; color: {{ c.secondary_text }}; font-style: italic; margin-top: 1mm;">{{ pillar.evidence }}</div>{% endif %}
+            </div>
         </div>
+        {% endfor %}
+
+        {% if investment_context.market_missing %}
+        <div style="border-left: 2px solid {{ primary_color }}; padding-left: 4mm; margin-top: 4mm;">
+            <div style="font-size: 8pt; font-weight: 700; color: {{ primary_color }}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1mm;">What the Market Is Missing</div>
+            <div style="font-size: 9pt; color: {{ c.dark_text }};">{{ investment_context.market_missing }}</div>
+        </div>
+        {% endif %}
+
+        {% if investment_context.risk_reward_ratio %}
+        <div style="position: absolute; bottom: 18mm; left: 20mm;">
+            <div class="metric-card" style="display: inline-block;">
+                <div class="metric-card-label">Risk / Reward</div>
+                <div class="metric-card-value">{{ investment_context.risk_reward_ratio }}</div>
+            </div>
+            {% if investment_context.risk_reward_explanation %}
+            <span style="font-size: 8pt; color: {{ c.secondary_text }}; margin-left: 4mm; vertical-align: middle;">{{ investment_context.risk_reward_explanation }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">3</div>
 </div>
-{% endif %}
-
-<!-- ===== SLIDE 4: BULL / BEAR CASES ===== -->
-{% if bull_case or bear_case %}
+{% elif thesis_bullets is defined and thesis_bullets %}
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
-        <div class="slide-title">Investment Cases</div>
-        <div class="two-col">
-            {% if bull_case %}
-            <div>
-                <div class="case-box bull">
-                    <h3>Bull Case</h3>
-                    {{ bull_case | safe }}
-                </div>
-            </div>
-            {% endif %}
-            {% if bear_case %}
-            <div>
-                <div class="case-box bear">
-                    <h3>Bear Case</h3>
-                    {{ bear_case | safe }}
-                </div>
-            </div>
-            {% endif %}
-        </div>
+        <div class="slide-title">Investment Thesis</div>
+        {% for bullet in thesis_bullets %}
+        <div class="bullet-card">{{ bullet }}</div>
+        {% endfor %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">4</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 5: SWOT ANALYSIS ===== -->
-{% if swot %}
+<!-- ===== CONVICTION & RATING ===== -->
+{% if conviction_categories is defined and conviction_categories %}
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
-        <div class="slide-title">SWOT Analysis</div>
-        <div class="swot-grid">
-            <div class="swot-box strengths">
-                <h4>Strengths</h4>
-                {{ swot.strengths | safe }}
+        <div class="slide-title">Conviction & Rating</div>
+
+        {% if conviction_structured is defined and conviction_structured %}
+        <div class="metric-cards" style="margin-bottom: 6mm;">
+            <div class="metric-card">
+                <div class="metric-card-label">Overall Score</div>
+                <div class="metric-card-value">{{ conviction_structured.overall_score }}/100</div>
             </div>
-            <div class="swot-box weaknesses">
-                <h4>Weaknesses</h4>
-                {{ swot.weaknesses | safe }}
+            <div class="metric-card">
+                <div class="metric-card-label">Recommendation</div>
+                <div class="metric-card-value" style="font-size: 16pt; color: {{ rating_color }};">{{ rating }}</div>
             </div>
-            <div class="swot-box opportunities">
-                <h4>Opportunities</h4>
-                {{ swot.opportunities | safe }}
+            {% if conviction_structured.confidence %}
+            <div class="metric-card">
+                <div class="metric-card-label">Confidence</div>
+                <div class="metric-card-value" style="font-size: 14pt;">{{ conviction_structured.confidence }}%</div>
             </div>
-            <div class="swot-box threats">
-                <h4>Threats</h4>
-                {{ swot.threats | safe }}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% for cat in conviction_categories %}
+        <div class="score-bar-row">
+            <div class="score-bar-label">{{ cat.name }}</div>
+            <div class="score-bar-track">
+                <div class="score-bar-fill" style="width: {{ cat.bar_pct }}%;"></div>
             </div>
+            <div class="score-bar-value">{{ cat.score }}</div>
+        </div>
+        {% endfor %}
+
+        {% if conviction_summary is defined and conviction_summary %}
+        <p style="font-size: 10pt; color: {{ c.label_text }}; margin-top: 4mm;">{{ conviction_summary }}</p>
+        {% endif %}
+        <p style="font-size: 8pt; color: {{ c.secondary_text }}; margin-top: 3mm; font-style: italic;">Overall score reflects proprietary fundamental and technical scoring, not a simple average of category scores.</p>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% elif conviction is defined and conviction %}
+<!-- Fallback: prose -->
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Conviction & Rating</div>
+        <div style="font-size: 12pt; line-height: 1.5;">{{ conviction | safe }}</div>
+        <div class="rating-badge" style="bottom: 20mm;">
+            <div class="rating-badge-label">Recommendation</div>
+            <div class="rating-badge-value">{{ rating }}</div>
         </div>
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">5</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 6: FINANCIAL OVERVIEW ===== -->
+<!-- ===== FINANCIAL OVERVIEW ===== -->
 {% if key_data or statistics %}
 <div class="slide">
     <div class="stripe"></div>
@@ -599,7 +860,7 @@
         </div>
 
         {% if returns %}
-        <h3 style="margin-top: 6mm;">Period Returns</h3>
+        <h3 style="margin-top: 4mm;">Period Returns</h3>
         <table class="returns-table">
             <thead>
                 <tr>
@@ -611,7 +872,7 @@
             <tbody>
                 <tr>
                     {% for r in returns %}
-                    <td class="{{ 'positive' if r.value is not none and r.value >= 0 else 'negative' }}">{{ r.display }}</td>
+                    <td class="{% if r.value is not none %}{{ 'positive' if r.value >= 0 else 'negative' }}{% endif %}">{{ r.display }}</td>
                     {% endfor %}
                 </tr>
             </tbody>
@@ -619,87 +880,688 @@
         {% endif %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">6</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 7: VALUATION SUMMARY ===== -->
-{% if dcf_valuation or comp_table or scenario_analysis %}
+<!-- ===== VALUATION FOOTBALL FIELD ===== -->
+{% if football_ranges is defined and football_ranges %}
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
-        <div class="slide-title">Valuation Summary</div>
+        <div class="slide-title">Valuation Football Field</div>
 
-        {% if dcf_valuation %}
-        <h3>DCF Valuation</h3>
-        <div class="prose">{{ dcf_valuation | safe }}</div>
-        {% endif %}
+        <div class="bar-chart">
+            {% for r in football_ranges %}
+            <div class="bar-chart-row">
+                <div class="bar-chart-label">{{ r.method }}</div>
+                <div class="bar-chart-track">
+                    <div class="bar-chart-bar" style="left: {{ r.bar_left_pct }}%; width: {{ r.bar_width_pct }}%;"></div>
+                    <div class="bar-chart-mid" style="left: {{ r.mid_pct }}%;"></div>
+                    {% if football_current_pct is defined and football_current_pct is not none %}
+                    <div class="bar-chart-price-marker" style="left: {{ football_current_pct }}%;"></div>
+                    {% endif %}
+                </div>
+                <div class="bar-chart-values">
+                    ${{ "%.0f"|format(r.low) }} - ${{ "%.0f"|format(r.mid) }} - ${{ "%.0f"|format(r.high) }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
 
-        {% if comp_table %}
-        <h3>Comparable Companies</h3>
-        <div class="prose">{{ comp_table | safe }}</div>
-        {% endif %}
-
-        {% if scenario_analysis %}
-        <h3>Scenario Analysis</h3>
-        <div class="prose">{{ scenario_analysis | safe }}</div>
+        {% if football_current_price is defined and football_current_price %}
+        <div style="margin-top: 4mm; position: relative;">
+            {% if football_current_pct is defined and football_current_pct is not none %}
+            <div style="position: absolute; left: {{ football_current_pct }}%; transform: translateX(-50%); text-align: center; font-size: 9pt; color: {{ c.negative }}; font-weight: 600;">
+                ${{ "%.2f"|format(football_current_price) }}
+            </div>
+            {% endif %}
+            <div style="text-align: right; padding-right: 20mm;">
+                <span style="font-size: 10pt; color: {{ c.negative }}; font-weight: 600;">
+                    &#9472;&#9472; Current Price: ${{ "%.2f"|format(football_current_price) }}
+                </span>
+            </div>
+        </div>
         {% endif %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">7</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 8: COMPETITIVE MOAT ===== -->
-{% if moat_analysis %}
+<!-- ===== DCF VALUATION ===== -->
+{% if dcf_summary is defined and dcf_summary %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">DCF Valuation</div>
+
+        <div class="metric-cards">
+            {% if dcf_summary.fair_value %}
+            <div class="metric-card">
+                <div class="metric-card-label">Fair Value / Share</div>
+                <div class="metric-card-value">${{ "%.2f"|format(dcf_summary.fair_value) }}</div>
+            </div>
+            {% endif %}
+            {% if dcf_summary.current_price %}
+            <div class="metric-card">
+                <div class="metric-card-label">Current Price</div>
+                <div class="metric-card-value">${{ "%.2f"|format(dcf_summary.current_price) }}</div>
+            </div>
+            {% endif %}
+            {% if dcf_summary.upside_pct is defined and dcf_summary.upside_pct is not none %}
+            <div class="metric-card">
+                <div class="metric-card-label">Upside / Downside</div>
+                <div class="metric-card-value {{ 'positive' if dcf_summary.upside_pct >= 0 else 'negative' }}">
+                    {{ "%.1f"|format(dcf_summary.upside_pct) }}%
+                </div>
+            </div>
+            {% endif %}
+            {% if dcf_summary.wacc %}
+            <div class="metric-card">
+                <div class="metric-card-label">WACC</div>
+                <div class="metric-card-value">{{ "%.1f"|format(dcf_summary.wacc * 100) }}%</div>
+            </div>
+            {% endif %}
+            {% if dcf_summary.terminal_growth_rate %}
+            <div class="metric-card">
+                <div class="metric-card-label">Terminal Growth</div>
+                <div class="metric-card-value">{{ "%.1f"|format(dcf_summary.terminal_growth_rate * 100) }}%</div>
+            </div>
+            {% endif %}
+            {% if dcf_summary.enterprise_value %}
+            <div class="metric-card">
+                <div class="metric-card-label">Enterprise Value</div>
+                <div class="metric-card-value">{% if dcf_summary.enterprise_value >= 1000000000000 %}${{ "%.2f"|format(dcf_summary.enterprise_value / 1000000000000) }}T{% elif dcf_summary.enterprise_value >= 1000000000 %}${{ "%.2f"|format(dcf_summary.enterprise_value / 1000000000) }}B{% elif dcf_summary.enterprise_value >= 1000000 %}${{ "%.0f"|format(dcf_summary.enterprise_value / 1000000) }}M{% else %}${{ "%.0f"|format(dcf_summary.enterprise_value) }}{% endif %}</div>
+            </div>
+            {% endif %}
+            {% if dcf_summary.tv_pct_of_ev is not none %}
+            <div class="metric-card">
+                <div class="metric-card-label">Terminal Value % of EV</div>
+                <div class="metric-card-value">{{ "%.1f"|format(dcf_summary.tv_pct_of_ev) }}%</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.dcf %}
+        <p style="font-size: 9pt; color: {{ c.secondary_text }}; margin-top: 4mm; font-style: italic;">{{ model_audit.section_commentary.dcf }}</p>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== SCENARIO ANALYSIS ===== -->
+{% if scenario_summary is defined and scenario_summary %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Scenario Analysis</div>
+
+        <div class="scenario-cards">
+            {% for label in ['bull', 'base', 'bear'] %}
+            {% if scenario_summary[label] is defined %}
+            {% set s = scenario_summary[label] %}
+            <div class="scenario-card {{ label }}">
+                <div class="scenario-card-title">{{ label | capitalize }}</div>
+                {% if s.fair_value %}
+                <div class="scenario-card-fv">${{ "%.2f"|format(s.fair_value) }}</div>
+                {% endif %}
+                {% if s.probability %}
+                <div class="scenario-card-detail">Probability: {{ "%.0f"|format(s.probability * 100) }}%</div>
+                {% endif %}
+                {% if s.upside_pct is defined and s.upside_pct is not none %}
+                <div class="scenario-card-detail {{ 'positive' if s.upside_pct >= 0 else 'negative' }}">
+                    Upside: {{ "%.1f"|format(s.upside_pct) }}%
+                </div>
+                {% endif %}
+                {% if s.assumptions is defined and s.assumptions %}
+                <div style="font-size: 8pt; color: {{ c.secondary_text }}; margin-top: 2mm; border-top: 0.5pt solid {{ c.border_light }}; padding-top: 1mm;">
+                    {% if s.assumptions.revenue_growth is not none %}Rev Growth: {{ "%.1f"|format(s.assumptions.revenue_growth * 100) }}%{% endif %}
+                    {% if s.assumptions.wacc is not none %}{% if s.assumptions.revenue_growth is not none %} | {% endif %}WACC: {{ "%.1f"|format(s.assumptions.wacc * 100) }}%{% endif %}
+                    {% if s.assumptions.terminal_growth is not none %}{% if s.assumptions.wacc is not none or s.assumptions.revenue_growth is not none %} | {% endif %}TGR: {{ "%.1f"|format(s.assumptions.terminal_growth * 100) }}%{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 12mm; margin-top: 8mm;">
+            {% if scenario_summary.weighted_fair_value %}
+            <div style="text-align: center;">
+                <span style="font-size: 10pt; color: {{ c.secondary_text }}; text-transform: uppercase; letter-spacing: 0.5px;">Weighted Fair Value</span>
+                <br>
+                <span style="font-size: 22pt; font-weight: 700; color: {{ primary_color }};">
+                    ${{ "%.2f"|format(scenario_summary.weighted_fair_value) }}
+                </span>
+            </div>
+            {% endif %}
+            {% if investment_context is defined and investment_context and investment_context.risk_reward_ratio %}
+            <div style="text-align: center;">
+                <span style="font-size: 10pt; color: {{ c.secondary_text }}; text-transform: uppercase; letter-spacing: 0.5px;">Risk / Reward</span>
+                <br>
+                <span style="font-size: 22pt; font-weight: 700; color: {{ primary_color }};">
+                    {{ investment_context.risk_reward_ratio }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.scenarios %}
+        <p style="font-size: 9pt; color: {{ c.secondary_text }}; margin-top: 4mm; font-style: italic;">{{ model_audit.section_commentary.scenarios }}</p>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== SENSITIVITY ANALYSIS ===== -->
+{% if sensitivity_grid is defined and sensitivity_grid and sensitivity_grid.grid is defined and sensitivity_grid.grid %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Sensitivity Analysis</div>
+
+        {% if sensitivity_grid.current_price %}
+        <p style="font-size: 10pt; color: {{ c.secondary_text }}; margin-bottom: 4mm;">Current Price: ${{ "%.2f"|format(sensitivity_grid.current_price) }}</p>
+        {% endif %}
+
+        <h3 style="margin-bottom: 3mm;">WACC vs Terminal Growth Rate</h3>
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="text-align: right; font-size: 9pt;">WACC \ TGR</th>
+                    {% for tgr in sensitivity_grid.col_values %}
+                    <th style="font-size: 9pt;{% if loop.index0 == sensitivity_grid.base_col_idx %} background: {{ c.base_case_bg }}; color: {{ c.dark_text }};{% endif %}">{{ "%.1f"|format(tgr * 100) }}%</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for wacc_row in sensitivity_grid.grid %}
+                {% set row_idx = loop.index0 %}
+                <tr>
+                    <td style="font-weight: 600; text-align: right;{% if row_idx == sensitivity_grid.base_row_idx %} background: {{ c.base_case_bg }};{% endif %}">{{ "%.1f"|format(sensitivity_grid.row_values[row_idx] * 100) }}%</td>
+                    {% for fv in wacc_row %}
+                    <td style="text-align: center;{% if sensitivity_grid.cell_classes[row_idx][loop.index0] == 'base' %} background: {{ c.base_case_bg }}; font-weight: 700;{% elif sensitivity_grid.cell_classes[row_idx][loop.index0] == 'positive' %} color: {{ c.positive }};{% elif sensitivity_grid.cell_classes[row_idx][loop.index0] == 'negative' %} color: {{ c.negative }};{% endif %}">
+                        {% if fv %}${{ "%.0f"|format(fv) }}{% else %}N/A{% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if growth_margin_grid is defined and growth_margin_grid and growth_margin_grid.grid is defined and growth_margin_grid.grid %}
+        <h3 style="margin-top: 5mm; margin-bottom: 3mm;">Revenue Growth vs Operating Margin</h3>
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="text-align: right; font-size: 9pt;">Growth \ Margin</th>
+                    {% for mg in growth_margin_grid.col_values %}
+                    <th style="font-size: 9pt;{% if loop.index0 == growth_margin_grid.base_col_idx %} background: {{ c.base_case_bg }}; color: {{ c.dark_text }};{% endif %}">{{ "%.1f"|format(mg * 100) }}%</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in growth_margin_grid.grid %}
+                {% set row_idx = loop.index0 %}
+                <tr>
+                    <td style="font-weight: 600; text-align: right;{% if row_idx == growth_margin_grid.base_row_idx %} background: {{ c.base_case_bg }};{% endif %}">{{ "%.1f"|format(growth_margin_grid.row_values[row_idx] * 100) }}%</td>
+                    {% for fv in row %}
+                    <td style="text-align: center;{% if growth_margin_grid.cell_classes[row_idx][loop.index0] == 'base' %} background: {{ c.base_case_bg }}; font-weight: 700;{% elif growth_margin_grid.cell_classes[row_idx][loop.index0] == 'positive' %} color: {{ c.positive }};{% elif growth_margin_grid.cell_classes[row_idx][loop.index0] == 'negative' %} color: {{ c.negative }};{% endif %}">
+                        {% if fv %}${{ "%.0f"|format(fv) }}{% else %}N/A{% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== EARNINGS MODEL ===== -->
+{% if earnings_table is defined and earnings_table and earnings_table.rows is defined and earnings_table.rows %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Earnings Model</div>
+
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Fiscal Year</th>
+                    <th>Revenue</th>
+                    <th>Rev Growth</th>
+                    <th>EBITDA</th>
+                    <th>EBITDA Margin</th>
+                    <th>EPS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in earnings_table.rows %}
+                <tr{% if row.is_estimate %} style="background: {{ c.estimate_row_bg }};"{% endif %}>
+                    <td style="font-weight: {% if row.is_estimate %}600{% else %}400{% endif %};">
+                        FY{{ row.fiscal_year }}{% if row.is_estimate %}E{% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if row.revenue %}{% if row.revenue >= 1000000000 %}${{ "%.1f"|format(row.revenue / 1000000000) }}B{% elif row.revenue >= 1000000 %}${{ "%.0f"|format(row.revenue / 1000000) }}M{% else %}${{ "%.0f"|format(row.revenue) }}{% endif %}{% else %}N/A{% endif %}
+                    </td>
+                    <td style="text-align: right; color: {% if row.revenue_growth is defined and row.revenue_growth is not none %}{% if row.revenue_growth >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %}{% else %}{{ c.label_text }}{% endif %};">
+                        {% if row.revenue_growth is defined and row.revenue_growth is not none %}{{ "%.1f"|format(row.revenue_growth * 100) }}%{% else %}N/A{% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if row.ebitda %}{% if row.ebitda >= 1000000000 %}${{ "%.1f"|format(row.ebitda / 1000000000) }}B{% elif row.ebitda >= 1000000 %}${{ "%.0f"|format(row.ebitda / 1000000) }}M{% else %}${{ "%.0f"|format(row.ebitda) }}{% endif %}{% else %}N/A{% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if row.ebitda_margin is defined and row.ebitda_margin is not none %}{{ "%.1f"|format(row.ebitda_margin * 100) }}%{% else %}N/A{% endif %}
+                    </td>
+                    <td style="text-align: right; font-weight: {% if row.is_estimate %}600{% else %}400{% endif %};">
+                        {% if row.eps is defined and row.eps is not none %}${{ "%.2f"|format(row.eps) }}{% else %}N/A{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if earnings_table.has_estimates %}
+        <p style="font-size: 9pt; color: {{ c.secondary_text }}; font-style: italic; margin-top: 3mm;">Shaded rows = analyst estimates</p>
+        {% endif %}
+        {% if earnings_takeaway is defined and earnings_takeaway %}
+        <div style="margin-top: 4mm; padding: 3mm 4mm; background: {{ c.base_case_bg }}; border-left: 3pt solid {{ primary_color }}; font-size: 10pt; color: {{ c.dark_text }};">
+            {{ earnings_takeaway }}
+        </div>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== COMPARABLE COMPANIES ===== -->
+{% if comp_summary is defined and comp_summary and comp_summary.peers is defined and comp_summary.peers %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Comparable Companies</div>
+
+        {% if comp_summary.implied_values %}
+        <div class="metric-cards" style="margin-bottom: 5mm;">
+            {% if comp_summary.implied_values.pe_implied %}
+            <div class="metric-card">
+                <div class="metric-card-label">P/E Implied Value</div>
+                <div class="metric-card-value">${{ "%.2f"|format(comp_summary.implied_values.pe_implied) }}</div>
+            </div>
+            {% endif %}
+            {% if comp_summary.implied_values.ev_ebitda_implied %}
+            <div class="metric-card">
+                <div class="metric-card-label">EV/EBITDA Implied</div>
+                <div class="metric-card-value">${{ "%.2f"|format(comp_summary.implied_values.ev_ebitda_implied) }}</div>
+            </div>
+            {% endif %}
+            {% if comp_summary.implied_values.ev_revenue_implied %}
+            <div class="metric-card">
+                <div class="metric-card-label">EV/Revenue Implied</div>
+                <div class="metric-card-value">${{ "%.2f"|format(comp_summary.implied_values.ev_revenue_implied) }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Company</th>
+                    <th>Mkt Cap</th>
+                    <th>P/E</th>
+                    <th>Fwd P/E</th>
+                    <th>EV/EBITDA</th>
+                    <th>EV/Rev</th>
+                    <th>Gross Mgn</th>
+                    <th>Rev Growth</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if comp_summary.target %}
+                <tr style="background: {{ c.base_case_bg }}; font-weight: 600;">
+                    <td style="text-align: left;">{{ comp_summary.target.name or comp_summary.target.ticker or 'Target' }}</td>
+                    <td>{% if comp_summary.target.market_cap %}${{ "%.0f"|format(comp_summary.target.market_cap / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                    <td>{% if comp_summary.target.pe_ratio %}{{ "%.1f"|format(comp_summary.target.pe_ratio) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if comp_summary.target.forward_pe %}{{ "%.1f"|format(comp_summary.target.forward_pe) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if comp_summary.target.ev_to_ebitda %}{{ "%.1f"|format(comp_summary.target.ev_to_ebitda) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if comp_summary.target.ev_to_revenue %}{{ "%.1f"|format(comp_summary.target.ev_to_revenue) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if comp_summary.target.gross_margin %}{{ "%.1f"|format(comp_summary.target.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                    <td>{% if comp_summary.target.revenue_growth %}{{ "%.1f"|format(comp_summary.target.revenue_growth * 100) }}%{% else %}N/A{% endif %}</td>
+                </tr>
+                {% endif %}
+                {% for peer in comp_summary.peers %}
+                <tr>
+                    <td style="text-align: left;">{{ peer.name or peer.ticker or '' }}</td>
+                    <td>{% if peer.market_cap %}${{ "%.0f"|format(peer.market_cap / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                    <td>{% if peer.pe_ratio %}{{ "%.1f"|format(peer.pe_ratio) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if peer.forward_pe %}{{ "%.1f"|format(peer.forward_pe) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if peer.ev_to_ebitda %}{{ "%.1f"|format(peer.ev_to_ebitda) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if peer.ev_to_revenue %}{{ "%.1f"|format(peer.ev_to_revenue) }}x{% else %}N/A{% endif %}</td>
+                    <td>{% if peer.gross_margin %}{{ "%.1f"|format(peer.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                    <td>{% if peer.revenue_growth %}{{ "%.1f"|format(peer.revenue_growth * 100) }}%{% else %}N/A{% endif %}</td>
+                </tr>
+                {% endfor %}
+                {% if comp_summary.medians %}
+                <tr style="border-top: 2pt solid {{ c.border_light }}; font-weight: 600; font-style: italic;">
+                    <td style="text-align: left;">Peer Median</td>
+                    <td>--</td>
+                    <td>{% if comp_summary.medians.pe_ratio %}{{ "%.1f"|format(comp_summary.medians.pe_ratio) }}x{% else %}--{% endif %}</td>
+                    <td>{% if comp_summary.medians.forward_pe %}{{ "%.1f"|format(comp_summary.medians.forward_pe) }}x{% else %}--{% endif %}</td>
+                    <td>{% if comp_summary.medians.ev_to_ebitda %}{{ "%.1f"|format(comp_summary.medians.ev_to_ebitda) }}x{% else %}--{% endif %}</td>
+                    <td>{% if comp_summary.medians.ev_to_revenue %}{{ "%.1f"|format(comp_summary.medians.ev_to_revenue) }}x{% else %}--{% endif %}</td>
+                    <td>{% if comp_summary.medians.gross_margin %}{{ "%.1f"|format(comp_summary.medians.gross_margin * 100) }}%{% else %}--{% endif %}</td>
+                    <td>{% if comp_summary.medians.revenue_growth %}{{ "%.1f"|format(comp_summary.medians.revenue_growth * 100) }}%{% else %}--{% endif %}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== PRECEDENT TRANSACTIONS ===== -->
+{% if precedent_summary is defined and precedent_summary and precedent_summary.deals is defined and precedent_summary.deals %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Precedent M&A Transactions</div>
+
+        {% if precedent_summary.medians %}
+        <div class="metric-cards" style="margin-bottom: 5mm;">
+            {% if precedent_summary.medians.ev_revenue %}
+            <div class="metric-card">
+                <div class="metric-card-label">Median EV/Revenue</div>
+                <div class="metric-card-value">{{ "%.1f"|format(precedent_summary.medians.ev_revenue) }}x</div>
+            </div>
+            {% endif %}
+            {% if precedent_summary.medians.ev_ebitda %}
+            <div class="metric-card">
+                <div class="metric-card-label">Median EV/EBITDA</div>
+                <div class="metric-card-value">{{ "%.1f"|format(precedent_summary.medians.ev_ebitda) }}x</div>
+            </div>
+            {% endif %}
+            {% if precedent_summary.implied_values.ev_revenue %}
+            <div class="metric-card">
+                <div class="metric-card-label">Implied (EV/Rev)</div>
+                <div class="metric-card-value">${{ "%.2f"|format(precedent_summary.implied_values.ev_revenue) }}</div>
+            </div>
+            {% endif %}
+            {% if precedent_summary.implied_values.ev_ebitda %}
+            <div class="metric-card">
+                <div class="metric-card-label">Implied (EV/EBITDA)</div>
+                <div class="metric-card-value">${{ "%.2f"|format(precedent_summary.implied_values.ev_ebitda) }}</div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Date</th>
+                    <th style="text-align: left;">Acquirer</th>
+                    <th style="text-align: left;">Target</th>
+                    <th>EV/Rev</th>
+                    <th>EV/EBITDA</th>
+                    <th>Premium</th>
+                    {% if model_audit and model_audit.precedent_relevance %}<th>Rel.</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for deal in precedent_summary.deals %}
+                <tr>
+                    <td>{{ deal.date or '' }}</td>
+                    <td>{{ deal.acquirer or '' }}</td>
+                    <td>{{ deal.target or '' }}</td>
+                    <td style="text-align: right;">{% if deal.ev_to_revenue %}{{ "%.1f"|format(deal.ev_to_revenue) }}x{% else %}N/A{% endif %}</td>
+                    <td style="text-align: right;">{% if deal.ev_to_ebitda %}{{ "%.1f"|format(deal.ev_to_ebitda) }}x{% else %}N/A{% endif %}</td>
+                    <td style="text-align: right;">{% if deal.premium_pct %}{{ "%.0f"|format(deal.premium_pct) }}%{% else %}N/A{% endif %}</td>
+                    {% if model_audit and model_audit.precedent_relevance %}
+                    <td style="text-align: center;">
+                        {% set deal_key = deal.acquirer ~ '/' ~ deal.target %}
+                        {% set rel = namespace(found=false, level='') %}
+                        {% for pr in model_audit.precedent_relevance %}
+                            {% if pr.deal == deal_key or deal_key in pr.deal or pr.deal in deal_key %}
+                                {% set rel.found = true %}
+                                {% set rel.level = pr.relevance %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if rel.found %}
+                        <span style="font-size: 8pt; font-weight: 600;
+                            {% if rel.level == 'high' %}color: #006100;
+                            {% elif rel.level == 'medium' %}color: #9C6500;
+                            {% else %}color: #9C0006;{% endif %}">
+                            {{ rel.level[0] | upper }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.precedents %}
+        <p style="font-size: 9pt; color: {{ c.secondary_text }}; margin-top: 3mm; font-style: italic;">{{ model_audit.section_commentary.precedents }}</p>
+        {% endif %}
+        {% if precedent_takeaway is defined and precedent_takeaway %}
+        <div style="margin-top: 4mm; padding: 3mm 4mm; background: {{ c.base_case_bg }}; border-left: 3pt solid {{ primary_color }}; font-size: 10pt; color: {{ c.dark_text }};">
+            {{ precedent_takeaway }}
+        </div>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== STRATEGIC ASSESSMENT ===== -->
+{% if strategy_grid %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Strategic Assessment</div>
+        <div class="strategy-grid">
+            <div class="strategy-box advantages">
+                <h4>Advantages</h4>
+                {{ strategy_grid.advantages | safe }}
+            </div>
+            <div class="strategy-box vulnerabilities">
+                <h4>Vulnerabilities</h4>
+                {{ strategy_grid.vulnerabilities | safe }}
+            </div>
+            <div class="strategy-box tailwinds">
+                <h4>Tailwinds</h4>
+                {{ strategy_grid.tailwinds | safe }}
+            </div>
+            <div class="strategy-box headwinds">
+                <h4>Headwinds</h4>
+                {{ strategy_grid.headwinds | safe }}
+            </div>
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% elif strategy_bullets is defined and strategy_bullets %}
+<!-- Fallback: LLM-summarized bullets when grid parsing failed -->
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Strategic Assessment</div>
+        {% for bullet in strategy_bullets %}
+        <div class="bullet-card">{{ bullet }}</div>
+        {% endfor %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== EXTERNAL FORCES ===== -->
+{% if external_bullets is defined and external_bullets %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Industry Dynamics</div>
+        {% for bullet in external_bullets %}
+        <div class="bullet-card">{{ bullet }}</div>
+        {% endfor %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% elif strategic_assessment is defined and strategic_assessment %}
+<!-- Fallback: prose -->
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Industry Dynamics</div>
+        <div style="font-size: 12pt; line-height: 1.5;">{{ strategic_assessment | safe }}</div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== COMPETITIVE MOAT ===== -->
+{% if moat_bullets is defined and moat_bullets %}
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
         <div class="slide-title">Competitive Moat</div>
-        <div class="prose">
-            {{ moat_analysis | safe }}
-        </div>
+        {% for bullet in moat_bullets %}
+        <div class="bullet-card">{{ bullet }}</div>
+        {% endfor %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">8</div>
 </div>
-{% endif %}
-
-<!-- ===== SLIDE 9: EXTERNAL FORCES ===== -->
-{% if strategic_assessment %}
+{% elif moat_analysis is defined and moat_analysis %}
+<!-- Fallback: prose -->
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
-        <div class="slide-title">External Forces</div>
-        <div class="prose">
-            {{ strategic_assessment | safe }}
-        </div>
+        <div class="slide-title">Competitive Moat</div>
+        <div style="font-size: 12pt; line-height: 1.5;">{{ moat_analysis | safe }}</div>
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">9</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 10: CONVICTION & RATING ===== -->
-{% if conviction %}
+<!-- ===== BULL / BEAR CASES ===== -->
+{% if (bull_bullets is defined and bull_bullets) or (bear_bullets is defined and bear_bullets) %}
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
-        <div class="slide-title">Conviction & Rating</div>
-        <div class="prose">
-            {{ conviction | safe }}
-        </div>
-        <div class="rating-badge" style="bottom: 20mm;">
-            <div class="rating-badge-label">Recommendation</div>
-            <div class="rating-badge-value">{{ rating }}</div>
+        <div class="slide-title">Investment Cases</div>
+        <div class="two-col">
+            {% if bull_bullets is defined and bull_bullets %}
+            <div>
+                <div class="case-box bull">
+                    <h3>Bull Case</h3>
+                    {% for bullet in bull_bullets %}
+                    <div class="bullet-card green">{{ bullet }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if bear_bullets is defined and bear_bullets %}
+            <div>
+                <div class="case-box bear">
+                    <h3>Bear Case</h3>
+                    {% for bullet in bear_bullets %}
+                    <div class="bullet-card red">{{ bullet }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">10</div>
+</div>
+{% elif bull_case is defined and (bull_case or bear_case) %}
+<!-- Fallback: prose-based bull/bear from old context -->
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Investment Cases</div>
+        <div class="two-col">
+            {% if bull_case %}<div><div class="case-box bull"><h3>Bull Case</h3>{{ bull_case | safe }}</div></div>{% endif %}
+            {% if bear_case %}<div><div class="case-box bear"><h3>Bear Case</h3>{{ bear_case | safe }}</div></div>{% endif %}
+        </div>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 11: SOURCES ===== -->
+<!-- ===== CATALYSTS & RISK QUANTIFICATION ===== -->
+{% if investment_context is defined and investment_context and (investment_context.catalysts or investment_context.quantified_risks) %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Catalysts & Risk Quantification</div>
+
+        {% if investment_context.catalysts %}
+        <div style="font-size: 8pt; font-weight: 700; color: {{ primary_color }}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2mm;">Catalyst Timeline</div>
+        <table class="data-table" style="font-size: 8pt; margin-bottom: 6mm;">
+            <thead><tr><th>Event</th><th>Expected Date</th><th>Expected Impact</th></tr></thead>
+            <tbody>
+            {% for cat in investment_context.catalysts[:6] %}
+            <tr>
+                <td>{{ cat.event }}</td>
+                <td style="text-align: center;">{{ cat.expected_date }}</td>
+                <td>{{ cat.expected_impact }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if investment_context.quantified_risks %}
+        <div style="font-size: 8pt; font-weight: 700; color: {{ c.negative }}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2mm;">Quantified Risk Factors</div>
+        <table class="data-table" style="font-size: 8pt;">
+            <thead><tr><th>Risk</th><th>Key Metric</th><th>Sensitivity</th></tr></thead>
+            <tbody>
+            {% for risk in investment_context.quantified_risks[:5] %}
+            <tr>
+                <td>{{ risk.risk }}</td>
+                <td style="text-align: center;">{{ risk.current_value }}</td>
+                <td>{{ risk.sensitivity }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== THESIS MONITORING FRAMEWORK ===== -->
+{% if investment_context is defined and investment_context and investment_context.monitoring_kpis %}
+<div class="slide">
+    <div class="stripe"></div>
+    <div class="slide-body">
+        <div class="slide-title">Thesis Monitoring Framework</div>
+        <table class="data-table" style="font-size: 8pt;">
+            <thead><tr><th>KPI</th><th>Current</th><th style="color: {{ c.positive }};">Bull Threshold</th><th style="color: {{ c.negative }};">Bear Threshold</th><th>Frequency</th></tr></thead>
+            <tbody>
+            {% for kpi in investment_context.monitoring_kpis[:6] %}
+            <tr>
+                <td>{{ kpi.kpi }}</td>
+                <td style="text-align: center;">{{ kpi.current_value }}</td>
+                <td style="text-align: center; color: {{ c.positive }};">{{ kpi.bull_threshold }}</td>
+                <td style="text-align: center; color: {{ c.negative }};">{{ kpi.bear_threshold }}</td>
+                <td style="text-align: center;">{{ kpi.frequency }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="slide-firm">{{ firm_name }}</div>
+</div>
+{% endif %}
+
+<!-- ===== SOURCES ===== -->
 {% if research_sources or analyst_sources %}
 <div class="slide">
     <div class="stripe"></div>
@@ -707,12 +1569,14 @@
         <div class="slide-title">Sources & References</div>
 
         {% if research_sources %}
+        <div{% if research_sources | length > 8 %} style="columns: 2; column-gap: 8mm;"{% endif %}>
         {% for source in research_sources %}
-        <div class="source-item">
+        <div class="source-item" style="break-inside: avoid;">
             <span class="source-id">[{{ source.id }}]</span> {{ source.title }}
-            {% if source.date %} ({{ source.date }}){% endif %}
+            {% if source.date %}<span style="color: {{ c.secondary_text }}; font-size: 8pt;"> ({{ source.date }})</span>{% endif %}
         </div>
         {% endfor %}
+        </div>
         {% endif %}
 
         {% if analyst_sources %}
@@ -725,11 +1589,10 @@
         {% endif %}
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">11</div>
 </div>
 {% endif %}
 
-<!-- ===== SLIDE 12: DISCLAIMER ===== -->
+<!-- ===== DISCLAIMER ===== -->
 <div class="slide">
     <div class="stripe"></div>
     <div class="slide-body">
@@ -742,13 +1605,12 @@
 
         <div class="attribution">
             <div class="name">{{ analyst_name }}</div>
-            <div style="font-size: 10pt; color: #666;">{{ analyst_sector }} | {{ analyst_email }}</div>
+            <div style="font-size: 10pt; color: {{ c.label_text }};">{{ analyst_sector }} | {{ analyst_email }}</div>
             <div class="firm">{{ firm_name }}</div>
             <div class="meta">{{ tool_branding }}  |  Generated: {{ generation_time }}</div>
         </div>
     </div>
     <div class="slide-firm">{{ firm_name }}</div>
-    <div class="slide-number">12</div>
 </div>
 
 </body>

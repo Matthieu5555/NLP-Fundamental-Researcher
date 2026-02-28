@@ -8,8 +8,10 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 # Number of historical and forecast years in the earnings model table.
-MAX_ACTUAL_YEARS = 3
-MAX_ESTIMATE_YEARS = 2
+# 5 historical + 5 forward matches sell-side convention and aligns
+# with the DCF's 5-year projection horizon.
+MAX_ACTUAL_YEARS = 5
+MAX_ESTIMATE_YEARS = 5
 
 from src_george_researcher.analysis.shared.growth_metrics import EnrichedFinancials
 from src_george_researcher.data_fetchers.us.financial_datasets_client import AnalystEstimate
@@ -53,8 +55,18 @@ def build_earnings_model(
                 ebitda_margin_val = period.operating_margin.current_value if period.operating_margin else None
             eps_val = period.eps.current_value if period.eps else None
 
+            fy = period.fiscal_year
+            if not fy and period.period:
+                try:
+                    fy = int(period.period[:4])
+                except (ValueError, IndexError):
+                    fy = 0
+
+            if not fy or fy <= 0:
+                continue
+
             rows.append(EarningsModelRow(
-                fiscal_year=period.fiscal_year or 0,
+                fiscal_year=fy,
                 is_estimate=False,
                 revenue=revenue,
                 revenue_growth=revenue_growth,
@@ -63,28 +75,45 @@ def build_earnings_model(
                 eps=eps_val,
             ))
 
+    # Deduplicate actuals by fiscal_year, keeping first (most recent period)
+    seen_fy: set[int] = set()
+    deduped: list[EarningsModelRow] = []
+    for row in rows:
+        if row.fiscal_year not in seen_fy:
+            seen_fy.add(row.fiscal_year)
+            deduped.append(row)
+    rows = deduped
+
     # Estimate rows from analyst estimates
     if analyst_estimates:
         # Group by fiscal year, take annual estimates
-        seen_years = {r.fiscal_year for r in rows}
+        actual_years = {r.fiscal_year for r in rows}
         by_year = {}
         for est in analyst_estimates:
-            if est.fiscal_quarter is None and est.fiscal_year not in seen_years:
+            if est.fiscal_quarter is None and est.fiscal_year not in actual_years:
                 if est.fiscal_year not in by_year:
                     by_year[est.fiscal_year] = est
 
+        # Track prior-year revenue for chained growth calculation.
+        # Use most recent actual revenue; fall back to enriched_financials
+        # period[0] if all actuals had None revenue.
+        prev_rev: Optional[float] = None
+        for r in rows:
+            if r.revenue and not r.is_estimate:
+                prev_rev = r.revenue
+                break
+        if prev_rev is None and enriched_financials and enriched_financials.periods:
+            first = enriched_financials.periods[0]
+            if first.revenue and first.revenue.current_value:
+                prev_rev = first.revenue.current_value
+
         for year in sorted(by_year.keys())[:MAX_ESTIMATE_YEARS]:
             est = by_year[year]
-            # Calculate implied growth if we have prior year revenue
             rev_growth = None
-            if est.revenue_estimate_avg and rows:
-                last_actual_rev = None
-                for r in rows:
-                    if r.revenue and not r.is_estimate:
-                        last_actual_rev = r.revenue
-                        break
-                if last_actual_rev and last_actual_rev > 0:
-                    rev_growth = (est.revenue_estimate_avg / last_actual_rev) - 1
+            if est.revenue_estimate_avg and prev_rev and prev_rev > 0:
+                rev_growth = (est.revenue_estimate_avg / prev_rev) - 1
+            if est.revenue_estimate_avg:
+                prev_rev = est.revenue_estimate_avg
 
             rows.append(EarningsModelRow(
                 fiscal_year=est.fiscal_year,

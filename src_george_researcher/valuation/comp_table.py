@@ -6,7 +6,7 @@ Fetches peer data via yfinance and calculates relative valuation metrics.
 
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Dict, List, Optional
 from statistics import median
 
@@ -40,6 +40,14 @@ class CompTableResult:
     peers: List[CompPeerData]
     medians: Dict[str, Optional[float]]
     implied_values: Dict[str, Optional[float]]
+
+    def to_dict(self) -> Dict:
+        return {
+            "target": asdict(self.target),
+            "peers": [asdict(p) for p in self.peers],
+            "medians": self.medians,
+            "implied_values": self.implied_values,
+        }
 
 
 # Static peer mapping by industry (top industries, 4-6 peers each)
@@ -115,6 +123,18 @@ _ADJACENT_BUCKETS = {
 }
 
 
+def _normalize_industry(name: str) -> str:
+    """Normalize industry name to handle dash/em-dash mismatches from data providers."""
+    return name.replace("—", " - ").replace("–", " - ").strip()
+
+
+# Build a normalized lookup for industry peers so "Drug Manufacturers - General"
+# matches "Drug Manufacturers—General" regardless of dash character.
+_INDUSTRY_PEERS_NORMALIZED = {
+    _normalize_industry(k): v for k, v in INDUSTRY_PEERS.items()
+}
+
+
 def select_peers(
     sector: Optional[str],
     industry: Optional[str],
@@ -130,9 +150,11 @@ def select_peers(
     """
     candidates = []
 
-    # Try industry-specific peers first
-    if industry and industry in INDUSTRY_PEERS:
-        candidates = [t for t in INDUSTRY_PEERS[industry] if t != target_ticker]
+    # Try industry-specific peers first (normalize to handle dash variants)
+    if industry:
+        norm_industry = _normalize_industry(industry)
+        if norm_industry in _INDUSTRY_PEERS_NORMALIZED:
+            candidates = [t for t in _INDUSTRY_PEERS_NORMALIZED[norm_industry] if t != target_ticker]
 
     # Fall back to sector
     if len(candidates) < 3 and sector and sector in SECTOR_PEERS:

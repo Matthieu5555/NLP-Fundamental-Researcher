@@ -68,7 +68,7 @@ class TestLoadConfig:
             config = load_config()
 
         assert config.openrouter_api_key == ""  # Default empty
-        assert config.openrouter_model == "moonshotai/kimi-k2.5"  # Default model
+        assert config.openrouter_model == "google/gemini-3-flash-preview"  # Default model
 
     def test_loads_optional_keys(self):
         """Test that optional API keys are loaded when present."""

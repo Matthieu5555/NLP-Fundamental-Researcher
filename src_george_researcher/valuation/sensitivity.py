@@ -70,6 +70,23 @@ class GrowthMarginSensitivityResult:
         }
 
 
+def _deduplicate_axis(values: list[float], step: float) -> list[float]:
+    """Ensure distinct values by shifting duplicates upward when floor-clamped.
+
+    When a min() or max() clamp collapses multiple entries to the same value,
+    this pushes the duplicate to the next available slot at `step` increments.
+    """
+    seen: set[float] = set()
+    result: list[float] = []
+    for v in values:
+        rounded = round(v, 6)
+        while rounded in seen:
+            rounded = round(rounded + step, 6)
+        seen.add(rounded)
+        result.append(rounded)
+    return result
+
+
 def _clone_assumptions_wacc_tgr(base: DCFAssumptions, wacc: float, tgr: float) -> DCFAssumptions:
     """Clone assumptions with different WACC and terminal growth rate."""
     kwargs = {
@@ -105,21 +122,25 @@ def run_sensitivity(dcf_result: DCFResult) -> SensitivityResult:
     base_wacc = dcf_result.assumptions.wacc
     base_tgr = dcf_result.assumptions.terminal_growth_rate
 
-    wacc_values = [
+    wacc_values = _deduplicate_axis([
         max(MIN_WACC, base_wacc - WACC_STEP_LARGE),
         max(MIN_WACC, base_wacc - WACC_STEP_SMALL),
         base_wacc,
         base_wacc + WACC_STEP_SMALL,
         base_wacc + WACC_STEP_LARGE,
-    ]
+    ], step=WACC_STEP_SMALL)
 
-    tgr_values = [
+    tgr_values = _deduplicate_axis([
         max(MIN_TERMINAL_GROWTH, base_tgr - TGR_STEP_LARGE),
         max(MIN_TERMINAL_GROWTH, base_tgr - TGR_STEP_SMALL),
         base_tgr,
         min(base_wacc - 0.015, base_tgr + TGR_STEP_SMALL),
         min(base_wacc - WACC_STEP_SMALL, base_tgr + TGR_STEP_LARGE),
-    ]
+    ], step=TGR_STEP_SMALL)
+
+    # Locate base case in the (possibly shifted) deduped lists
+    base_wacc_idx = wacc_values.index(base_wacc)
+    base_tgr_idx = tgr_values.index(base_tgr)
 
     grid = []
     for wacc in wacc_values:
@@ -144,8 +165,8 @@ def run_sensitivity(dcf_result: DCFResult) -> SensitivityResult:
         wacc_values=wacc_values,
         terminal_growth_values=tgr_values,
         fair_value_grid=grid,
-        base_wacc_idx=2,
-        base_tgr_idx=2,
+        base_wacc_idx=base_wacc_idx,
+        base_tgr_idx=base_tgr_idx,
         current_price=dcf_result.current_price,
     )
 
@@ -174,21 +195,21 @@ def run_growth_margin_sensitivity(dcf_result: DCFResult) -> GrowthMarginSensitiv
     else:
         base_margin = base_assumptions.fcf_margin
 
-    growth_values = [
+    growth_values = _deduplicate_axis([
         max(-0.20, base_growth - GROWTH_STEP_LARGE),
         max(-0.10, base_growth - GROWTH_STEP_SMALL),
         base_growth,
         min(0.50, base_growth + GROWTH_STEP_SMALL),
         min(0.60, base_growth + GROWTH_STEP_LARGE),
-    ]
+    ], step=GROWTH_STEP_SMALL)
 
-    margin_values = [
+    margin_values = _deduplicate_axis([
         max(-0.20, base_margin - MARGIN_STEP_LARGE),
         max(-0.10, base_margin - MARGIN_STEP_SMALL),
         base_margin,
         min(0.80, base_margin + MARGIN_STEP_SMALL),
         min(0.90, base_margin + MARGIN_STEP_LARGE),
-    ]
+    ], step=MARGIN_STEP_SMALL)
 
     grid = []
     for growth in growth_values:
@@ -236,12 +257,15 @@ def run_growth_margin_sensitivity(dcf_result: DCFResult) -> GrowthMarginSensitiv
             row.append(result.fair_value_per_share)
         grid.append(row)
 
+    base_growth_idx = growth_values.index(base_growth)
+    base_margin_idx = margin_values.index(base_margin)
+
     return GrowthMarginSensitivityResult(
         growth_values=growth_values,
         margin_values=margin_values,
         fair_value_grid=grid,
-        base_growth_idx=2,
-        base_margin_idx=2,
+        base_growth_idx=base_growth_idx,
+        base_margin_idx=base_margin_idx,
         current_price=dcf_result.current_price,
     )
 

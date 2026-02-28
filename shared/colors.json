@@ -2,65 +2,65 @@
   "_comment": "Single source of truth for all colors. Frontend theme.css and backend colors.py derive from this file.",
 
   "brand": {
-    "primary": "#C87A23",
-    "primaryDark": "#B06A1A",
-    "primaryLight": "#E8A040",
-    "gradientFrom": "#C87A23",
-    "gradientTo": "#B06A1A",
-    "surface": "#FEF3E2",
-    "surfaceDark": "#FDE8D0",
-    "border": "#E8C4A0",
-    "dark": "#302011",
-    "darkLight": "#4A3520"
+    "primary": "#2563EB",
+    "primaryDark": "#1D4ED8",
+    "primaryLight": "#3B82F6",
+    "gradientFrom": "#1B2559",
+    "gradientTo": "#131B42",
+    "surface": "#EFF6FF",
+    "surfaceDark": "#DBEAFE",
+    "border": "#BFDBFE",
+    "dark": "#0F1629",
+    "darkLight": "#151F41"
   },
 
   "surface": {
-    "primary": "#ffffff",
-    "secondary": "#f8fafc",
-    "tertiary": "#f1f5f9",
-    "elevated": "#ffffff",
-    "card": "#F8FAFC",
-    "cardHover": "#f1f5f9"
+    "primary": "#F8FAFC",
+    "secondary": "#F1F5F9",
+    "tertiary": "#E2E8F0",
+    "elevated": "#FFFFFF",
+    "card": "#FFFFFF",
+    "cardHover": "#F1F5F9"
   },
 
   "text": {
-    "primary": "#1e293b",
-    "secondary": "#475569",
-    "tertiary": "#64748b",
-    "muted": "#94a3b8",
-    "onBrand": "#ffffff",
-    "onBrandSurface": "#C87A23"
+    "primary": "#151F41",
+    "secondary": "#4A5568",
+    "tertiary": "#64748B",
+    "muted": "#94A3B8",
+    "onBrand": "#FFFFFF",
+    "onBrandSurface": "#1B2559"
   },
 
   "border": {
-    "light": "#e2e8f0",
-    "medium": "#cbd5e1",
-    "dark": "#94a3b8"
+    "light": "#D5DCE5",
+    "medium": "#C1CAD6",
+    "dark": "#94A3B8"
   },
 
   "semantic": {
     "success": "#22c55e",
-    "successLight": "#dcfce7",
+    "successLight": "#f0fdf4",
     "successMuted": "#4ade80",
     "successDark": "#16a34a",
     "danger": "#ef4444",
-    "dangerLight": "#fee2e2",
+    "dangerLight": "#fef2f2",
     "dangerMuted": "#f87171",
     "dangerDark": "#dc2626",
     "warning": "#f59e0b",
-    "warningLight": "#fef3c7",
+    "warningLight": "#fffbeb",
     "warningMuted": "#fbbf24",
     "warningDark": "#d97706",
     "info": "#3b82f6",
-    "infoLight": "#dbeafe",
+    "infoLight": "#eff6ff",
     "infoMuted": "#60a5fa",
     "infoDark": "#2563eb"
   },
 
   "chart": {
-    "background": "#ffffff",
-    "grid": "#e2e8f0",
-    "text": "#1e293b",
+    "background": "#FFFFFF",
+    "grid": "#D5DCE5",
+    "text": "#151F41",
     "bullish": "#22c55e",
     "bearish": "#ef4444",
     "sma20": "#3b82f6",
@@ -77,12 +77,12 @@
     "macdNegative": "#EF4444",
     "volumePositive": "#22C55E",
     "volumeNegative": "#EF4444",
-    "axisLabel": "#666666",
-    "title": "#333333",
-    "spine": "#CCCCCC",
-    "spineTechnical": "#DDDDDD",
-    "gridLine": "#E5E5E5",
-    "dimmedText": "#888888"
+    "axisLabel": "#64748B",
+    "title": "#151F41",
+    "spine": "#C1CAD6",
+    "spineTechnical": "#D5DCE5",
+    "gridLine": "#DDE3EB",
+    "dimmedText": "#94A3B8"
   },
 
   "ratings": {
@@ -96,28 +96,28 @@
   },
 
   "insights": {
-    "confirmed": { "label": "CONFIRMED", "color": "#059669", "bg": "#D1FAE5" },
-    "insight": { "label": "INSIGHT", "color": "#7C3AED", "bg": "#EDE9FE" },
-    "risk": { "label": "RISK", "color": "#DC2626", "bg": "#FEE2E2" },
-    "opportunity": { "label": "OPPORTUNITY", "color": "#D97706", "bg": "#FEF3C7" },
-    "valuation": { "label": "VALUATION", "color": "#2563EB", "bg": "#DBEAFE" },
-    "competitive": { "label": "COMPETITIVE", "color": "#0891B2", "bg": "#CFFAFE" },
-    "default": { "label": "NOTE", "color": "#6B7280", "bg": "#F3F4F6" }
+    "confirmed": { "label": "CONFIRMED", "color": "#059669", "bg": "#f0fdf4" },
+    "insight": { "label": "INSIGHT", "color": "#7C3AED", "bg": "#f5f3ff" },
+    "risk": { "label": "RISK", "color": "#DC2626", "bg": "#fef2f2" },
+    "opportunity": { "label": "OPPORTUNITY", "color": "#D97706", "bg": "#fffbeb" },
+    "valuation": { "label": "VALUATION", "color": "#2563EB", "bg": "#eff6ff" },
+    "competitive": { "label": "COMPETITIVE", "color": "#0891B2", "bg": "#f0fdfa" },
+    "default": { "label": "NOTE", "color": "#6B7280", "bg": "#F8FAFC" }
   },
 
   "pdf": {
     "bodyText": "#1a1a1a",
-    "darkText": "#333333",
-    "contentText": "#444444",
-    "labelText": "#555555",
-    "secondaryText": "#666666",
-    "dimmedText": "#888888",
-    "borderLight": "#dddddd",
-    "borderDotted": "#e0e0e0",
-    "rowSeparator": "#eeeeee",
-    "sectionBg": "#f5f5f5",
-    "highlightBg": "#f8f9fa",
-    "tableAltRow": "#fafafa",
+    "darkText": "#151F41",
+    "contentText": "#4A5568",
+    "labelText": "#64748B",
+    "secondaryText": "#94A3B8",
+    "dimmedText": "#94A3B8",
+    "borderLight": "#D5DCE5",
+    "borderDotted": "#DDE3EB",
+    "rowSeparator": "#EAECF1",
+    "sectionBg": "#F3F5F8",
+    "highlightBg": "#EAECF4",
+    "tableAltRow": "#F7F8FA",
     "bullCase": { "bg": "#dcfce7", "border": "#16a34a", "text": "#16a34a" },
     "bearCase": { "bg": "#fee2e2", "border": "#dc2626", "text": "#dc2626" },
     "swot": {
@@ -132,78 +132,80 @@
       "fcfHighlight": { "bg": "#f3e8ff", "text": "#7c3aed" }
     },
     "positive": "#16a34a",
-    "negative": "#dc2626"
+    "negative": "#dc2626",
+    "baseCaseBg": "#FFF3CD",
+    "estimateRowBg": "#EBF5FB"
   },
 
   "badges": {
-    "high": { "bg": "#fee2e2", "text": "#dc2626" },
-    "medium": { "bg": "#fef3c7", "text": "#d97706" },
-    "low": { "bg": "#e2e8f0", "text": "#475569" }
+    "high": { "bg": "#fef2f2", "text": "#dc2626" },
+    "medium": { "bg": "#fffbeb", "text": "#d97706" },
+    "low": { "bg": "#F1F5F9", "text": "#4A5568" }
   },
 
   "darkMode": {
     "brand": {
-      "primary": "#F5A623",
-      "primaryDark": "#E8941A",
-      "primaryLight": "#FFB84D",
-      "gradientFrom": "#F5A623",
-      "gradientTo": "#E8941A",
-      "surface": "#3D2814",
-      "surfaceDark": "#2D1E0E",
-      "border": "#5C4A2A",
-      "dark": "#1a1208",
-      "darkLight": "#302011"
+      "primary": "#60A5FA",
+      "primaryDark": "#3B82F6",
+      "primaryLight": "#93C5FD",
+      "gradientFrom": "#60A5FA",
+      "gradientTo": "#3B82F6",
+      "surface": "#1A2354",
+      "surfaceDark": "#131B42",
+      "border": "#2D3A6A",
+      "dark": "#0A0F24",
+      "darkLight": "#0F1629"
     },
     "surface": {
-      "primary": "#0f172a",
-      "secondary": "#1e293b",
-      "tertiary": "#334155",
-      "elevated": "#1e293b",
-      "card": "#1e293b",
-      "cardHover": "#334155"
+      "primary": "#151F41",
+      "secondary": "#1F2951",
+      "tertiary": "#263059",
+      "elevated": "#1F2951",
+      "card": "#1F2951",
+      "cardHover": "#263059"
     },
     "text": {
-      "primary": "#f1f5f9",
-      "secondary": "#cbd5e1",
-      "tertiary": "#94a3b8",
-      "muted": "#64748b",
-      "onBrand": "#ffffff",
-      "onBrandSurface": "#F5A623"
+      "primary": "#F7F9FB",
+      "secondary": "#CBD5E1",
+      "tertiary": "#94A3B8",
+      "muted": "#64748B",
+      "onBrand": "#FFFFFF",
+      "onBrandSurface": "#93C5FD"
     },
     "border": {
-      "light": "#334155",
-      "medium": "#475569",
-      "dark": "#64748b"
+      "light": "#26345A",
+      "medium": "#334170",
+      "dark": "#64748B"
     },
     "semantic": {
       "success": "#22c55e",
-      "successLight": "rgba(34, 197, 94, 0.2)",
-      "successMuted": "rgba(34, 197, 94, 0.4)",
+      "successLight": "rgba(34, 197, 94, 0.3)",
+      "successMuted": "rgba(34, 197, 94, 0.55)",
       "successDark": "#16a34a",
       "danger": "#ef4444",
-      "dangerLight": "rgba(239, 68, 68, 0.2)",
-      "dangerMuted": "rgba(239, 68, 68, 0.4)",
+      "dangerLight": "rgba(239, 68, 68, 0.3)",
+      "dangerMuted": "rgba(239, 68, 68, 0.55)",
       "dangerDark": "#dc2626",
       "warning": "#f59e0b",
-      "warningLight": "rgba(245, 158, 11, 0.2)",
-      "warningMuted": "rgba(245, 158, 11, 0.4)",
+      "warningLight": "rgba(245, 158, 11, 0.3)",
+      "warningMuted": "rgba(245, 158, 11, 0.55)",
       "warningDark": "#d97706",
       "info": "#3b82f6",
-      "infoLight": "rgba(59, 130, 246, 0.2)",
-      "infoMuted": "rgba(59, 130, 246, 0.4)",
+      "infoLight": "rgba(59, 130, 246, 0.3)",
+      "infoMuted": "rgba(59, 130, 246, 0.55)",
       "infoDark": "#2563eb"
     },
     "chart": {
-      "background": "#1e293b",
-      "grid": "#334155",
-      "text": "#e2e8f0",
+      "background": "#1F2951",
+      "grid": "#2D3A6A",
+      "text": "#CBD5E1",
       "bullish": "#22c55e",
       "bearish": "#ef4444"
     },
     "badges": {
-      "high": { "bg": "rgba(239, 68, 68, 0.2)", "text": "#f87171" },
-      "medium": { "bg": "rgba(245, 158, 11, 0.2)", "text": "#fbbf24" },
-      "low": { "bg": "rgba(100, 116, 139, 0.3)", "text": "#94a3b8" }
+      "high": { "bg": "rgba(239, 68, 68, 0.3)", "text": "#f87171" },
+      "medium": { "bg": "rgba(245, 158, 11, 0.3)", "text": "#fbbf24" },
+      "low": { "bg": "rgba(100, 116, 139, 0.35)", "text": "#94a3b8" }
     }
   }
 }

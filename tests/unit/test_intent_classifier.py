@@ -65,7 +65,7 @@ class TestHeuristicClassification:
     def test_edit_full_report(self):
         result = classify_intent_heuristic("Shorten the entire report")
         assert result.intent == UserIntent.REPORT_EDIT
-        assert result.target_section == "full_report"
+        assert result.target_section == "investment_thesis"
 
     def test_edit_without_section_falls_to_research(self):
         """Edit keyword without a section target should not be REPORT_EDIT."""

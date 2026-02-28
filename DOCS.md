@@ -1,6 +1,6 @@
 # George - AI Equity Research (Financial Analyst)
 
-A full-stack financial analysis platform powered by multi-agent LLM architecture. Analyzes stocks using fundamentals, technicals, bull/bear debate, moat analysis, and SWOT, then lets you chat with the analysis. Private, all rights reserved.
+A full-stack financial analysis platform powered by multi-agent LLM architecture. Analyzes stocks using fundamentals, technicals, bull/bear debate, moat analysis, and strategic assessment, then lets you chat with the analysis. Private, all rights reserved.
 
 
 ## Quick Start
@@ -35,7 +35,7 @@ Data sources are split by region. US companies use FinancialDatasets.ai, which c
 
 The queue separation means US analyses (~20/min throughput) are never blocked by the non-US rate limit bottleneck (~3-5/min). Each queue has its own token bucket rate limiter. LLM and Gemini calls run concurrently with data fetching and are never blocked by data queues.
 
-Analysis runs through seven specialized agents: fundamentals, technicals, bull thesis, bear thesis, moat analysis, SWOT/strategy, and recommendation. US companies additionally get DCF valuation, comparable company analysis, sensitivity analysis, earnings model, and conviction scoring. Results are streamed to the frontend via SSE as each step completes.
+Analysis runs through seven specialized agents: fundamentals, technicals, bull thesis, bear thesis, moat analysis, strategic assessment/strategy, and recommendation. US companies additionally get DCF valuation, comparable company analysis, sensitivity analysis, earnings model, and conviction scoring. Results are streamed to the frontend via SSE as each step completes.
 
 The valuation module lives in `src_george_researcher/valuation/` with a clean separation between pure calculation code (dcf_engine, sensitivity, earnings_model) and LLM-driven agents (dcf_agent, comp_agent, conviction). All calculation dataclasses are frozen and provide `to_dict()` for serialization. Custom exceptions (AssumptionParseError, InsufficientDataError, PeerFetchError) distinguish failure modes.
 

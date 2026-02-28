@@ -1,6 +1,6 @@
 # George - AI Equity Research (Financial Analyst)
 
-A full-stack financial analysis platform powered by multi-agent LLM architecture. Analyzes stocks using fundamentals, technicals, bull/bear debate, moat analysis, and SWOT then lets you chat with the analysis.
+A full-stack financial analysis platform powered by multi-agent LLM architecture. Analyzes stocks using fundamentals, technicals, bull/bear debate, moat analysis, and strategic assessment then lets you chat with the analysis.
 
 ## Quick Start
 
@@ -68,7 +68,7 @@ Open http://localhost:5173
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-Agent Analysis** | 7 specialized agents (fundamentals, technicals, bull, bear, moat, SWOT, recommendation) |
+| **Multi-Agent Analysis** | 7 specialized agents (fundamentals, technicals, bull, bear, moat, strategic assessment, recommendation) |
 | **Bull/Bear Debate** | Two-round debate system for balanced viewpoints |
 | **RAG-Enhanced Chat** | Search SEC filings, news, and report content |
 | **Belief Tracking** | Extracts and tracks user opinions from chat |

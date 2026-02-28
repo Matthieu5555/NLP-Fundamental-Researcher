@@ -14,6 +14,7 @@ _spec.loader.exec_module(_parsing)
 extract_json_from_llm_response = _parsing.extract_json_from_llm_response
 strip_markdown_code_block = _parsing.strip_markdown_code_block
 safe_extract_json = _parsing.safe_extract_json
+repair_truncated_json = _parsing.repair_truncated_json
 
 
 class TestStripMarkdownCodeBlock:
@@ -104,3 +105,95 @@ class TestSafeExtractJson:
         content = '```json\n{"key": "value"}\n```'
         result = safe_extract_json(content)
         assert result == {"key": "value"}
+
+    def test_truncated_string_repaired(self):
+        """Recovers JSON truncated mid-string (the actual JNJ failure mode)."""
+        content = '{"overall_score": 65, "summary": "Attractive risk-reward given the'
+        result = safe_extract_json(content)
+        assert result is not None
+        assert result["overall_score"] == 65
+
+    def test_truncated_nested_object(self):
+        """Recovers JSON truncated inside a nested object."""
+        content = '{"categories": [{"name": "Valuation", "score": 70'
+        result = safe_extract_json(content)
+        assert result is not None
+        assert result["categories"][0]["name"] == "Valuation"
+
+    def test_markdown_preamble_before_json(self):
+        """Extracts JSON preceded by LLM prose."""
+        content = 'Here is the analysis:\n```json\n{"key": "value"}\n```'
+        result = safe_extract_json(content)
+        assert result == {"key": "value"}
+
+    def test_prose_wrapping_json_no_fences(self):
+        """Extracts JSON embedded in prose without code fences."""
+        content = 'Here is the result:\n{"score": 42, "label": "test"}\nHope that helps!'
+        result = safe_extract_json(content)
+        assert result is not None
+        assert result["score"] == 42
+
+    def test_empty_string_returns_default(self):
+        """Empty LLM response returns default."""
+        assert safe_extract_json("", default={"fallback": True}) == {"fallback": True}
+
+    def test_error_prefix_returns_default(self):
+        """Response starting with 'Error:' is not JSON."""
+        result = safe_extract_json("Error: rate limit exceeded")
+        assert result is None
+
+    def test_valid_json_in_explanation(self):
+        """Valid JSON wrapped in explanation text is extracted."""
+        content = 'I analyzed the data.\n{"contradictions": []}\nLet me know if you need more.'
+        result = safe_extract_json(content)
+        assert result == {"contradictions": []}
+
+
+class TestRepairTruncatedJson:
+    """Tests for repair_truncated_json function."""
+
+    def test_unterminated_string(self):
+        """Closes an open string and its containing object."""
+        result = repair_truncated_json('{"key": "val')
+        parsed = json.loads(result)
+        assert parsed["key"] == "val"
+
+    def test_missing_closing_brace(self):
+        """Adds missing closing brace."""
+        result = repair_truncated_json('{"a": 1, "b": 2')
+        parsed = json.loads(result)
+        assert parsed == {"a": 1, "b": 2}
+
+    def test_missing_closing_bracket(self):
+        """Adds missing closing bracket."""
+        result = repair_truncated_json('[1, 2, 3')
+        parsed = json.loads(result)
+        assert parsed == [1, 2, 3]
+
+    def test_nested_truncation(self):
+        """Closes multiple nesting levels."""
+        result = repair_truncated_json('{"a": [{"b": 1')
+        parsed = json.loads(result)
+        assert parsed["a"][0]["b"] == 1
+
+    def test_trailing_comma_removed(self):
+        """Strips trailing comma before closing."""
+        result = repair_truncated_json('{"a": 1,')
+        parsed = json.loads(result)
+        assert parsed == {"a": 1}
+
+    def test_already_valid_json_unchanged(self):
+        """Valid JSON passes through without modification."""
+        original = '{"key": "value"}'
+        result = repair_truncated_json(original)
+        assert json.loads(result) == {"key": "value"}
+
+    def test_empty_string(self):
+        """Empty input returns empty string."""
+        assert repair_truncated_json("") == ""
+
+    def test_escaped_quotes_handled(self):
+        """Escaped quotes inside strings don't confuse the tracker."""
+        result = repair_truncated_json('{"msg": "he said \\"hello')
+        parsed = json.loads(result)
+        assert "hello" in parsed["msg"]

@@ -161,8 +161,8 @@ Restructured section:""",
 
 def get_section_title(section_id: str, report_state: ReportState) -> str:
     """Get human-readable section title."""
-    if section_id == 'full_report':
-        return 'Full Report'
+    if section_id == 'investment_thesis':
+        return 'Investment Thesis'
 
     section = report_state.get_section(section_id)
     if section:
@@ -226,7 +226,7 @@ def edit_section(
     action = intent.edit_action or ReportEditAction.REWRITE
 
     # Handle full report edits
-    if section_id == 'full_report':
+    if section_id == 'investment_thesis':
         return edit_full_report(session, intent, llm_func, api_key, model)
 
     # Get the section to edit
@@ -325,7 +325,7 @@ def edit_full_report(
     if not session.report_state:
         return EditResult(
             success=False,
-            section_id="full_report",
+            section_id="investment_thesis",
             old_content="",
             new_content="",
             action=intent.edit_action or ReportEditAction.REWRITE,
@@ -359,7 +359,7 @@ def edit_full_report(
         action_name = intent.edit_action.value if intent.edit_action else "updated"
         return EditResult(
             success=True,
-            section_id="full_report",
+            section_id="investment_thesis",
             old_content="",
             new_content="",
             action=intent.edit_action or ReportEditAction.REWRITE,
@@ -368,7 +368,7 @@ def edit_full_report(
     else:
         return EditResult(
             success=False,
-            section_id="full_report",
+            section_id="investment_thesis",
             old_content="",
             new_content="",
             action=intent.edit_action or ReportEditAction.REWRITE,
@@ -386,7 +386,7 @@ def generate_edit_confirmation(intent: ClassifiedIntent, result: EditResult) -> 
         return f"I wasn't able to make that edit: {result.message}"
 
     # Get a human-readable section name
-    if result.section_id == "full_report":
+    if result.section_id == "investment_thesis":
         section_name = "the full report"
     else:
         # Simple title from section_id

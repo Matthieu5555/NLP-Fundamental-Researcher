@@ -7,6 +7,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
+from src_george_researcher.analysis.shared.parsing import extract_json_from_llm_response
 from src_george_researcher.analysis_agents import AnalysisResult
 from src_george_researcher.data_fetchers.stock_data import StockInfo
 from src_george_researcher.llm import call_llm
@@ -57,13 +58,7 @@ class ConvictionResult:
 def _parse_conviction(response_text: str) -> Optional[ConvictionResult]:
     """Parse LLM JSON response into ConvictionResult."""
     try:
-        text = response_text.strip()
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0].strip()
-
-        data = json.loads(text)
+        data = extract_json_from_llm_response(response_text)
 
         overall = max(0, min(100, data.get("overall_score", 50)))
         # No HOLD — derive recommendation from score

@@ -16,9 +16,9 @@ if [ ! -f "backend/.env" ]; then
     exit 1
 fi
 
-if [ ! -f "frontend/.env" ]; then
-    echo "Creating frontend/.env..."
-    echo "VITE_API_URL=http://localhost:5001" > frontend/.env
+if [ ! -f "frontend_v2/.env" ]; then
+    echo "Creating frontend_v2/.env..."
+    echo "VITE_API_URL=http://localhost:5001" > frontend_v2/.env
 fi
 
 echo "Starting FastAPI backend server on port 5001..."
@@ -33,8 +33,8 @@ sleep 3
 
 echo ""
 echo "Starting frontend server..."
-cd frontend
-npm run dev &
+cd frontend_v2
+npm run dev -- --port 5174 &
 FRONTEND_PID=$!
 cd ..
 
@@ -43,7 +43,7 @@ echo "==================================="
 echo "READY!"
 echo "==================================="
 echo ""
-echo "Frontend: http://localhost:5173"
+echo "Frontend: http://localhost:5174"
 echo "Backend:  http://localhost:5001"
 echo ""
 echo "Press Ctrl+C to stop both servers"

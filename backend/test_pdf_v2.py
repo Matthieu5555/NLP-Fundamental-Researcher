@@ -42,9 +42,9 @@ Trading at 28x forward P/E, Apple is at a premium to the S&P 500 but justified b
 
     # Full analysis
     report.add_section(
-        section_id="full_report",
-        title="Full Investment Analysis",
-        section_type=SectionType.EXECUTIVE_SUMMARY,
+        section_id="investment_thesis",
+        title="Investment Thesis",
+        section_type=SectionType.INVESTMENT_THESIS,
         content="""## Business Overview
 
 Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company operates through five segments: iPhone, Mac, iPad, Services, and Wearables, Home and Accessories.
@@ -121,7 +121,7 @@ Apple maintains a dominant position in premium smartphones with 55% share of dev
 """
     )
 
-    # Strategy (SWOT + Future Outlook)
+    # Strategy (Strategic Position + Future Outlook)
     report.add_section(
         section_id="strategy",
         title="Strategy Analysis",
@@ -220,9 +220,9 @@ The stock is forming a cup-and-handle pattern with a potential breakout target o
 
     # Moat Analysis
     report.add_section(
-        section_id="moat_analysis",
-        title="Moat Analysis",
-        section_type=SectionType.MOAT_ANALYSIS,
+        section_id="moat",
+        title="Competitive Moat",
+        section_type=SectionType.MOAT,
         content="""## Economic Moat: Wide
 
 Apple possesses one of the widest economic moats in the technology sector, driven by multiple sustainable competitive advantages.

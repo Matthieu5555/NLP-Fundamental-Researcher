@@ -130,9 +130,9 @@ class TestCallLLM:
                 user_prompt="test",
             )
 
-        # Haiku pricing: $0.25/1M input, $1.25/1M output
-        # (1000/1M) * 0.25 + (500/1M) * 1.25 = 0.00025 + 0.000625 = 0.000875
-        expected_cost = 0.000875
+        # kimi-k2.5 pricing: $0.45/1M input, $2.20/1M output
+        # (1000/1M) * 0.45 + (500/1M) * 2.20 = 0.00045 + 0.0011 = 0.00155
+        expected_cost = 0.00155
         assert abs(result.cost_usd - expected_cost) < 0.0000001
 
 

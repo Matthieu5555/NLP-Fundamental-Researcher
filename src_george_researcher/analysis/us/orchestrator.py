@@ -66,6 +66,10 @@ from src_george_researcher.valuation.scenarios import ScenarioResult
 from src_george_researcher.valuation.precedent_transactions import PrecedentTransactionResult
 from src_george_researcher.valuation.football_field import FootballFieldResult
 from src_george_researcher.valuation.earnings_model import EarningsModelRow
+from src_george_researcher.valuation.investment_context import (
+    InvestmentContext,
+    extract_investment_context,
+)
 from src_george_researcher.analysis.strategic_assessment import (
     StrategicAssessment,
     run_strategic_assessment,
@@ -238,6 +242,9 @@ class USFullAnalysis:
     conviction_analysis: Optional[AnalysisResult] = None
     conviction_result: Optional[ConvictionResult] = None
     normalization: Optional[NormalizationResult] = None
+    ddm_result: Optional[dict] = None
+    earnings_quality: Optional[dict] = None
+    investment_context: Optional[InvestmentContext] = None
 
 
 # =============================================================================
@@ -754,7 +761,7 @@ def run_us_analysis(
     3. Fetch web research via Gemini (2 rounds)
     4. Run two-round fundamentals agent
     5. Run insider analysis agent
-    6. Run technical, SWOT, moat agents
+    6. Run technical, strategy, moat agents
     7. Run bull/bear debate (2 rounds each)
     8. Synthesize recommendation
 
@@ -832,8 +839,8 @@ def run_us_analysis(
         country=stock_info.country,
     )
 
-    # Step 7: Strategic Assessment (PESTEL, Porter's, Market Sizing)
-    report_progress("Running Strategic Assessment (PESTEL, Porter's, Market Sizing)...", USStep.STRATEGIC_ASSESSMENT)
+    # Step 7: Strategic Assessment (industry dynamics, competitive structure, addressable market)
+    report_progress("Running Industry & Competitive Assessment...", USStep.STRATEGIC_ASSESSMENT)
     strategic_assessment_obj = None
     strategic_assessment_result = None
     try:
@@ -852,16 +859,16 @@ def run_us_analysis(
         strategic_assessment_result = AnalysisResult(
             section="External Forces",
             content=(
-                f"## External Forces — {stock_info.name}\n\n"
-                f"*Automated fallback: the full PESTEL/Porter's assessment could not be completed.*\n\n"
+                f"## Industry Dynamics — {stock_info.name}\n\n"
+                f"*Automated fallback: the full industry and competitive assessment could not be completed.*\n\n"
                 f"### Industry Context\n\n"
                 f"{stock_info.name} operates in the **{industry}** industry within the **{sector}** sector. "
-                f"Investors should consider the standard external forces affecting this space:\n\n"
-                f"**Political & Regulatory:** Government policy, trade regulations, and industry-specific compliance requirements.\n\n"
+                f"Investors should consider the key external forces affecting this space:\n\n"
+                f"**Regulatory & Macro Environment:** Government policy, trade regulations, and industry-specific compliance requirements.\n\n"
                 f"**Economic:** Interest rate environment, inflation trends, consumer/enterprise spending cycles, and currency exposure.\n\n"
                 f"**Technological:** Pace of innovation, R&D intensity, and disruption risk from emerging technologies.\n\n"
-                f"**Competitive:** Barrier to entry, supplier/buyer power, and threat of substitutes within {industry}.\n\n"
-                f"*A full strategic assessment with market sizing (TAM/SAM/SOM) and competitive positioning "
+                f"**Competitive Dynamics:** Barrier to entry, supplier/buyer power, and threat of substitutes within {industry}.\n\n"
+                f"*A full strategic assessment with addressable market sizing and competitive positioning "
                 f"was not available for this analysis run. Re-running the analysis may resolve this.*"
             ),
             tokens_used=0,
@@ -869,14 +876,19 @@ def run_us_analysis(
             cost_usd=0.0,
         )
 
-    # Step 8: Strategy Analysis (SWOT + outlook, informed by strategic assessment)
-    report_progress("Running Strategy Analysis Agent...", USStep.STRATEGY_ANALYSIS)
+    # Step 8: Strategy Analysis (strategic position + outlook, informed by assessment)
+    report_progress("Running Strategic Position Analysis...", USStep.STRATEGY_ANALYSIS)
     strategy_result = analyze_strategy(
         config.openrouter_api_key,
         config.openrouter_model,
         stock_info,
         combined_fundamentals.content,
         fetched.sentiment_report,
+        strategic_context=(
+            strategic_assessment_result.content
+            if strategic_assessment_result and strategic_assessment_result.success
+            else ""
+        ),
     )
     total_cost.add_llm_cost(strategy_result.cost_usd)
 
@@ -887,6 +899,7 @@ def run_us_analysis(
         config.openrouter_model,
         stock_info,
         fetched.sentiment_report,
+        fundamentals_analysis=combined_fundamentals.content,
     )
     total_cost.add_llm_cost(moat_result.cost_usd)
 
@@ -912,7 +925,7 @@ def run_us_analysis(
         )
         total_cost.add_llm_cost(dcf_analysis_result.cost_usd)
     except Exception as e:
-        logger.warning(f"DCF analysis failed: {e}")
+        logger.exception(f"DCF analysis failed: {e}")
         dcf_analysis_result = AnalysisResult(
             section="DCF Valuation", content=f"DCF analysis could not be completed: {e}",
             tokens_used=0, success=False, error=str(e),
@@ -931,7 +944,7 @@ def run_us_analysis(
         )
         total_cost.add_llm_cost(comp_analysis_result.cost_usd)
     except Exception as e:
-        logger.warning(f"Comp analysis failed: {e}")
+        logger.exception(f"Comp analysis failed: {e}")
         comp_analysis_result = AnalysisResult(
             section="Comparable Companies", content=f"Comparable analysis could not be completed: {e}",
             tokens_used=0, success=False, error=str(e),
@@ -960,21 +973,44 @@ def run_us_analysis(
             from src_george_researcher.valuation.sensitivity import run_sensitivity_analysis
             sensitivity_result_obj, growth_margin_sensitivity_obj, sensitivity_analysis_result = run_sensitivity_analysis(dcf_result_obj)
         except Exception as e:
-            logger.warning(f"Sensitivity analysis failed: {e}")
+            logger.exception(f"Sensitivity analysis failed: {e}")
 
     # Step 13b: Scenario Analysis (no LLM, depends on DCF)
+    # Uses volatility-calibrated scenarios when historical data is available
     scenario_result_obj = None
     scenario_analysis_result = None
     if dcf_result_obj:
         report_progress("Running bull/base/bear scenario modeling...", USStep.SCENARIOS)
         try:
             from src_george_researcher.valuation.scenarios import run_scenarios, format_scenarios_markdown
+            from src_george_researcher.valuation.scenario_calibrator import CompanyVolatility
+
+            # Build volatility profile from enriched financials
+            company_vol = None
+            if fetched.enriched_financials and fetched.enriched_financials.periods:
+                rev_growth_rates = [
+                    p.revenue.yoy_change for p in fetched.enriched_financials.periods
+                    if p.revenue and p.revenue.yoy_change is not None
+                ]
+                op_margins = [
+                    p.operating_margin.current_value for p in fetched.enriched_financials.periods
+                    if p.operating_margin and p.operating_margin.current_value is not None
+                ]
+                if len(rev_growth_rates) >= 2:
+                    company_vol = CompanyVolatility(
+                        revenue_growth_rates=rev_growth_rates,
+                        operating_margins=op_margins or None,
+                        beta=stock_info.beta,
+                        market_cap=stock_info.market_cap,
+                    )
+
             scenario_result_obj = run_scenarios(
                 base_revenue=dcf_result_obj.base_revenue,
                 net_debt=dcf_result_obj.net_debt,
                 shares_outstanding=dcf_result_obj.shares_outstanding,
                 current_price=dcf_result_obj.current_price,
                 base_assumptions=dcf_result_obj.assumptions,
+                company_volatility=company_vol,
             )
             scenario_analysis_result = AnalysisResult(
                 section="Scenario Analysis",
@@ -984,7 +1020,7 @@ def run_us_analysis(
                 cost_usd=0.0,
             )
         except Exception as e:
-            logger.warning(f"Scenario analysis failed: {e}")
+            logger.exception(f"Scenario analysis failed: {e}")
 
     # Step 14: Precedent Transactions (1 LLM call, uses existing web search)
     precedent_result_obj = None
@@ -1016,7 +1052,67 @@ def run_us_analysis(
             if precedent_analysis_result:
                 total_cost.add_llm_cost(precedent_analysis_result.cost_usd)
         except Exception as e:
-            logger.warning(f"Precedent transaction analysis failed: {e}")
+            logger.exception(f"Precedent transaction analysis failed: {e}")
+
+    # Step 14b: DDM for dividend payers (no LLM, depends on DCF WACC)
+    ddm_result_obj = None
+    if dcf_result_obj and stock_info.dividend_yield and stock_info.current_price:
+        try:
+            from src_george_researcher.valuation.ddm import run_ddm
+
+            # Compute dividend per share from yield.
+            # yfinance returns dividendYield as a decimal (0.032 for 3.2%).
+            # Guard against bad data: if the computed DPS exceeds the stock price,
+            # the yield was likely a percentage (3.2) rather than a decimal (0.032).
+            div_per_share = stock_info.current_price * stock_info.dividend_yield
+            if div_per_share > stock_info.current_price:
+                logger.warning(
+                    "DDM: computed div_per_share $%.2f > current_price $%.2f — "
+                    "dividend_yield %.4f likely in wrong units, skipping DDM",
+                    div_per_share, stock_info.current_price, stock_info.dividend_yield,
+                )
+                div_per_share = 0  # Will fail the payout > 0 check below
+
+            # Payout ratio: dividends / EPS
+            payout = div_per_share / stock_info.eps if stock_info.eps and stock_info.eps > 0 else 0
+            if payout > 0:
+                # Short-term growth from enriched financials
+                short_term_g = None
+                if fetched.enriched_financials and fetched.enriched_financials.revenue_cagr_3y:
+                    short_term_g = fetched.enriched_financials.revenue_cagr_3y
+
+                ddm_result_obj = run_ddm(
+                    current_price=stock_info.current_price,
+                    dividend_per_share=div_per_share,
+                    cost_of_equity=dcf_result_obj.assumptions.wacc,  # Approximation: use WACC as Ke
+                    long_term_growth=dcf_result_obj.assumptions.terminal_growth_rate,
+                    payout_ratio=payout,
+                    earnings_growth_short_term=short_term_g,
+                )
+        except Exception as e:
+            logger.warning(f"DDM analysis failed: {e}")
+
+    # Step 14c: Earnings Quality (pure math, no LLM)
+    earnings_quality_obj = None
+    if fetched.financials and len(fetched.financials) >= 2:
+        try:
+            from src_george_researcher.analysis.us.earnings_quality import assess_earnings_quality
+
+            eq_stmts = []
+            for stmt in fetched.financials[:5]:
+                eq_stmts.append({
+                    "net_income": stmt.net_income,
+                    "operating_cash_flow": stmt.operating_cash_flow,
+                    "free_cash_flow": stmt.free_cash_flow,
+                    "total_assets": stmt.total_assets,
+                    "total_liabilities": stmt.total_liabilities,
+                    "total_equity": stmt.total_equity,
+                    "cash_and_equivalents": stmt.cash_and_equivalents,
+                    "total_debt": stmt.total_debt,
+                })
+            earnings_quality_obj = assess_earnings_quality(eq_stmts)
+        except Exception as e:
+            logger.warning(f"Earnings quality assessment failed: {e}")
 
     # Step 15: Football Field (no LLM, aggregates all valuation methods)
     football_field_obj = None
@@ -1040,6 +1136,9 @@ def run_us_analysis(
             comp_ev_ebitda_implied=comp_implied.get("ev_ebitda_implied"),
             precedent_ev_revenue=precedent_result_obj.implied_value_from_revenue if precedent_result_obj else None,
             precedent_ev_ebitda=precedent_result_obj.implied_value_from_ebitda if precedent_result_obj else None,
+            precedent_minority_ev_revenue=precedent_result_obj.minority_adj_value_from_revenue if precedent_result_obj else None,
+            precedent_minority_ev_ebitda=precedent_result_obj.minority_adj_value_from_ebitda if precedent_result_obj else None,
+            ddm_value=ddm_result_obj.blended_value if ddm_result_obj and ddm_result_obj.is_applicable else None,
             consensus_target=stock_info.target_price,
         )
         football_field_analysis = AnalysisResult(
@@ -1050,7 +1149,7 @@ def run_us_analysis(
             cost_usd=0.0,
         )
     except Exception as e:
-        logger.warning(f"Football field construction failed: {e}")
+        logger.exception(f"Football field construction failed: {e}")
 
     # =============================================================================
     # Phase D: Bull/Bear Debate AFTER Valuation (Steps 16-20)
@@ -1133,26 +1232,11 @@ def run_us_analysis(
         if bear_result_r2.success:
             bear_result = bear_result_r2
 
-    # Step 18: Recommendation Synthesis
-    report_progress("Synthesizing final recommendation...", USStep.RECOMMENDATION)
-    synthesis_context = AnalysisContext(
-        api_key=config.openrouter_api_key,
-        model=config.openrouter_model,
-        stock_info=stock_info,
-        fundamentals_analysis=combined_fundamentals.content,
-        technicals_analysis=technical_result.content if technical_result else "Not available",
-        strategy_analysis=strategy_result.content if strategy_result.success else "",
-        moat_analysis=moat_result.content if moat_result.success else "Not available",
-        sentiment_report=fetched.sentiment_report,
-        bull_thesis=bull_result.content if bull_result.success else "Not available",
-        bear_thesis=bear_result.content if bear_result.success else "Not available",
-    )
-    recommendation_result = synthesize_recommendation(synthesis_context)
-    total_cost.add_llm_cost(recommendation_result.cost_usd)
-
     # =============================================================================
-    # Phase E: Conviction Scoring (Step 19)
+    # Phase E: Conviction Scoring (Step 18)
     # =============================================================================
+    # Conviction runs BEFORE recommendation so the synthesis prompt receives
+    # the real score instead of hallucinating one.
 
     conviction_result_obj = None
     conviction_analysis_result = None
@@ -1174,6 +1258,61 @@ def run_us_analysis(
         total_cost.add_llm_cost(conviction_analysis_result.cost_usd)
     except Exception as e:
         logger.warning(f"Conviction scoring failed: {e}")
+
+    # Format conviction summary for the recommendation prompt
+    conviction_summary_for_synthesis = ""
+    if conviction_result_obj is not None:
+        conviction_summary_for_synthesis = (
+            f"{conviction_result_obj.recommendation} at {conviction_result_obj.confidence}% confidence, "
+            f"Score: {conviction_result_obj.overall_score}/100"
+        )
+
+    # Step 19: Recommendation Synthesis + Investment Context (parallel)
+    # Both calls consume the same analysis context but produce different outputs:
+    # recommendation_result -> narrative prose, investment_context -> structured JSON.
+    report_progress("Synthesizing final recommendation...", USStep.RECOMMENDATION)
+
+    synthesis_context = AnalysisContext(
+        api_key=config.openrouter_api_key,
+        model=config.openrouter_model,
+        stock_info=stock_info,
+        fundamentals_analysis=combined_fundamentals.content,
+        technicals_analysis=technical_result.content if technical_result else "Not available",
+        strategy_analysis=strategy_result.content if strategy_result.success else "",
+        moat_analysis=moat_result.content if moat_result.success else "Not available",
+        sentiment_report=fetched.sentiment_report,
+        bull_thesis=bull_result.content if bull_result.success else "Not available",
+        bear_thesis=bear_result.content if bear_result.success else "Not available",
+        conviction_summary=conviction_summary_for_synthesis,
+    )
+
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    investment_context_obj = None
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        rec_future = pool.submit(synthesize_recommendation, synthesis_context)
+        ctx_future = pool.submit(
+            extract_investment_context,
+            api_key=config.openrouter_api_key,
+            model=config.openrouter_model,
+            ticker=symbol,
+            fundamentals=combined_fundamentals.content,
+            bull_thesis=bull_result.content if bull_result.success else "",
+            bear_thesis=bear_result.content if bear_result.success else "",
+            dcf_summary=dcf_analysis_result.content[:1500] if dcf_analysis_result and dcf_analysis_result.success else "",
+            scenario_summary=scenario_analysis_result.content[:1500] if scenario_analysis_result and scenario_analysis_result.success else "",
+            conviction_summary=conviction_summary_for_synthesis,
+            strategy=strategy_result.content if strategy_result.success else "",
+            moat=moat_result.content if moat_result.success else "",
+        )
+
+        recommendation_result = rec_future.result()
+        try:
+            investment_context_obj = ctx_future.result()
+        except Exception as e:
+            logger.warning("Investment context extraction failed (non-blocking): %s", e)
+
+    total_cost.add_llm_cost(recommendation_result.cost_usd)
 
     # Build final result
     total_tokens = (
@@ -1226,6 +1365,9 @@ def run_us_analysis(
         conviction_analysis=conviction_analysis_result,
         conviction_result=conviction_result_obj,
         normalization=normalization_result,
+        ddm_result=ddm_result_obj.to_dict() if ddm_result_obj else None,
+        earnings_quality=earnings_quality_obj.to_dict() if earnings_quality_obj else None,
+        investment_context=investment_context_obj,
         # Metadata
         total_tokens=total_tokens,
         total_cost_usd=total_cost.total,

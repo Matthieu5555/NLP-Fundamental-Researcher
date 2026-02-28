@@ -16,29 +16,28 @@ class SectionType(Enum):
 
     Each section type corresponds to a specific aspect of stock analysis.
     The enum values are used as identifiers in serialization and routing.
+    Values match the canonical keys in shared/section_registry.json.
     """
-    EXECUTIVE_SUMMARY = "executive_summary"  # High-level overview and key findings
-    FUNDAMENTALS = "fundamentals"            # Valuation metrics and financial data (P/E, P/B, etc.)
-    TECHNICALS = "technicals"                # Price action and technical indicators (RSI, MACD, etc.)
-    BULL_CASE = "bull_case"                  # Positive investment thesis and catalysts
-    BEAR_CASE = "bear_case"                  # Negative thesis, risks, and potential downsides
-    MOAT_ANALYSIS = "moat_analysis"          # Competitive advantages assessment (brand, network effects, etc.)
-    STRATEGY = "strategy"                    # SWOT + Future Outlook strategic analysis
-    FINANCIAL_STATEMENTS = "financial_statements"  # Income, balance sheet, cash flow (US companies only)
-    SENTIMENT = "sentiment"                  # Market and news sentiment analysis
-    RISKS = "risks"                          # Key risk factors and mitigation strategies
-    RECOMMENDATION = "recommendation"        # Final investment recommendation (buy/hold/sell)
-    DCF_VALUATION = "dcf_valuation"          # DCF model and fair value
-    COMP_TABLE = "comp_table"                # Comparable company analysis
-    EARNINGS_MODEL = "earnings_model"        # Earnings model summary table
-    SENSITIVITY = "sensitivity"              # Sensitivity analysis grid
-    CONVICTION = "conviction"                # Conviction scoring
-    SCENARIO_ANALYSIS = "scenario_analysis"  # Bull/Base/Bear scenario modeling
-    PRECEDENT_TRANSACTIONS = "precedent_transactions"  # M&A precedent transactions
-    FOOTBALL_FIELD = "football_field"        # Valuation football field summary
-    EXTERNAL_FORCES = "external_forces"            # PESTEL/Porter's/Market Sizing
-    SOURCES = "sources"                      # Bibliography and citation references
-    CUSTOM = "custom"                        # User-defined custom section type
+    INVESTMENT_THESIS = "investment_thesis"   # Rating, thesis, valuation context, key risks/catalysts
+    FUNDAMENTALS = "fundamentals"             # Financial health, profitability, growth, management signals
+    TECHNICALS = "technicals"                 # Price action and technical indicators
+    BULL_CASE = "bull_case"                   # Positive investment thesis and catalysts
+    BEAR_CASE = "bear_case"                   # Negative thesis, risks, and potential downsides
+    MOAT = "moat"                             # Competitive advantages assessment
+    STRATEGY = "strategy"                     # Strategic position + Future Outlook analysis
+    INDUSTRY = "industry"                     # Industry dynamics, competitive forces, market sizing
+    RECOMMENDATION = "recommendation"         # Final investment recommendation (buy/hold/sell)
+    DCF = "dcf"                               # DCF model and fair value
+    COMPS = "comps"                           # Comparable company analysis
+    EARNINGS_MODEL = "earnings_model"         # Earnings model summary table
+    SENSITIVITY = "sensitivity"               # Sensitivity analysis grid
+    CONVICTION = "conviction"                 # Conviction scoring
+    SCENARIOS = "scenarios"                   # Bull/Base/Bear scenario modeling
+    PRECEDENTS = "precedents"                 # M&A precedent transactions
+    FOOTBALL_FIELD = "football_field"         # Valuation football field summary
+    FINANCIALS = "financials"                 # Income, balance sheet, cash flow
+    SOURCES = "sources"                       # Bibliography and citation references
+    CUSTOM = "custom"                         # User-defined custom section type
 
 
 @dataclass
@@ -251,47 +250,44 @@ class ReportState:
             self.version += 1
         else:
             # Create the section with a default title based on section_id
+            # Display names and types use canonical keys from shared/section_registry.json
             section_titles = {
-                "recommendation": "Investment Recommendation",
-                "fundamentals": "Fundamentals Analysis",
-                "technicals": "Technical Analysis",
+                "investment_thesis": "Investment Thesis",
+                "recommendation": "Recommendation",
+                "fundamentals": "Fundamental Analysis",
+                "moat": "Competitive Moat",
+                "strategy": "Strategic Assessment",
+                "industry": "Industry Dynamics",
                 "bull_case": "Bull Case",
                 "bear_case": "Bear Case",
-                "moat": "Competitive Moat",
-                "strategy": "Strategy Analysis",
-                "insider_activity": "Insider Activity",
-                "executive_summary": "Executive Summary",
-                "full_report": "Full Analysis Report",
-                "dcf_valuation": "DCF Valuation",
-                "comp_table": "Comparable Companies",
+                "technicals": "Technical Analysis",
+                "dcf": "DCF Valuation",
+                "comps": "Comparable Companies",
                 "earnings_model": "Earnings Model",
                 "sensitivity": "Sensitivity Analysis",
-                "conviction": "Conviction Score",
-                "scenario_analysis": "Scenario Analysis",
-                "precedent_transactions": "Precedent Transactions",
+                "conviction": "Conviction & Rating",
+                "scenarios": "Scenario Analysis",
+                "precedents": "Precedent Transactions",
                 "football_field": "Valuation Summary",
-                "external_forces": "External Forces",
             }
             section_types = {
+                "investment_thesis": SectionType.INVESTMENT_THESIS,
                 "recommendation": SectionType.RECOMMENDATION,
                 "fundamentals": SectionType.FUNDAMENTALS,
-                "technicals": SectionType.TECHNICALS,
+                "moat": SectionType.MOAT,
+                "strategy": SectionType.STRATEGY,
+                "industry": SectionType.INDUSTRY,
                 "bull_case": SectionType.BULL_CASE,
                 "bear_case": SectionType.BEAR_CASE,
-                "moat": SectionType.MOAT_ANALYSIS,
-                "strategy": SectionType.STRATEGY,
-                "insider_activity": SectionType.CUSTOM,
-                "executive_summary": SectionType.EXECUTIVE_SUMMARY,
-                "full_report": SectionType.CUSTOM,
-                "dcf_valuation": SectionType.DCF_VALUATION,
-                "comp_table": SectionType.COMP_TABLE,
+                "technicals": SectionType.TECHNICALS,
+                "dcf": SectionType.DCF,
+                "comps": SectionType.COMPS,
                 "earnings_model": SectionType.EARNINGS_MODEL,
                 "sensitivity": SectionType.SENSITIVITY,
                 "conviction": SectionType.CONVICTION,
-                "scenario_analysis": SectionType.SCENARIO_ANALYSIS,
-                "precedent_transactions": SectionType.PRECEDENT_TRANSACTIONS,
+                "scenarios": SectionType.SCENARIOS,
+                "precedents": SectionType.PRECEDENTS,
                 "football_field": SectionType.FOOTBALL_FIELD,
-                "external_forces": SectionType.EXTERNAL_FORCES,
             }
             title = section_titles.get(section_id, section_id.replace("_", " ").title())
             section_type = section_types.get(section_id, SectionType.CUSTOM)
@@ -366,26 +362,25 @@ class ReportState:
 
         # Sections in order
         section_order = [
-            SectionType.EXECUTIVE_SUMMARY,
+            SectionType.INVESTMENT_THESIS,
+            SectionType.CONVICTION,
             SectionType.FOOTBALL_FIELD,
-            SectionType.EXTERNAL_FORCES,
-            SectionType.FUNDAMENTALS,
-            SectionType.DCF_VALUATION,
-            SectionType.SCENARIO_ANALYSIS,
-            SectionType.COMP_TABLE,
-            SectionType.PRECEDENT_TRANSACTIONS,
+            SectionType.DCF,
+            SectionType.SCENARIOS,
+            SectionType.COMPS,
+            SectionType.PRECEDENTS,
             SectionType.EARNINGS_MODEL,
             SectionType.SENSITIVITY,
-            SectionType.CONVICTION,
-            SectionType.TECHNICALS,
-            SectionType.SENTIMENT,
+            SectionType.FINANCIALS,
+            SectionType.FUNDAMENTALS,
+            SectionType.MOAT,
+            SectionType.STRATEGY,
+            SectionType.INDUSTRY,
             SectionType.BULL_CASE,
             SectionType.BEAR_CASE,
-            SectionType.MOAT_ANALYSIS,
-            SectionType.STRATEGY,
-            SectionType.RISKS,
+            SectionType.TECHNICALS,
             SectionType.RECOMMENDATION,
-            SectionType.SOURCES
+            SectionType.SOURCES,
         ]
 
         # Add sections in standard order

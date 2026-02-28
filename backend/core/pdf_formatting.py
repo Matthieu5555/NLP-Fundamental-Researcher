@@ -8,7 +8,7 @@ Used by pdf_generator_v2.py for template context building.
 """
 
 import re
-from typing import List, Optional, Dict
+from typing import Any, Dict, List, Optional
 
 import markdown
 
@@ -102,43 +102,74 @@ def extract_recommendation(report_state: ReportState) -> str:
     return 'N/A'
 
 
-def parse_swot(content: str) -> Optional[Dict[str, str]]:
-    """Parse SWOT content into structured sections."""
+def parse_strategy_grid(content: str) -> Optional[Dict[str, str]]:
+    """Parse strategy content into a four-quadrant grid (advantages/vulnerabilities/tailwinds/headwinds)."""
     if not content:
         return None
 
-    swot = {
-        'strengths': '',
-        'weaknesses': '',
-        'opportunities': '',
-        'threats': ''
+    grid = {
+        'advantages': '',
+        'vulnerabilities': '',
+        'tailwinds': '',
+        'headwinds': ''
     }
 
-    # Try to find sections by headers
+    # Map header keywords to grid quadrants. Matches both the new labels
+    # and legacy labels (strengths -> advantages, etc.) for backward compatibility.
     sections_map = {
-        'strength': 'strengths',
-        'weakness': 'weaknesses',
-        'opportunit': 'opportunities',
-        'threat': 'threats'
+        'advantage': 'advantages',
+        'strength': 'advantages',
+        'capabilit': 'advantages',
+        'strategic position': 'advantages',
+        'internal capabilities': 'advantages',
+        'competitive position': 'advantages',
+        'core competenc': 'advantages',
+        'vulnerabilit': 'vulnerabilities',
+        'weakness': 'vulnerabilities',
+        'risk': 'vulnerabilities',
+        'challenge': 'vulnerabilities',
+        'concern': 'vulnerabilities',
+        'tailwind': 'tailwinds',
+        'opportunit': 'tailwinds',
+        'future outlook': 'tailwinds',
+        'growth driver': 'tailwinds',
+        'catalyst': 'tailwinds',
+        'headwind': 'headwinds',
+        'threat': 'headwinds',
+        'industry': 'headwinds',
+        'competitive environment': 'headwinds',
+        'competitive landscape': 'headwinds',
     }
+
+    # Maximum bullet points per quadrant to prevent slide overflow
+    MAX_BULLETS_PER_QUADRANT = 5
 
     current_section = None
-    current_content = []
+    current_content: List[str] = []
 
     for line in content.split('\n'):
-        line_lower = line.lower().strip()
+        stripped = line.strip()
+        line_lower = stripped.lower()
 
-        # Check if this is a section header
+        # Check if this is a section header: markdown heading, bold marker, or numbered prefix
         new_section = None
-        for key, section_name in sections_map.items():
-            if key in line_lower and (line.startswith('#') or line.startswith('**')):
-                new_section = section_name
-                break
+        is_header = (
+            stripped.startswith('#')
+            or stripped.startswith('**')
+            or re.match(r'^\d+[.)]\s+\**', stripped)
+        )
+        if is_header:
+            for key, section_name in sections_map.items():
+                if key in line_lower:
+                    new_section = section_name
+                    break
 
         if new_section:
             # Save previous section
             if current_section and current_content:
-                swot[current_section] = md_to_html('\n'.join(current_content))
+                grid[current_section] = md_to_html(
+                    '\n'.join(current_content[:MAX_BULLETS_PER_QUADRANT])
+                )
             current_section = new_section
             current_content = []
         elif current_section:
@@ -146,13 +177,31 @@ def parse_swot(content: str) -> Optional[Dict[str, str]]:
 
     # Save last section
     if current_section and current_content:
-        swot[current_section] = md_to_html('\n'.join(current_content))
+        grid[current_section] = md_to_html(
+            '\n'.join(current_content[:MAX_BULLETS_PER_QUADRANT])
+        )
 
     # If parsing failed, return None
-    if not any(swot.values()):
+    if not any(grid.values()):
         return None
 
-    return swot
+    return grid
+
+
+# Backward-compatible alias
+parse_swot = parse_strategy_grid
+
+
+def deduplicate_fiscal_years(rows: List[Dict]) -> List[Dict]:
+    """Keep last occurrence when multiple entries share the same fiscal_year."""
+    seen: Dict[Any, int] = {}
+    for i, row in enumerate(rows):
+        fy = row.get("fiscal_year")
+        seen[fy] = i
+    if len(seen) == len(rows):
+        return rows
+    keep = set(seen.values())
+    return [row for i, row in enumerate(rows) if i in keep]
 
 
 def format_number(value: Optional[float], format_type: str = 'number') -> str:
@@ -175,6 +224,12 @@ def format_number(value: Optional[float], format_type: str = 'number') -> str:
     elif format_type == 'percent':
         sign = '+' if value >= 0 else ''
         return f'{sign}{value:.1f}%'
+
+    elif format_type == 'percent_raw':
+        # Accepts decimal input (e.g. 0.0214) and converts to display percent (+2.1%)
+        pct = value * 100
+        sign = '+' if pct >= 0 else ''
+        return f'{sign}{pct:.1f}%'
 
     elif format_type == 'ratio':
         return f'{value:.2f}x'

@@ -1,8 +1,8 @@
 """
-Strategic Assessment - PESTEL, Porter's Five Forces, and Market Sizing.
+Strategic Assessment - Industry dynamics, competitive structure, and market sizing.
 
-Produces structured JSON + narrative for each framework, feeding into
-strategy-informed DCF assumptions.
+Produces structured JSON + narrative for external risk factors, competitive forces,
+and addressable market, feeding into strategy-informed DCF assumptions.
 """
 
 import json
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PESTELResult:
-    """PESTEL analysis scores and narratives."""
+    """External risk factor scores and narratives."""
     political_risk: int = 3        # 1-5 scale
     economic_sensitivity: int = 3
     social_trends: int = 3
@@ -47,7 +47,7 @@ class PESTELResult:
 
 @dataclass
 class PortersResult:
-    """Porter's Five Forces scores and narratives."""
+    """Competitive force scores and narratives."""
     supplier_power: int = 3        # 1-5 scale (1=weak, 5=strong)
     buyer_power: int = 3
     competitive_rivalry: int = 3
@@ -74,7 +74,7 @@ class PortersResult:
 
 @dataclass
 class MarketSizingResult:
-    """TAM/SAM/SOM estimation."""
+    """Addressable market estimation (total, serviceable, obtainable)."""
     tam_usd: Optional[float] = None    # Total Addressable Market
     sam_usd: Optional[float] = None    # Serviceable Addressable Market
     som_usd: Optional[float] = None    # Serviceable Obtainable Market
@@ -134,17 +134,17 @@ class StrategicAssessment:
         # Market sizing
         ms = self.market_sizing
         if ms.tam_usd:
-            lines.append(f"\n**Market Sizing**: TAM=${ms.tam_usd/1e9:.0f}B, "
-                        f"SAM=${ms.sam_usd/1e9:.0f}B, SOM=${ms.som_usd/1e9:.0f}B"
-                        if ms.sam_usd and ms.som_usd else f"\n**TAM**: ${ms.tam_usd/1e9:.0f}B")
+            lines.append(f"\n**Market Sizing**: Total addressable=${ms.tam_usd/1e9:.0f}B, "
+                        f"Serviceable=${ms.sam_usd/1e9:.0f}B, Obtainable=${ms.som_usd/1e9:.0f}B"
+                        if ms.sam_usd and ms.som_usd else f"\n**Total Addressable Market**: ${ms.tam_usd/1e9:.0f}B")
             if ms.market_share_pct:
                 lines.append(f"  Current market share: {ms.market_share_pct:.1f}%")
             if ms.growth_rate:
                 lines.append(f"  Market CAGR: {ms.growth_rate*100:.1f}%")
 
-        # Porter's summary
+        # Competitive forces summary
         p = self.porters
-        lines.append(f"\n**Porter's Five Forces** (avg intensity: {p.avg_force:.1f}/5):")
+        lines.append(f"\n**Competitive Intensity** (avg: {p.avg_force:.1f}/5):")
         lines.append(f"  Supplier Power={p.supplier_power}/5, Buyer Power={p.buyer_power}/5, "
                     f"Rivalry={p.competitive_rivalry}/5, Substitutes={p.threat_of_substitutes}/5, "
                     f"New Entrants={p.threat_of_new_entrants}/5")
@@ -153,7 +153,7 @@ class StrategicAssessment:
         elif p.avg_force >= 3.5:
             lines.append("  → Intense competitive forces constrain margin potential")
 
-        # PESTEL headline risks
+        # External risk flags
         pe = self.pestel
         high_risks = []
         if pe.political_risk >= 4: high_risks.append("political")
@@ -161,7 +161,7 @@ class StrategicAssessment:
         if pe.legal_regulatory_risk >= 4: high_risks.append("regulatory")
         if pe.environmental_exposure >= 4: high_risks.append("environmental")
         if high_risks:
-            lines.append(f"\n**PESTEL Flags**: Elevated {', '.join(high_risks)} risk")
+            lines.append(f"\n**Macro Risk Flags**: Elevated {', '.join(high_risks)} risk")
 
         # Growth drivers
         if self.growth_drivers:
@@ -191,7 +191,7 @@ Return ONLY valid JSON matching this schema. No other text before or after.
     "tech_disruption_risk": 4,
     "environmental_exposure": 1,
     "legal_regulatory_risk": 3,
-    "narrative": "Concise PESTEL narrative (2-3 sentences per factor that scores 3+)."
+    "narrative": "Concise regulatory and macro risk narrative (2-3 sentences per factor that scores 3+)."
   },
   "porters": {
     "supplier_power": 2,
@@ -199,7 +199,7 @@ Return ONLY valid JSON matching this schema. No other text before or after.
     "competitive_rivalry": 4,
     "threat_of_substitutes": 2,
     "threat_of_new_entrants": 2,
-    "narrative": "Concise Porter's narrative explaining the competitive structure."
+    "narrative": "Concise competitive dynamics narrative explaining the industry structure."
   },
   "market_sizing": {
     "tam_usd": 500000000000,
@@ -222,8 +222,8 @@ Return ONLY valid JSON matching this schema. No other text before or after.
 ```
 
 Scoring guide (1-5 scale):
-- PESTEL: 1=minimal risk, 5=severe risk
-- Porter's: 1=weak force (favorable), 5=strong force (unfavorable)
+- External Risk Factors (pestel): 1=minimal risk, 5=severe risk
+- Competitive Forces (porters): 1=weak force (favorable), 5=strong force (unfavorable)
 
 Be evidence-based. If you lack data for market sizing, provide reasonable estimates with caveats. Revenue figures in USD (not billions).
 Growth drivers should be the company's actual business segments where identifiable."""
@@ -241,7 +241,7 @@ def run_strategic_assessment(
     sentiment_report: str = "",
 ) -> tuple[Optional[StrategicAssessment], AnalysisResult]:
     """
-    Run strategic assessment: PESTEL + Porter's + Market Sizing.
+    Run strategic assessment: external risk factors, competitive forces, and market sizing.
 
     Returns:
         (StrategicAssessment or None, AnalysisResult with narrative)
@@ -261,7 +261,7 @@ def run_strategic_assessment(
 **Recent News/Sentiment**:
 {sentiment_report[:600]}
 
-Provide PESTEL, Porter's Five Forces, TAM/SAM/SOM, and growth driver analysis."""
+Provide external risk assessment, competitive force analysis, addressable market sizing, and growth driver analysis."""
 
     response = call_llm(
         api_key=api_key,
@@ -359,15 +359,15 @@ def _build_narrative(assessment: StrategicAssessment) -> List[str]:
     """Build markdown narrative from structured assessment."""
     parts = []
 
-    # PESTEL
+    # External risk factors
     pe = assessment.pestel
-    parts.append("**PESTEL Analysis**\n\n" + (pe.narrative or
+    parts.append("**Regulatory & Macro Environment**\n\n" + (pe.narrative or
         f"Political risk: {pe.political_risk}/5. Economic sensitivity: {pe.economic_sensitivity}/5. "
         f"Tech disruption risk: {pe.tech_disruption_risk}/5. Regulatory risk: {pe.legal_regulatory_risk}/5."))
 
-    # Porter's
+    # Competitive dynamics
     p = assessment.porters
-    parts.append("**Porter's Five Forces**\n\n" + (p.narrative or
+    parts.append("**Competitive Dynamics**\n\n" + (p.narrative or
         f"Average competitive intensity: {p.avg_force:.1f}/5. "
         f"Supplier power: {p.supplier_power}/5, Buyer power: {p.buyer_power}/5, "
         f"Rivalry: {p.competitive_rivalry}/5, Substitutes: {p.threat_of_substitutes}/5, "
@@ -376,11 +376,11 @@ def _build_narrative(assessment: StrategicAssessment) -> List[str]:
     # Market Sizing
     ms = assessment.market_sizing
     if ms.tam_usd:
-        sizing_text = f"**Market Sizing**\n\n"
+        sizing_text = f"**Addressable Market**\n\n"
         sizing_text += ms.narrative or (
-            f"TAM: ${ms.tam_usd/1e9:.0f}B" +
-            (f", SAM: ${ms.sam_usd/1e9:.0f}B" if ms.sam_usd else "") +
-            (f", SOM: ${ms.som_usd/1e9:.0f}B" if ms.som_usd else "") +
+            f"Total addressable market: ${ms.tam_usd/1e9:.0f}B" +
+            (f", serviceable market: ${ms.sam_usd/1e9:.0f}B" if ms.sam_usd else "") +
+            (f", obtainable market: ${ms.som_usd/1e9:.0f}B" if ms.som_usd else "") +
             (f". Market share: {ms.market_share_pct:.1f}%." if ms.market_share_pct else "") +
             (f" Market CAGR: {ms.growth_rate*100:.1f}%." if ms.growth_rate else ""))
         parts.append(sizing_text)

@@ -185,6 +185,13 @@ class FinancialRatios:
     inventory_turnover: Optional[float] = None
     receivables_turnover: Optional[float] = None
 
+    # DuPont 5-factor decomposition
+    dupont_tax_burden: Optional[float] = None         # NI / Pretax
+    dupont_interest_burden: Optional[float] = None     # Pretax / EBIT
+    dupont_operating_margin: Optional[float] = None    # EBIT / Revenue
+    dupont_asset_turnover: Optional[float] = None      # Revenue / Assets
+    dupont_equity_multiplier: Optional[float] = None   # Assets / Equity
+
     # Per-share metrics
     revenue_per_share: Optional[float] = None
     book_value_per_share: Optional[float] = None
@@ -228,6 +235,13 @@ class FinancialRatios:
                 "asset_turnover": self.asset_turnover,
                 "inventory_turnover": self.inventory_turnover,
                 "receivables_turnover": self.receivables_turnover,
+            },
+            "dupont": {
+                "tax_burden": self.dupont_tax_burden,
+                "interest_burden": self.dupont_interest_burden,
+                "operating_margin": self.dupont_operating_margin,
+                "asset_turnover": self.dupont_asset_turnover,
+                "equity_multiplier": self.dupont_equity_multiplier,
             },
             "per_share": {
                 "revenue_per_share": self.revenue_per_share,
@@ -434,12 +448,34 @@ def analyze_financial_statements(
         asset_turnover = _safe_divide(stmt.revenue, stmt.total_assets)
         equity_multiplier = _safe_divide(stmt.total_assets, stmt.total_equity)
 
-        # ROIC: Net Income / (Total Equity + Total Debt - Cash)
+        # ROIC: NOPAT / Invested Capital (CFA standard)
+        # NOPAT = EBIT * (1 - effective_tax_rate)
+        # Invested Capital = Total Equity + Total Debt - Cash
         invested_capital = None
+        roic = None
         if stmt.total_equity is not None and stmt.total_debt is not None:
             cash = stmt.cash_and_equivalents or 0
             invested_capital = stmt.total_equity + stmt.total_debt - cash
-        roic = _safe_divide(stmt.net_income, invested_capital) if invested_capital and invested_capital > 0 else None
+
+        if invested_capital and invested_capital > 0 and stmt.operating_income is not None:
+            # Compute effective tax rate: tax_paid / pretax_income
+            pretax = (stmt.operating_income - (stmt.interest_expense or 0))
+            effective_tax_rate = 1.0 - _safe_divide(stmt.net_income, pretax) if pretax and pretax > 0 else 0.21
+            if effective_tax_rate is None or effective_tax_rate < 0 or effective_tax_rate > 0.50:
+                effective_tax_rate = 0.21  # fallback to US statutory
+            nopat = stmt.operating_income * (1 - effective_tax_rate)
+            roic = nopat / invested_capital
+
+        # Interest coverage ratio
+        interest_coverage = _safe_divide(stmt.operating_income, stmt.interest_expense) if stmt.interest_expense and stmt.interest_expense > 0 else None
+
+        # DuPont 5-factor decomposition: ROE = tax_burden * interest_burden * op_margin * asset_turnover * equity_multiplier
+        pretax_income = (stmt.operating_income - (stmt.interest_expense or 0)) if stmt.operating_income is not None else None
+        dupont_tax_burden = _safe_divide(stmt.net_income, pretax_income)          # NI / Pretax
+        dupont_interest_burden = _safe_divide(pretax_income, stmt.operating_income) # Pretax / EBIT
+        dupont_operating_margin = operating_margin                                  # EBIT / Revenue
+        dupont_asset_turnover = asset_turnover                                      # Revenue / Assets
+        dupont_equity_multiplier = equity_multiplier                                # Assets / Equity
 
         # FCF to Net Income (quality of earnings indicator)
         fcf_to_net_income = _safe_divide(stmt.free_cash_flow, stmt.net_income)
@@ -509,6 +545,7 @@ def analyze_financial_statements(
             debt_to_assets=debt_to_assets,
             equity_multiplier=equity_multiplier,
             asset_turnover=asset_turnover,
+            interest_coverage=interest_coverage,
             fcf_yield=fcf_margin,
             fcf_to_net_income=fcf_to_net_income,
             book_value_per_share=book_value_per_share,
@@ -518,6 +555,11 @@ def analyze_financial_statements(
             pb_ratio=pb_ratio,
             ps_ratio=ps_ratio,
             pfcf_ratio=pfcf_ratio,
+            dupont_tax_burden=dupont_tax_burden,
+            dupont_interest_burden=dupont_interest_burden,
+            dupont_operating_margin=dupont_operating_margin,
+            dupont_asset_turnover=dupont_asset_turnover,
+            dupont_equity_multiplier=dupont_equity_multiplier,
         )
         result.ratios.append(ratios)
 

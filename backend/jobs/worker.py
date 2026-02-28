@@ -277,6 +277,10 @@ class Worker:
         # Determine if this is a US company based on queue type
         is_us = job.queue_type == QueueType.US
 
+        # Read user's LLM model preference from session metadata
+        llm_config = session.metadata.get("llm_config", {})
+        model_override = llm_config.get("model")
+
         # Progress callback that updates the job queue
         async def progress_callback(step: int, total: int, message: str):
             progress = min(100, int((step / total) * 100))
@@ -292,6 +296,7 @@ class Worker:
                 progress_callback=lambda s, t, m: asyncio.run(
                     progress_callback(s, t, m)
                 ),
+                model_override=model_override,
             )
 
         result = await asyncio.to_thread(sync_analysis)

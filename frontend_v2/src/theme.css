@@ -1,0 +1,233 @@
+/**
+ * George Researcher Theme System
+ *
+ * AUTO-GENERATED from shared/colors.json — do not edit manually.
+ * Run: node scripts/generate-theme.js
+ *
+ * All brand colors are defined here. To rebrand:
+ * 1. Edit shared/colors.json
+ * 2. Run this script
+ * 3. That's it — the entire app will update
+ *
+ * Color naming convention:
+ * - brand-*: Primary brand colors (amber/orange family)
+ * - surface-*: Background colors
+ * - text-*: Text colors
+ * - accent-*: Semantic accent colors (success, danger, etc.)
+ * - chart-*: Chart-specific colors
+ */
+
+:root {
+  /* BRAND COLORS — buttons, links, highlights */
+  --brand-primary: #2563EB;
+  --brand-primary-dark: #1D4ED8;
+  --brand-primary-light: #3B82F6;
+  --brand-gradient-from: #1B2559;
+  --brand-gradient-to: #131B42;
+  --brand-surface: #EFF6FF;
+  --brand-surface-dark: #DBEAFE;
+  --brand-border: #BFDBFE;
+  --brand-dark: #0F1629;
+  --brand-dark-light: #151F41;
+  /* SURFACE COLORS — backgrounds */
+  --surface-primary: #F8FAFC;
+  --surface-secondary: #F1F5F9;
+  --surface-tertiary: #E2E8F0;
+  --surface-elevated: #FFFFFF;
+  --surface-card: #FFFFFF;
+  --surface-card-hover: #F1F5F9;
+  /* TEXT COLORS */
+  --text-primary: #151F41;
+  --text-secondary: #4A5568;
+  --text-tertiary: #64748B;
+  --text-muted: #94A3B8;
+  --text-on-brand: #FFFFFF;
+  --text-on-brand-surface: #1B2559;
+  /* BORDER COLORS */
+  --border-light: #D5DCE5;
+  --border-medium: #C1CAD6;
+  --border-dark: #94A3B8;
+
+  /* SEMANTIC ACCENT COLORS */
+  --accent-success: #22c55e;
+  --accent-success-light: #f0fdf4;
+  --accent-success-muted: #4ade80;
+  --accent-success-dark: #16a34a;
+  --accent-danger: #ef4444;
+  --accent-danger-light: #fef2f2;
+  --accent-danger-muted: #f87171;
+  --accent-danger-dark: #dc2626;
+  --accent-warning: #f59e0b;
+  --accent-warning-light: #fffbeb;
+  --accent-warning-muted: #fbbf24;
+  --accent-warning-dark: #d97706;
+  --accent-info: #3b82f6;
+  --accent-info-light: #eff6ff;
+  --accent-info-muted: #60a5fa;
+  --accent-info-dark: #2563eb;
+  /* CHART COLORS */
+  --chart-background: #FFFFFF;
+  --chart-grid: #D5DCE5;
+  --chart-text: #151F41;
+  --chart-bullish: #22c55e;
+  --chart-bearish: #ef4444;
+  --chart-sma20: #3b82f6;
+  --chart-sma50: #8b5cf6;
+  --chart-sma200: #f59e0b;
+  --chart-bollinger-line: #9ca3af;
+  --chart-rsi-line: #6366f1;
+  --chart-rsi-overbought: #ef4444;
+  --chart-rsi-oversold: #22c55e;
+  --chart-rsi-center: #9CA3AF;
+  --chart-macd-line: #3b82f6;
+  --chart-macd-signal: #f59e0b;
+  --chart-macd-positive: #22C55E;
+  --chart-macd-negative: #EF4444;
+  --chart-volume-positive: #22C55E;
+  --chart-volume-negative: #EF4444;
+  --chart-axis-label: #64748B;
+  --chart-title: #151F41;
+  --chart-spine: #C1CAD6;
+  --chart-spine-technical: #D5DCE5;
+  --chart-grid-line: #DDE3EB;
+  --chart-dimmed-text: #94A3B8;
+
+  /* PRIORITY BADGES */
+  --badge-high-bg: #fef2f2;
+  --badge-high-text: #dc2626;
+  --badge-medium-bg: #fffbeb;
+  --badge-medium-text: #d97706;
+  --badge-low-bg: #F1F5F9;
+  --badge-low-text: #4A5568;
+}
+
+/* ==========================================
+ * DARK MODE
+ * ========================================== */
+
+html.dark {
+  /* Brand colors — brighter for dark backgrounds */
+  --brand-primary: #60A5FA;
+  --brand-primary-dark: #3B82F6;
+  --brand-primary-light: #93C5FD;
+  --brand-gradient-from: #60A5FA;
+  --brand-gradient-to: #3B82F6;
+  --brand-surface: #1A2354;
+  --brand-surface-dark: #131B42;
+  --brand-border: #2D3A6A;
+  --brand-dark: #0A0F24;
+  --brand-dark-light: #0F1629;
+  /* Surfaces */
+  --surface-primary: #151F41;
+  --surface-secondary: #1F2951;
+  --surface-tertiary: #263059;
+  --surface-elevated: #1F2951;
+  --surface-card: #1F2951;
+  --surface-card-hover: #263059;
+  /* Text */
+  --text-primary: #F7F9FB;
+  --text-secondary: #CBD5E1;
+  --text-tertiary: #94A3B8;
+  --text-muted: #64748B;
+  --text-on-brand: #FFFFFF;
+  --text-on-brand-surface: #93C5FD;
+  /* Borders */
+  --border-light: #26345A;
+  --border-medium: #334170;
+  --border-dark: #64748B;
+
+  /* Semantic accents (adjusted for dark) */
+  --accent-success: #22c55e;
+  --accent-success-light: rgba(34, 197, 94, 0.3);
+  --accent-success-muted: rgba(34, 197, 94, 0.55);
+  --accent-success-dark: #16a34a;
+  --accent-danger: #ef4444;
+  --accent-danger-light: rgba(239, 68, 68, 0.3);
+  --accent-danger-muted: rgba(239, 68, 68, 0.55);
+  --accent-danger-dark: #dc2626;
+  --accent-warning: #f59e0b;
+  --accent-warning-light: rgba(245, 158, 11, 0.3);
+  --accent-warning-muted: rgba(245, 158, 11, 0.55);
+  --accent-warning-dark: #d97706;
+  --accent-info: #3b82f6;
+  --accent-info-light: rgba(59, 130, 246, 0.3);
+  --accent-info-muted: rgba(59, 130, 246, 0.55);
+  --accent-info-dark: #2563eb;
+  /* Charts */
+  --chart-background: #1F2951;
+  --chart-grid: #2D3A6A;
+  --chart-text: #CBD5E1;
+  --chart-bullish: #22c55e;
+  --chart-bearish: #ef4444;
+
+  /* Priority badges */
+  --badge-high-bg: rgba(239, 68, 68, 0.3);
+  --badge-high-text: #f87171;
+  --badge-medium-bg: rgba(245, 158, 11, 0.3);
+  --badge-medium-text: #fbbf24;
+  --badge-low-bg: rgba(100, 116, 139, 0.35);
+  --badge-low-text: #94a3b8;
+}
+
+/* ==========================================
+ * UTILITY CLASSES
+ * ========================================== */
+
+/* Brand gradient background */
+.bg-brand-gradient {
+  background: linear-gradient(to right, var(--brand-gradient-from), var(--brand-gradient-to));
+}
+
+/* Brand surface (light amber background) */
+.bg-brand-surface {
+  background-color: var(--brand-surface);
+}
+
+/* Card section background */
+.bg-surface-card {
+  background-color: var(--surface-card);
+}
+
+/* Text on brand */
+.text-brand {
+  color: var(--brand-primary);
+}
+
+/* Priority badges */
+.badge-high {
+  background-color: var(--badge-high-bg);
+  color: var(--badge-high-text);
+}
+
+.badge-medium {
+  background-color: var(--badge-medium-bg);
+  color: var(--badge-medium-text);
+}
+
+.badge-low {
+  background-color: var(--badge-low-bg);
+  color: var(--badge-low-text);
+}
+
+/* Belief badge (Analyst Notes) */
+.belief-badge {
+  background-color: var(--accent-warning-light);
+  color: var(--accent-warning-dark);
+}
+
+/* Accent gradient utilities */
+.bg-accent-success-gradient {
+  background: linear-gradient(to right, var(--accent-success), var(--accent-success-dark));
+}
+
+.bg-accent-danger-gradient {
+  background: linear-gradient(to right, var(--accent-danger), var(--accent-danger-dark));
+}
+
+.bg-accent-warning-gradient {
+  background: linear-gradient(to right, var(--accent-warning), var(--accent-warning-dark));
+}
+
+.bg-accent-info-gradient {
+  background: linear-gradient(to right, var(--accent-info), var(--accent-info-dark));
+}

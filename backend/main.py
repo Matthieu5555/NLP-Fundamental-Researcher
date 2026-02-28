@@ -37,12 +37,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from backend/.env (primary config) then project root .env (fallback).
+# load_dotenv() without a path only reads CWD/.env which is the project root when launched
+# via start.sh, missing all backend-specific vars like CORS_ORIGINS and API keys.
+_backend_dir = Path(__file__).parent
+load_dotenv(_backend_dir / ".env")
+load_dotenv()  # project root .env as fallback (does not override already-set vars)
 
 # Add project root to path for sibling module imports (src_george_researcher)
 # This centralizes the path manipulation that was previously done in individual wrappers
-_project_root = Path(__file__).parent.parent
+_project_root = _backend_dir.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
@@ -180,7 +184,7 @@ def create_app() -> FastAPI:
     )
 
     # CORS configuration
-    origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174").split(",")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

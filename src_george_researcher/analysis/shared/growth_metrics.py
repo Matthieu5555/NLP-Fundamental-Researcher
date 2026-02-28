@@ -340,10 +340,18 @@ def compute_growth_metrics(
         if stmt.total_debt and stmt.total_equity and stmt.total_equity != 0:
             debt_to_equity = stmt.total_debt / stmt.total_equity
 
+        # Derive fiscal_year from report_period when API returns null
+        fiscal_year = stmt.fiscal_year
+        if fiscal_year is None and stmt.report_period:
+            try:
+                fiscal_year = int(stmt.report_period[:4])
+            except (ValueError, IndexError):
+                pass
+
         # Build enriched period
         period = EnrichedPeriod(
             period=stmt.report_period,
-            fiscal_year=stmt.fiscal_year,
+            fiscal_year=fiscal_year,
             fiscal_quarter=stmt.fiscal_quarter,
             period_type=stmt.period,
 

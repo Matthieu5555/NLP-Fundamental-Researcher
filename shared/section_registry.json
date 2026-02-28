@@ -1,0 +1,114 @@
+{
+  "sections": {
+    "investment_thesis": {
+      "display": "Investment Thesis",
+      "type": "narrative",
+      "group": "thesis"
+    },
+    "recommendation": {
+      "display": "Recommendation",
+      "type": "narrative",
+      "group": "thesis"
+    },
+    "fundamentals": {
+      "display": "Fundamental Analysis",
+      "type": "narrative",
+      "group": "fundamentals"
+    },
+    "moat": {
+      "display": "Competitive Moat",
+      "type": "narrative",
+      "group": "fundamentals"
+    },
+    "strategy": {
+      "display": "Strategic Assessment",
+      "type": "narrative",
+      "group": "strategy"
+    },
+    "industry": {
+      "display": "Industry Dynamics",
+      "type": "narrative",
+      "group": "strategy"
+    },
+    "bull_case": {
+      "display": "Bull Case",
+      "type": "narrative",
+      "group": "debate"
+    },
+    "bear_case": {
+      "display": "Bear Case",
+      "type": "narrative",
+      "group": "debate"
+    },
+    "technicals": {
+      "display": "Technical Analysis",
+      "type": "narrative",
+      "group": "technicals"
+    },
+    "sources": {
+      "display": "Sources & References",
+      "type": "narrative",
+      "group": "meta"
+    },
+    "further_research": {
+      "display": "Further Research",
+      "type": "narrative",
+      "group": "meta"
+    },
+    "dcf": {
+      "display": "DCF Valuation",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "scenarios": {
+      "display": "Scenario Analysis",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "sensitivity": {
+      "display": "Sensitivity Analysis",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "sensitivity_operating": {
+      "display": "Operating Leverage Sensitivity",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "comps": {
+      "display": "Comparable Companies",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "precedents": {
+      "display": "Precedent Transactions",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "earnings_model": {
+      "display": "Earnings Model",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "football_field": {
+      "display": "Valuation Summary",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "conviction": {
+      "display": "Conviction & Rating",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "financials": {
+      "display": "Financial Statements",
+      "type": "valuation",
+      "group": "valuation"
+    },
+    "ddm": {
+      "display": "Dividend Discount Model",
+      "type": "valuation",
+      "group": "valuation"
+    }
+  }
+}

@@ -24,7 +24,7 @@ The analysis pipeline includes:
 6. Technical analysis
 7. Bull/Bear thesis generation
 8. Moat analysis
-9. Strategy analysis (SWOT + Future Outlook)
+9. Strategy analysis (Strategic Position + Future Outlook)
 10. Final recommendation
 
 This module wraps the legacy orchestrator from src_george_researcher/orchestrator.py

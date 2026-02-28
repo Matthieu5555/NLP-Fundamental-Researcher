@@ -44,15 +44,15 @@ class ReportEditAction(Enum):
 
 # Map section keywords to section IDs
 SECTION_KEYWORDS = {
-    'executive_summary': ['summary', 'executive', 'overview', 'tldr', 'intro', 'introduction'],
+    'investment_thesis': ['report', 'full report', 'entire report', 'whole report', 'everything', 'all sections', 'thesis'],
     'fundamentals': ['fundamentals', 'fundamental', 'valuation', 'metrics', 'financials', 'pe', 'p/e', 'earnings', 'revenue'],
     'technicals': ['technical', 'technicals', 'chart', 'price', 'trading', 'momentum', 'rsi', 'macd'],
     'bull_case': ['bull', 'bullish', 'upside', 'positive', 'optimistic', 'bull case'],
     'bear_case': ['bear', 'bearish', 'downside', 'negative', 'pessimistic', 'bear case', 'risks'],
-    'moat_analysis': ['moat', 'competitive', 'advantage', 'competition', 'defensibility'],
-    'strategy': ['strategy', 'swot', 'strengths', 'weaknesses', 'opportunities', 'threats', 'future outlook'],
+    'moat': ['moat', 'competitive', 'advantage', 'competition', 'defensibility'],
+    'strategy': ['strategy', 'strengths', 'weaknesses', 'opportunities', 'threats', 'future outlook'],
     'recommendation': ['recommendation', 'verdict', 'conclusion', 'final', 'rating'],
-    'full_report': ['report', 'full report', 'entire report', 'whole report', 'everything', 'all sections'],
+    'industry': ['industry', 'macro', 'regulatory', 'market sizing', 'tam', 'competitive forces'],
 }
 
 # Keywords indicating report edit intent
@@ -75,7 +75,7 @@ class ClassifiedIntent:
 
     # For REPORT_EDIT intent
     edit_action: Optional[ReportEditAction] = None
-    target_section: Optional[str] = None  # Section ID or 'full_report'
+    target_section: Optional[str] = None  # Section ID or 'investment_thesis'
     edit_instruction: Optional[str] = None  # Natural language instruction
     specific_points: Optional[List[str]] = None  # Points to emphasize/add
 
@@ -142,7 +142,7 @@ def classify_intent_heuristic(message: str) -> ClassifiedIntent:
         if not target_section and detected_action:
             # Check if they're clearly referring to "the report"
             if any(word in msg_lower for word in ['report', 'analysis', 'document']):
-                target_section = 'full_report'
+                target_section = 'investment_thesis'
 
         if target_section:
             return ClassifiedIntent(
@@ -196,7 +196,7 @@ Respond in JSON:
     "intent": "research|belief|report_edit|conversational",
     "confidence": 0.0-1.0,
     "edit_action": "rewrite|expand|shorten|emphasize|add_point|change_tone|restructure" (only if report_edit),
-    "target_section": "executive_summary|fundamentals|technicals|bull_case|bear_case|moat_analysis|strategy|recommendation|full_report" (only if report_edit),
+    "target_section": "investment_thesis|fundamentals|technicals|bull_case|bear_case|moat|strategy|industry|recommendation" (only if report_edit),
     "edit_instruction": "natural language description of the edit" (only if report_edit),
     "specific_points": ["point1", "point2"] (only if emphasize or add_point)
 }}"""
@@ -206,7 +206,7 @@ def classify_intent_llm(
     message: str,
     llm_func: Callable[..., Any],
     api_key: str,
-    model: str = "moonshotai/kimi-k2.5"
+    model: str = "google/gemini-3-flash-preview"
 ) -> ClassifiedIntent:
     """
     LLM-powered intent classification for higher accuracy.
@@ -269,7 +269,7 @@ def classify_intent(
     use_llm: bool = False,
     llm_func: Callable[..., Any] = None,
     api_key: str = None,
-    model: str = "moonshotai/kimi-k2.5"
+    model: str = "google/gemini-3-flash-preview"
 ) -> ClassifiedIntent:
     """
     Main entry point for intent classification.

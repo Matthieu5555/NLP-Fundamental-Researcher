@@ -16,12 +16,12 @@ class TestSectionType:
     """SectionType enum completeness and correctness."""
 
     EXPECTED_TYPES = [
-        "executive_summary", "fundamentals", "technicals",
-        "bull_case", "bear_case", "moat_analysis", "strategy",
-        "financial_statements", "sentiment", "risks", "recommendation",
-        "dcf_valuation", "comp_table", "earnings_model", "sensitivity",
-        "conviction", "scenario_analysis", "precedent_transactions",
-        "football_field", "external_forces", "sources", "custom",
+        "investment_thesis", "fundamentals", "technicals",
+        "bull_case", "bear_case", "moat", "strategy",
+        "industry", "recommendation",
+        "dcf", "comps", "earnings_model", "sensitivity",
+        "conviction", "scenarios", "precedents",
+        "football_field", "financials", "sources", "custom",
     ]
 
     def test_all_expected_types_exist(self):

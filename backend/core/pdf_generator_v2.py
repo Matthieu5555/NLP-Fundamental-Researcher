@@ -18,13 +18,14 @@ from weasyprint import HTML
 
 from .report_builder import ReportState, Source, AnalystSource
 from .branding_config import ReportBrandingConfig, get_default_config
+from .colors import PALETTE
 from .pdf_formatting import (
     RATING_COLORS,
     get_exchange_name,
     md_to_html,
     extract_highlights,
     extract_recommendation,
-    parse_swot,
+    parse_strategy_grid,
     format_number,
     remove_key_questions_section,
 )
@@ -111,7 +112,8 @@ def build_template_context(
     first_page_data: Optional['FirstPageData'] = None,
     technical_chart_bytes: Optional[bytes] = None,
     sidebar_chart_bytes: Optional[bytes] = None,
-    financial_statements: Optional[Dict[str, Any]] = None
+    financial_statements: Optional[Dict[str, Any]] = None,
+    session_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the context dictionary for Jinja2 template rendering."""
 
@@ -173,19 +175,19 @@ def build_template_context(
             {'label': 'P/E (TTM)', 'value': format_number(first_page_data.pe_ratio, 'ratio')},
             {'label': 'P/B', 'value': format_number(first_page_data.price_to_book, 'ratio')},
             {'label': 'EV/EBITDA', 'value': format_number(first_page_data.ev_to_ebitda, 'ratio')},
-            {'label': 'ROE', 'value': format_number(first_page_data.roe * 100 if first_page_data.roe else None, 'percent')},
-            {'label': 'Div Yield', 'value': format_number(first_page_data.dividend_yield * 100 if first_page_data.dividend_yield else None, 'percent')},
+            {'label': 'ROE', 'value': format_number(first_page_data.roe, 'percent_raw')},
+            {'label': 'Div Yield', 'value': format_number(first_page_data.dividend_yield, 'percent_raw')},
             {'label': 'Beta', 'value': f'{first_page_data.beta:.2f}' if first_page_data.beta else 'N/A'},
         ]
 
-    # Investment thesis - use full_report for the main content, not recommendation
-    # The full_report contains the Executive Summary, Business Context, etc.
+    # Investment thesis - use investment_thesis for the main content, not recommendation
+    # The investment_thesis contains the Executive Summary, Business Context, etc.
     thesis_content = ''
     highlights = []
     full_analysis = ''
 
-    if 'full_report' in report_state.sections:
-        full = report_state.sections['full_report']
+    if 'investment_thesis' in report_state.sections:
+        full = report_state.sections['investment_thesis']
         if hasattr(full, 'content') and full.content:
             full_content = full.content
 
@@ -209,7 +211,7 @@ def build_template_context(
                 thesis_content = md_to_html(full_content)
                 full_analysis = ''
 
-    # Fallback to recommendation if no full_report
+    # Fallback to recommendation if no investment_thesis
     if not thesis_content and 'recommendation' in report_state.sections:
         rec = report_state.sections['recommendation']
         if hasattr(rec, 'content') and rec.content:
@@ -229,12 +231,15 @@ def build_template_context(
         if hasattr(bear, 'content'):
             bear_case = md_to_html(bear.content)
 
-    # Strategy Analysis (SWOT + Future Outlook)
-    swot = None
+    # Strategy Analysis (Strategic Position + Future Outlook)
+    strategy_grid = None
+    strategy_content = ''
     if 'strategy' in report_state.sections:
         strategy_section = report_state.sections['strategy']
-        if hasattr(strategy_section, 'content'):
-            swot = parse_swot(strategy_section.content)  # Parse into SWOT grid format
+        if hasattr(strategy_section, 'content') and strategy_section.content:
+            strategy_grid = parse_strategy_grid(strategy_section.content)
+            if not strategy_grid:
+                strategy_content = md_to_html(strategy_section.content)
 
     # Fundamentals
     fundamentals = ''
@@ -250,23 +255,23 @@ def build_template_context(
         if hasattr(tech, 'content'):
             technicals = md_to_html(tech.content)
 
-    # Moat Analysis
+    # Moat Analysis (stored as "moat" by the orchestrator)
     moat_analysis = ''
-    if 'moat_analysis' in report_state.sections:
-        moat = report_state.sections['moat_analysis']
+    if 'moat' in report_state.sections:
+        moat = report_state.sections['moat']
         if hasattr(moat, 'content'):
             moat_analysis = md_to_html(moat.content)
 
     # Valuation sections
     dcf_valuation = ''
-    if 'dcf_valuation' in report_state.sections:
-        dcf_sec = report_state.sections['dcf_valuation']
+    if 'dcf' in report_state.sections:
+        dcf_sec = report_state.sections['dcf']
         if hasattr(dcf_sec, 'content'):
             dcf_valuation = md_to_html(dcf_sec.content)
 
     comp_table = ''
-    if 'comp_table' in report_state.sections:
-        comp_sec = report_state.sections['comp_table']
+    if 'comps' in report_state.sections:
+        comp_sec = report_state.sections['comps']
         if hasattr(comp_sec, 'content'):
             comp_table = md_to_html(comp_sec.content)
 
@@ -289,14 +294,14 @@ def build_template_context(
             conviction = md_to_html(conv_sec.content)
 
     scenario_analysis = ''
-    if 'scenario_analysis' in report_state.sections:
-        scen_sec = report_state.sections['scenario_analysis']
+    if 'scenarios' in report_state.sections:
+        scen_sec = report_state.sections['scenarios']
         if hasattr(scen_sec, 'content'):
             scenario_analysis = md_to_html(scen_sec.content)
 
     precedent_transactions = ''
-    if 'precedent_transactions' in report_state.sections:
-        prec_sec = report_state.sections['precedent_transactions']
+    if 'precedents' in report_state.sections:
+        prec_sec = report_state.sections['precedents']
         if hasattr(prec_sec, 'content'):
             precedent_transactions = md_to_html(prec_sec.content)
 
@@ -307,8 +312,8 @@ def build_template_context(
             football_field = md_to_html(ff_sec.content)
 
     strategic_assessment = ''
-    if 'external_forces' in report_state.sections:
-        sa_sec = report_state.sections['external_forces']
+    if 'industry' in report_state.sections:
+        sa_sec = report_state.sections['industry']
         if hasattr(sa_sec, 'content'):
             strategic_assessment = md_to_html(sa_sec.content)
 
@@ -354,8 +359,15 @@ def build_template_context(
     if full_analysis:
         full_analysis = remove_key_questions_section(full_analysis)
 
+    # Log section availability for debugging missing sections
+    available = [k for k, s in report_state.sections.items() if hasattr(s, 'content') and s.content]
+    logger.info("PDF context: available sections = %s", available)
+
     # Build context
     context = {
+        # Colors from unified palette (replaces all hardcoded hex in templates)
+        'c': PALETTE.pdf.to_template_dict(),
+
         # Firm branding
         'firm_name': branding.firm.name,
         'tool_branding': branding.firm.tool_branding,
@@ -392,7 +404,8 @@ def build_template_context(
         'full_analysis': full_analysis,
         'bull_case': bull_case,
         'bear_case': bear_case,
-        'swot': swot,
+        'strategy_grid': strategy_grid,
+        'strategy_content': strategy_content,
         'fundamentals': fundamentals,
         'technicals': technicals,
         'moat_analysis': moat_analysis,
@@ -419,7 +432,71 @@ def build_template_context(
 
         # Financial statements (US companies only)
         'financial_statements': financial_statements,
+
+        # Model audit (LLM-powered quality review)
+        'model_audit': session_metadata.get("model_audit", {}) if session_metadata else {},
     }
+
+    # Merge structured valuation display data when session_metadata is available
+    if session_metadata:
+        from .valuation_display import build_valuation_display
+
+        cp = first_page_data.current_price if first_page_data else None
+        val_display = build_valuation_display(session_metadata, current_price=cp)
+        context.update(val_display)
+
+        # Derive price target: prefer weighted fair value from scenarios, fall back to DCF
+        scenario_sum = val_display.get("scenario_summary", {})
+        dcf_sum = val_display.get("dcf_summary", {})
+        price_target = scenario_sum.get("weighted_fair_value") or dcf_sum.get("fair_value")
+        target_upside_pct = None
+        if price_target and cp and cp > 0:
+            target_upside_pct = round(((price_target - cp) / cp) * 100, 1)
+        context["price_target"] = price_target
+        context["target_upside_pct"] = target_upside_pct
+
+    # Build table of contents from sections that actually rendered.
+    # Order matches template section order so the TOC reads top-to-bottom.
+    toc_section_map = [
+        ('full_analysis', 'Investment Analysis'),
+        ('conviction', 'Conviction & Rating'),
+        ('football_field', 'Valuation Summary'),
+        ('dcf_valuation', 'DCF Valuation'),
+        ('ddm_summary', 'Dividend Discount Model'),
+        ('scenario_analysis', 'Scenario Analysis'),
+        ('comp_table', 'Comparable Company Analysis'),
+        ('precedent_transactions', 'Precedent Transactions'),
+        ('earnings_model', 'Earnings Model'),
+        ('sensitivity', 'Sensitivity Analysis'),
+        ('fundamentals', 'Fundamental Analysis'),
+        ('financial_statements', 'Financial Statements'),
+        ('strategy_grid', 'Strategic Assessment'),
+        ('strategy_content', 'Strategic Assessment'),
+        ('strategic_assessment', 'Industry Dynamics'),
+        ('moat_analysis', 'Competitive Moat'),
+        ('bull_case', 'Bull Case'),
+        ('bear_case', 'Bear Case'),
+        ('technicals', 'Technical Analysis'),
+        ('research_sources', 'Sources & References'),
+    ]
+    toc_entries = []
+    seen_titles: set[str] = set()
+    for key, title in toc_section_map:
+        if title in seen_titles:
+            continue
+        val = context.get(key)
+        if key == 'financial_statements':
+            if val and getattr(val, 'is_available', False):
+                toc_entries.append({'title': title})
+                seen_titles.add(title)
+        elif key == 'bull_case':
+            if context.get('bull_case') or context.get('bear_case'):
+                toc_entries.append({'title': title})
+                seen_titles.add(title)
+        elif val:
+            toc_entries.append({'title': title})
+            seen_titles.add(title)
+    context['toc_entries'] = toc_entries
 
     return context
 
@@ -431,7 +508,8 @@ def generate_pdf_v2(
     branding: Optional[ReportBrandingConfig] = None,
     analyst_sources: Optional[List[AnalystSource]] = None,
     first_page_data: Optional['FirstPageData'] = None,
-    financial_statements: Optional[Dict[str, Any]] = None
+    financial_statements: Optional[Dict[str, Any]] = None,
+    session_metadata: Optional[Dict[str, Any]] = None,
 ) -> bytes:
     """
     Generate professional PDF report using HTML/CSS and WeasyPrint.
@@ -440,7 +518,7 @@ def generate_pdf_v2(
     - Professional header with firm branding
     - Sidebar with rating, key metrics, and returns
     - Two-column investment thesis
-    - Color-coded SWOT and Bull/Bear sections
+    - Color-coded strategy grid and Bull/Bear sections
     - Full Unicode support
 
     Args:
@@ -500,7 +578,8 @@ def generate_pdf_v2(
         first_page_data=first_page_data,
         technical_chart_bytes=technical_chart_bytes,
         sidebar_chart_bytes=sidebar_chart_bytes,
-        financial_statements=financial_statements
+        financial_statements=financial_statements,
+        session_metadata=session_metadata,
     )
 
     # Load and render template
@@ -523,7 +602,8 @@ def generate_pdf(
     branding: Optional[ReportBrandingConfig] = None,
     analyst_sources: Optional[List[AnalystSource]] = None,
     first_page_data: Optional['FirstPageData'] = None,
-    financial_statements: Optional[Dict[str, Any]] = None
+    financial_statements: Optional[Dict[str, Any]] = None,
+    session_metadata: Optional[Dict[str, Any]] = None,
 ) -> bytes:
     """Alias for generate_pdf_v2 for backwards compatibility."""
     return generate_pdf_v2(
@@ -533,7 +613,8 @@ def generate_pdf(
         branding=branding,
         analyst_sources=analyst_sources,
         first_page_data=first_page_data,
-        financial_statements=financial_statements
+        financial_statements=financial_statements,
+        session_metadata=session_metadata,
     )
 
 

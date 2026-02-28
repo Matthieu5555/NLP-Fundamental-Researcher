@@ -21,6 +21,7 @@ Re-exports:
 """
 
 import logging
+from dataclasses import replace
 from typing import Optional, Callable, Any
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ def run_full_analysis(
     session_id: str,
     is_us: bool = True,
     progress_callback: Optional[Callable] = None,
+    model_override: Optional[str] = None,
 ) -> dict:
     """
     Unified analysis function that routes to US or Non-US orchestrator.
@@ -61,6 +63,7 @@ def run_full_analysis(
         session_id: Session ID for tracking
         is_us: True for US companies (use FDS), False for Non-US (use yfinance)
         progress_callback: Optional callback for progress updates (step, total, message)
+        model_override: If provided, replaces the env-loaded openrouter_model in config
 
     Returns:
         dict with analysis results and cost breakdown
@@ -68,6 +71,8 @@ def run_full_analysis(
     from backend.core.session import session_manager
 
     config = load_config()
+    if model_override:
+        config = replace(config, openrouter_model=model_override)
 
     # Wrap progress callback to match orchestrator signature
     def wrapped_progress(message: str, step: int = None):
@@ -112,29 +117,65 @@ def run_full_analysis(
 
                 # Store structured valuation data for frontend interactive components
                 if result.dcf_result:
-                    session.metadata["dcf_model"] = result.dcf_result.to_dict()
+                    session.metadata["dcf"] = result.dcf_result.to_dict()
 
                 if result.sensitivity_result:
-                    session.metadata["sensitivity_data"] = result.sensitivity_result.to_dict()
+                    session.metadata["sensitivity"] = result.sensitivity_result.to_dict()
 
                 if result.conviction_result:
-                    session.metadata["conviction_data"] = result.conviction_result.to_dict()
+                    session.metadata["conviction"] = result.conviction_result.to_dict()
 
                 if result.scenario_result:
-                    session.metadata["scenario_data"] = result.scenario_result.to_dict()
+                    session.metadata["scenarios"] = result.scenario_result.to_dict()
 
                 if result.football_field_result:
-                    session.metadata["football_field_data"] = result.football_field_result.to_dict()
+                    session.metadata["football_field"] = result.football_field_result.to_dict()
+
+                if result.comp_result:
+                    session.metadata["comps"] = result.comp_result.to_dict()
 
                 if result.precedent_result:
-                    session.metadata["precedent_data"] = result.precedent_result.to_dict()
+                    session.metadata["precedents"] = result.precedent_result.to_dict()
 
                 if result.earnings_rows:
                     from src_george_researcher.valuation.earnings_model import earnings_rows_to_dict
-                    session.metadata["earnings_model_data"] = earnings_rows_to_dict(result.earnings_rows)
+                    session.metadata["earnings_model"] = earnings_rows_to_dict(result.earnings_rows)
 
                 if result.growth_margin_sensitivity:
-                    session.metadata["growth_margin_sensitivity_data"] = result.growth_margin_sensitivity.to_dict()
+                    session.metadata["sensitivity_operating"] = result.growth_margin_sensitivity.to_dict()
+
+                if result.ddm_result:
+                    session.metadata["ddm"] = result.ddm_result
+
+                if result.earnings_quality:
+                    session.metadata["earnings_quality_data"] = result.earnings_quality
+
+                if result.investment_context:
+                    session.metadata["investment_context"] = result.investment_context.to_dict()
+
+                # Run model auditor (non-blocking: failures produce empty audit)
+                try:
+                    from src_george_researcher.valuation.model_auditor import audit_valuation_model
+                    facts = result.company_facts
+                    dcf_data = session.metadata.get("dcf", {})
+                    company_ctx = {
+                        "ticker": ticker,
+                        "name": facts.name if facts else ticker,
+                        "market_cap": facts.market_cap if facts else None,
+                        "sector": facts.sector if facts else None,
+                        "current_price": dcf_data.get("current_price", 0),
+                        "revenue": dcf_data.get("base_revenue"),
+                    }
+                    audit = audit_valuation_model(
+                        company_context=company_ctx,
+                        valuation_results=session.metadata,
+                        api_key=config.openrouter_api_key,
+                        model=config.openrouter_model,
+                    )
+                    session.metadata["model_audit"] = audit.to_dict()
+                except Exception as e:
+                    logger.warning("Model audit failed (non-blocking): %s", e)
+                    session.metadata["model_audit"] = {}
 
         # Include fair value in result for async watchlist update by the worker
         if result.dcf_result:
@@ -185,6 +226,28 @@ def run_full_analysis(
                 session.metadata["contradictions"] = structured_data["contradictions"]
                 session.metadata["research_gaps"] = structured_data["research_gaps"]
 
+                # Run model auditor (same logic as US path; auditor is model-agnostic)
+                try:
+                    from src_george_researcher.valuation.model_auditor import audit_valuation_model
+                    company_ctx = {
+                        "ticker": ticker,
+                        "name": ticker,
+                        "market_cap": None,
+                        "sector": None,
+                        "current_price": session.metadata.get("dcf", {}).get("current_price", 0),
+                        "revenue": session.metadata.get("dcf", {}).get("base_revenue"),
+                    }
+                    audit = audit_valuation_model(
+                        company_context=company_ctx,
+                        valuation_results=session.metadata,
+                        api_key=config.openrouter_api_key,
+                        model=config.openrouter_model,
+                    )
+                    session.metadata["model_audit"] = audit.to_dict()
+                except Exception as e:
+                    logger.warning("Model audit failed (non-blocking): %s", e)
+                    session.metadata["model_audit"] = {}
+
         return analysis_dict
 
 
@@ -209,16 +272,16 @@ def _convert_us_result(result: USFullAnalysis) -> dict:
         "moat": result.moat_analysis.content if result.moat_analysis else None,
         "strategy": result.strategy_analysis.content if result.strategy_analysis else None,
         "recommendation": result.recommendation.content if result.recommendation else None,
-        # Valuation content
-        "dcf_valuation": result.dcf_analysis.content if result.dcf_analysis else None,
-        "comp_table": result.comp_analysis.content if result.comp_analysis else None,
-        "earnings_model": result.earnings_model.content if result.earnings_model else None,
-        "sensitivity": result.sensitivity_analysis.content if result.sensitivity_analysis else None,
-        "conviction": result.conviction_analysis.content if result.conviction_analysis else None,
-        "scenario_analysis": result.scenario_analysis.content if result.scenario_analysis else None,
-        "precedent_transactions": result.precedent_analysis.content if result.precedent_analysis else None,
-        "football_field": result.football_field_analysis.content if result.football_field_analysis else None,
-        "external_forces": result.strategic_assessment_analysis.content if result.strategic_assessment_analysis else None,
+        # Valuation content — only include successful results
+        "dcf": result.dcf_analysis.content if result.dcf_analysis and result.dcf_analysis.success else None,
+        "comps": result.comp_analysis.content if result.comp_analysis and result.comp_analysis.success else None,
+        "earnings_model": result.earnings_model.content if result.earnings_model and result.earnings_model.success else None,
+        "sensitivity": result.sensitivity_analysis.content if result.sensitivity_analysis and result.sensitivity_analysis.success else None,
+        "conviction": result.conviction_analysis.content if result.conviction_analysis and result.conviction_analysis.success else None,
+        "scenarios": result.scenario_analysis.content if result.scenario_analysis and result.scenario_analysis.success else None,
+        "precedents": result.precedent_analysis.content if result.precedent_analysis and result.precedent_analysis.success else None,
+        "football_field": result.football_field_analysis.content if result.football_field_analysis and result.football_field_analysis.success else None,
+        "industry": result.strategic_assessment_analysis.content if result.strategic_assessment_analysis and result.strategic_assessment_analysis.success else None,
     }
 
 
@@ -271,12 +334,13 @@ def _populate_report_us(report: Any, result: USFullAnalysis):
     if result.strategy_analysis:
         report.update_section("strategy", result.strategy_analysis.content)
 
-    # Valuation sections
+    # Valuation sections — only store successful results to avoid rendering
+    # "could not be performed" messages in PDF/frontend
     if result.dcf_analysis and result.dcf_analysis.success:
-        report.update_section("dcf_valuation", result.dcf_analysis.content)
+        report.update_section("dcf", result.dcf_analysis.content)
 
     if result.comp_analysis and result.comp_analysis.success:
-        report.update_section("comp_table", result.comp_analysis.content)
+        report.update_section("comps", result.comp_analysis.content)
 
     if result.earnings_model and result.earnings_model.success:
         report.update_section("earnings_model", result.earnings_model.content)
@@ -287,18 +351,17 @@ def _populate_report_us(report: Any, result: USFullAnalysis):
     if result.conviction_analysis and result.conviction_analysis.success:
         report.update_section("conviction", result.conviction_analysis.content)
 
-    # New valuation sections
     if result.scenario_analysis and result.scenario_analysis.success:
-        report.update_section("scenario_analysis", result.scenario_analysis.content)
+        report.update_section("scenarios", result.scenario_analysis.content)
 
     if result.precedent_analysis and result.precedent_analysis.success:
-        report.update_section("precedent_transactions", result.precedent_analysis.content)
+        report.update_section("precedents", result.precedent_analysis.content)
 
     if result.football_field_analysis and result.football_field_analysis.success:
         report.update_section("football_field", result.football_field_analysis.content)
 
     if result.strategic_assessment_analysis and result.strategic_assessment_analysis.content:
-        report.update_section("external_forces", result.strategic_assessment_analysis.content)
+        report.update_section("industry", result.strategic_assessment_analysis.content)
 
     # Add sources
     for source in result.sources_collected:

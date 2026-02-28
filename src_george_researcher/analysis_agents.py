@@ -116,6 +116,8 @@ class AnalysisContext:
     counter_argument: str = ""  # For debate rounds
     bull_thesis: str = ""  # For synthesis
     bear_thesis: str = ""  # For synthesis
+    analyst_directives: str = ""  # Hard overrides from analyst beliefs
+    conviction_summary: str = ""  # Pre-computed conviction score for synthesis
 
 
 def identify_research_topics(
@@ -295,6 +297,11 @@ def _generate_thesis(context: AnalysisContext, direction: str) -> AnalysisResult
         if context.moat_analysis else ""
     )
 
+    directives_section = (
+        f"\n{context.analyst_directives}"
+        if context.analyst_directives else ""
+    )
+
     closing_question = (
         "Based on ALL the above analyses, what arguments would bulls make for this investment?"
         if is_bull else
@@ -310,7 +317,7 @@ Market Cap: {mcap}
 P/E: {pe}
 
 Fundamentals Analysis:
-{context.fundamentals_analysis[:FUNDAMENTALS_CONTEXT_LIMIT]}{technicals_section}{strategy_section}{moat_section}{sentiment_context}{counter}
+{context.fundamentals_analysis[:FUNDAMENTALS_CONTEXT_LIMIT]}{technicals_section}{strategy_section}{moat_section}{sentiment_context}{counter}{directives_section}
 
 {closing_question}"""
 
@@ -341,9 +348,16 @@ def analyze_moat(
     model: str,
     stock_info: StockInfo,
     sentiment_report: str = "",
+    analyst_directives: str = "",
+    fundamentals_analysis: str = "",
 ) -> AnalysisResult:
     """Warren Buffett-style economic moat analysis with news context."""
     sentiment_context = f"\n\nNEWS CONTEXT:\n{sentiment_report[:NEWS_CONTEXT_LIMIT]}" if sentiment_report else ""
+    directives_section = f"\n{analyst_directives}" if analyst_directives else ""
+    fundamentals_context = (
+        f"\n\nFUNDAMENTALS ANALYSIS:\n{fundamentals_analysis[:FUNDAMENTALS_CONTEXT_LIMIT]}"
+        if fundamentals_analysis else ""
+    )
 
     mcap = f"${stock_info.market_cap/1e9:.1f}B" if stock_info.market_cap else "N/A"
     margin = f"{stock_info.profit_margin*100:.1f}%" if stock_info.profit_margin else "N/A"
@@ -361,7 +375,7 @@ Business: {business}
 Financials:
 - Market Cap: {mcap}
 - Profit Margin: {margin}
-- ROE: {roe}{sentiment_context}
+- ROE: {roe}{fundamentals_context}{sentiment_context}{directives_section}
 
 Evaluate the competitive position."""
 
@@ -383,9 +397,16 @@ def analyze_strategy(
     stock_info: StockInfo,
     fundamentals_analysis: str,
     sentiment_report: str = "",
+    analyst_directives: str = "",
+    strategic_context: str = "",
 ) -> AnalysisResult:
-    """Strategic analysis (SWOT + Future Outlook) with news sentiment context."""
+    """Strategic position and outlook analysis with news sentiment context."""
     sentiment_context = f"\n\nNEWS SENTIMENT:\n{sentiment_report[:SENTIMENT_LIMIT]}" if sentiment_report else ""
+    directives_section = f"\n{analyst_directives}" if analyst_directives else ""
+    structured_assessment = (
+        f"\n\nSTRUCTURED INDUSTRY & COMPETITIVE ASSESSMENT:\n{strategic_context[:1500]}"
+        if strategic_context else ""
+    )
 
     mcap = f"${stock_info.market_cap/1e9:.1f}B" if stock_info.market_cap else "N/A"
     margin = f"{stock_info.profit_margin*100:.1f}%" if stock_info.profit_margin else "N/A"
@@ -406,9 +427,9 @@ Key Financials:
 - Revenue Growth: {growth}
 
 Fundamentals Summary:
-{fundamentals_analysis[:STRATEGY_FUNDAMENTALS_LIMIT]}{sentiment_context}
+{fundamentals_analysis[:STRATEGY_FUNDAMENTALS_LIMIT]}{structured_assessment}{sentiment_context}{directives_section}
 
-Organize findings into SWOT framework with Future Outlook."""
+Assess the strategic position and project the outlook forward."""
 
     response = call_llm(api_key, model, STRATEGY_SYSTEM, user_prompt)
 
@@ -420,10 +441,6 @@ Organize findings into SWOT framework with Future Outlook."""
         error=response.error,
         cost_usd=response.cost_usd,
     )
-
-
-# Legacy alias for backwards compatibility
-analyze_swot = analyze_strategy
 
 
 def synthesize_recommendation(context: AnalysisContext) -> AnalysisResult:
@@ -446,6 +463,16 @@ def synthesize_recommendation(context: AnalysisContext) -> AnalysisResult:
         if context.strategy_analysis else ""
     )
 
+    directives_section = (
+        f"\n{context.analyst_directives}"
+        if context.analyst_directives else ""
+    )
+
+    conviction_section = (
+        f"\n\nCONVICTION SCORE:\n{context.conviction_summary}"
+        if context.conviction_summary else ""
+    )
+
     user_prompt = f"""Synthesize the research for {context.stock_info.symbol}:
 
 FUNDAMENTALS:
@@ -461,7 +488,7 @@ BEAR CASE:
 {context.bear_thesis[:RECOMMENDATION_BULL_BEAR_LIMIT]}
 
 MOAT ANALYSIS:
-{context.moat_analysis[:RECOMMENDATION_MOAT_LIMIT]}{strategy_section}{sentiment_section}
+{context.moat_analysis[:RECOMMENDATION_MOAT_LIMIT]}{strategy_section}{sentiment_section}{conviction_section}{directives_section}
 
 Provide a research summary for the analyst."""
 
@@ -482,6 +509,7 @@ def generate_full_report(
     sources: List[SourceLink] = None,
     analyst_notes: list = None,
     analyst_citations: str = "",
+    conviction_summary: str = "",
 ) -> AnalysisResult:
     """
     Generate synthesized narrative full report incorporating all analyses.
@@ -518,9 +546,14 @@ def generate_full_report(
     if analyst_citations:
         analyst_section = analyst_citations
 
+    # Build conviction context if available
+    conviction_section = ""
+    if conviction_summary:
+        conviction_section = f"\n\nINVESTMENT RATING CONTEXT:\n{conviction_summary}"
+
     # Build comprehensive context for the LLM
     symbol = context.stock_info.symbol
-    user_prompt = f"""Create a comprehensive investment thesis narrative for {symbol}:
+    user_prompt = f"""Create a comprehensive investment thesis narrative for {symbol}:{conviction_section}
 
 FUNDAMENTALS ANALYSIS:
 {context.fundamentals_analysis[:FULL_REPORT_FUNDAMENTALS_LIMIT]}

@@ -25,6 +25,8 @@ from src_george_researcher.prompts import DCF_ASSUMPTIONS_SYSTEM
 from src_george_researcher.valuation.dcf_engine import (
     DCFAssumptions,
     DCFResult,
+    EVBridge,
+    WACCComponents,
     calculate_dcf,
     compute_wacc,
 )
@@ -190,7 +192,7 @@ def _format_dcf_narrative(result: DCFResult) -> str:
 
     lines = [
         f"**DCF Fair Value: ${result.fair_value_per_share:.2f}** | "
-        f"Current Price: ${result.current_price:.2f if result.current_price else 'N/A'} | "
+        f"Current Price: {f'${result.current_price:.2f}' if result.current_price else 'N/A'} | "
         f"{'Upside' if result.upside_downside_pct > 0 else 'Downside'}: {abs_pct:.1f}%\n",
 
         f"Our discounted cash flow model suggests the stock is approximately {abs_pct:.1f}% "
@@ -267,7 +269,24 @@ def _format_dcf_narrative(result: DCFResult) -> str:
         f"| PV of FCFs | ${sum(result.discounted_fcfs) / 1e9:.1f}B |",
         f"| PV of Terminal Value | ${result.pv_terminal_value / 1e9:.1f}B |",
         f"| Enterprise Value | ${result.enterprise_value / 1e9:.1f}B |",
-        f"| Less: Net Debt | ${result.net_debt / 1e9:.1f}B |",
+    ])
+
+    # Full EV bridge if available, otherwise simple net debt line
+    if result.ev_bridge:
+        bridge = result.ev_bridge
+        lines.append(f"| Less: Net Debt | ${bridge.net_debt / 1e9:.1f}B |")
+        if bridge.minority_interest:
+            lines.append(f"| Less: Minority Interest | ${bridge.minority_interest / 1e9:.1f}B |")
+        if bridge.preferred_stock:
+            lines.append(f"| Less: Preferred Stock | ${bridge.preferred_stock / 1e9:.1f}B |")
+        if bridge.pension_deficit:
+            lines.append(f"| Less: Pension Deficit | ${bridge.pension_deficit / 1e9:.1f}B |")
+        if bridge.equity_investments:
+            lines.append(f"| Plus: Equity Investments | ${bridge.equity_investments / 1e9:.1f}B |")
+    else:
+        lines.append(f"| Less: Net Debt | ${result.net_debt / 1e9:.1f}B |")
+
+    lines.extend([
         f"| Equity Value | ${result.equity_value / 1e9:.1f}B |",
         f"| Shares Outstanding | {result.shares_outstanding / 1e9:.2f}B |",
         f"| **Fair Value / Share** | **${result.fair_value_per_share:.2f}** |",
@@ -316,9 +335,9 @@ def _build_dcf_context(
 {strategic_text}
 
 IMPORTANT INSTRUCTIONS:
-- Use TAM/SAM estimates to bound your revenue growth assumptions (revenue cannot exceed SOM without gaining market share)
-- Use Porter's competitive intensity to inform margin trajectory (high rivalry = margin pressure)
-- Use PESTEL risks to calibrate WACC and terminal growth rate
+- Use addressable market estimates to bound your revenue growth assumptions (revenue cannot exceed the obtainable market without gaining share)
+- Use competitive intensity scores to inform margin trajectory (high rivalry = margin pressure)
+- Use macro risk flags to calibrate WACC and terminal growth rate
 - Provide decomposed assumptions: gross margins, opex ratio, D&A, capex, tax rate, and NWC change
 
 Based on this data, provide your DCF assumptions as JSON."""
@@ -333,9 +352,16 @@ def run_dcf_analysis(
     analyst_estimates: Optional[List[AnalystEstimate]] = None,
     sentiment_report: str = "",
     strategic_assessment: Optional[StrategicAssessment] = None,
+    assumption_overrides: Optional[dict] = None,
 ) -> tuple[Optional[DCFResult], AnalysisResult]:
     """
     Run DCF analysis: LLM reasons about assumptions, engine runs the math.
+
+    Args:
+        assumption_overrides: Dict of DCFAssumptions field overrides from the
+            analyst. These are hard overrides: the analyst's values replace
+            the LLM's unconditionally. Applied after LLM parsing, before
+            calculation.
 
     Returns:
         (DCFResult or None, AnalysisResult with narrative)
@@ -387,12 +413,16 @@ def run_dcf_analysis(
         interest_expense = getattr(latest, 'interest_expense', None)
         total_debt_val = latest.total_debt
 
-    computed_wacc, wacc_rationale = compute_wacc(
+    wacc_result = compute_wacc(
         beta=stock_info.beta,
         market_cap=stock_info.market_cap,
         total_debt=total_debt_val,
         interest_expense=interest_expense,
+        current_price=stock_info.current_price,
+        shares_outstanding=stock_info.shares_outstanding,
     )
+    computed_wacc = wacc_result.wacc
+    wacc_rationale = wacc_result.rationale
 
     # Build context for LLM
     user_prompt = _build_dcf_context(stock_info, enriched_financials, financials, analyst_estimates, strategic_assessment)
@@ -418,6 +448,14 @@ def run_dcf_analysis(
         logger.warning("Using default DCF assumptions (LLM parsing failed)")
         assumptions = DEFAULT_ASSUMPTIONS
 
+    # Apply analyst overrides (hard replacement, analyst's word is final)
+    if assumption_overrides:
+        logger.info(f"Applying analyst overrides to DCF: {list(assumption_overrides.keys())}")
+        assumptions = assumptions.with_overrides(assumption_overrides)
+
+    # Build EV bridge (CFA-standard enterprise value to equity bridge)
+    ev_bridge = EVBridge.from_net_debt(net_debt)
+
     # Run DCF calculation
     dcf_result = calculate_dcf(
         base_revenue=base_revenue,
@@ -425,6 +463,8 @@ def run_dcf_analysis(
         shares_outstanding=shares_outstanding,
         current_price=current_price,
         assumptions=assumptions,
+        ev_bridge=ev_bridge,
+        wacc_components=wacc_result,
     )
 
     # Format narrative

@@ -125,7 +125,7 @@ class InsightBadge:
 
 @dataclass(frozen=True)
 class CaseStyling:
-    """Bull/bear case or SWOT styling."""
+    """Bull/bear case or strategy grid styling."""
     bg: str
     border: str
     text: str = ""
@@ -164,6 +164,53 @@ class PdfColors:
     fcf_highlight: FinancialHighlight
     positive: str
     negative: str
+    base_case_bg: str
+    estimate_row_bg: str
+
+    def to_template_dict(self) -> Dict[str, str]:
+        """Flatten all PDF colors into a simple dict for Jinja2 templates.
+
+        Templates reference these as {{ c.body_text }}, {{ c.bull_case_bg }}, etc.
+        This is the bridge between the typed dataclass and the template engine.
+        """
+        return {
+            "body_text": self.body_text,
+            "dark_text": self.dark_text,
+            "content_text": self.content_text,
+            "label_text": self.label_text,
+            "secondary_text": self.secondary_text,
+            "dimmed_text": self.dimmed_text,
+            "border_light": self.border_light,
+            "border_dotted": self.border_dotted,
+            "row_separator": self.row_separator,
+            "section_bg": self.section_bg,
+            "highlight_bg": self.highlight_bg,
+            "table_alt_row": self.table_alt_row,
+            "positive": self.positive,
+            "negative": self.negative,
+            "bull_case_bg": self.bull_case.bg,
+            "bull_case_border": self.bull_case.border,
+            "bull_case_text": self.bull_case.text,
+            "bear_case_bg": self.bear_case.bg,
+            "bear_case_border": self.bear_case.border,
+            "bear_case_text": self.bear_case.text,
+            "swot_strengths_bg": self.swot_strengths.bg,
+            "swot_strengths_border": self.swot_strengths.border,
+            "swot_weaknesses_bg": self.swot_weaknesses.bg,
+            "swot_weaknesses_border": self.swot_weaknesses.border,
+            "swot_opportunities_bg": self.swot_opportunities.bg,
+            "swot_opportunities_border": self.swot_opportunities.border,
+            "swot_threats_bg": self.swot_threats.bg,
+            "swot_threats_border": self.swot_threats.border,
+            "margin_highlight_bg": self.margin_highlight.bg,
+            "margin_highlight_text": self.margin_highlight.text,
+            "debt_highlight_bg": self.debt_highlight.bg,
+            "debt_highlight_text": self.debt_highlight.text,
+            "fcf_highlight_bg": self.fcf_highlight.bg,
+            "fcf_highlight_text": self.fcf_highlight.text,
+            "base_case_bg": self.base_case_bg,
+            "estimate_row_bg": self.estimate_row_bg,
+        }
 
 
 @dataclass(frozen=True)
@@ -311,6 +358,8 @@ def _load_palette() -> ColorPalette:
         fcf_highlight=FinancialHighlight(**pdf_data["financials"]["fcfHighlight"]),
         positive=pdf_data["positive"],
         negative=pdf_data["negative"],
+        base_case_bg=pdf_data["baseCaseBg"],
+        estimate_row_bg=pdf_data["estimateRowBg"],
     )
 
     badges = BadgeColors(

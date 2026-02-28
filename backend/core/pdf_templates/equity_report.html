@@ -12,19 +12,19 @@
             @bottom-center {
                 content: "Page " counter(page) " of " counter(pages);
                 font-size: 8pt;
-                color: #666;
+                color: {{ c.label_text }};
             }
 
             @bottom-left {
                 content: "{{ firm_name }}";
                 font-size: 8pt;
-                color: #666;
+                color: {{ c.label_text }};
             }
 
             @bottom-right {
                 content: "See disclosures at end of report";
                 font-size: 7pt;
-                color: #888;
+                color: {{ c.secondary_text }};
             }
         }
 
@@ -46,17 +46,64 @@
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 9.5pt;
             line-height: 1.45;
-            color: #1a1a1a;
+            color: {{ c.body_text }};
         }
 
         h1 { font-size: 18pt; font-weight: 700; margin-bottom: 8px; }
         h2 { font-size: 13pt; font-weight: 700; margin: 16px 0 8px 0; color: {{ primary_color }}; }
         h3 { font-size: 11pt; font-weight: 700; margin: 12px 0 6px 0; }
 
-        p { margin-bottom: 8px; text-align: justify; }
+        p { margin-bottom: 8px; text-align: justify; orphans: 3; widows: 3; }
 
         ul, ol { margin-left: 16px; margin-bottom: 8px; }
         li { margin-bottom: 4px; }
+
+        strong { font-weight: 700; }
+        em { font-style: italic; }
+
+        /* Generic tables from markdown content */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            margin: 10px 0;
+            break-inside: avoid;
+        }
+
+        table th {
+            background: {{ c.section_bg }};
+            font-weight: 700;
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 2px solid {{ c.border_light }};
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: {{ c.content_text }};
+        }
+
+        table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid {{ c.row_separator }};
+            vertical-align: top;
+        }
+
+        table tr:nth-child(even) td {
+            background: {{ c.table_alt_row }};
+        }
+
+        table td:not(:first-child) {
+            text-align: right;
+        }
+
+        /* Blockquotes from markdown */
+        blockquote {
+            border-left: 3px solid {{ c.border_light }};
+            padding: 6px 12px;
+            margin: 8px 0;
+            color: {{ c.content_text }};
+            font-style: italic;
+        }
 
         /* ===== FIRST PAGE - COVER ===== */
         .cover-page {
@@ -76,13 +123,13 @@
 
         .header-left {
             float: left;
-            width: 75%;
+            width: 70%;
         }
 
         .header-right {
             float: right;
             text-align: center;
-            width: 20%;
+            width: 25%;
             padding-top: 8px;
         }
 
@@ -117,7 +164,7 @@
             font-size: 7pt;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #666;
+            color: {{ c.label_text }};
             margin-bottom: 2px;
         }
 
@@ -142,7 +189,7 @@
             float: left;
             width: 27%;
             font-size: 8.5pt;
-            border-right: 1px solid #ddd;
+            border-right: 1px solid {{ c.border_light }};
             padding-right: 14px;
         }
 
@@ -165,7 +212,7 @@
             display: flex;
             justify-content: space-between;
             padding: 3px 0;
-            border-bottom: 1px dotted #e0e0e0;
+            border-bottom: 1px dotted {{ c.border_dotted }};
         }
 
         .data-row:last-child {
@@ -173,7 +220,7 @@
         }
 
         .data-label {
-            color: #555;
+            color: {{ c.content_text }};
         }
 
         .data-value {
@@ -181,12 +228,12 @@
             text-align: right;
         }
 
-        .positive { color: #16a34a; }
-        .negative { color: #dc2626; }
+        .positive { color: {{ c.positive }}; }
+        .negative { color: {{ c.negative }}; }
 
         /* Analyst Box */
         .analyst-box {
-            background: #f8f9fa;
+            background: {{ c.section_bg }};
             padding: 10px;
             font-size: 8pt;
             margin-bottom: 12px;
@@ -210,7 +257,7 @@
 
         .sidebar-chart .chart-label {
             font-size: 7pt;
-            color: #888;
+            color: {{ c.secondary_text }};
             margin-top: 4px;
         }
 
@@ -236,10 +283,11 @@
 
         /* Key Highlights Box */
         .highlights-box {
-            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            background: linear-gradient(135deg, {{ c.section_bg }} 0%, #fff 100%);
             border-left: 4px solid {{ primary_color }};
             padding: 12px 14px;
             margin: 12px 0;
+            break-inside: avoid;
         }
 
         .highlights-box h3 {
@@ -268,7 +316,8 @@
             color: {{ primary_color }};
             border-bottom: 2px solid {{ primary_color }};
             padding-bottom: 6px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            break-after: avoid;
         }
 
         /* Two-column text for Investment Analysis */
@@ -295,26 +344,26 @@
         }
 
         .case-section.bull {
-            background: linear-gradient(to right, #dcfce7, #fff);
-            border-left: 4px solid #16a34a;
+            background: linear-gradient(to right, {{ c.bull_case_bg }}, #fff);
+            border-left: 4px solid {{ c.positive }};
         }
 
         .case-section.bear {
-            background: linear-gradient(to right, #fee2e2, #fff);
-            border-left: 4px solid #dc2626;
+            background: linear-gradient(to right, {{ c.bear_case_bg }}, #fff);
+            border-left: 4px solid {{ c.negative }};
         }
 
         .case-section h3 {
             margin-top: 0;
         }
 
-        .case-section.bull h3 { color: #16a34a; }
-        .case-section.bear h3 { color: #dc2626; }
+        .case-section.bull h3 { color: {{ c.positive }}; }
+        .case-section.bear h3 { color: {{ c.negative }}; }
 
         /* Sources Section */
         .sources-section {
             font-size: 8pt;
-            color: #555;
+            color: {{ c.content_text }};
         }
 
         .source-item {
@@ -330,7 +379,7 @@
 
         /* Appendix Sections */
         .appendix-header {
-            background: #f5f5f5;
+            background: {{ c.section_bg }};
             padding: 8px 12px;
             margin: 16px 0 12px 0;
             font-size: 11pt;
@@ -339,30 +388,31 @@
             border-left: 4px solid {{ primary_color }};
         }
 
-        /* SWOT Grid */
-        .swot-grid {
+        /* Strategy Grid */
+        .strategy-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin: 16px 0;
         }
 
-        .swot-box {
+        .strategy-box {
             padding: 12px;
             border-radius: 4px;
+            break-inside: avoid;
         }
 
-        .swot-box.strengths { background: #dcfce7; border-left: 4px solid #16a34a; }
-        .swot-box.weaknesses { background: #fee2e2; border-left: 4px solid #dc2626; }
-        .swot-box.opportunities { background: #dbeafe; border-left: 4px solid #2563eb; }
-        .swot-box.threats { background: #fef3c7; border-left: 4px solid #d97706; }
+        .strategy-box.advantages { background: {{ c.swot_strengths_bg }}; border-left: 4px solid {{ c.swot_strengths_border }}; }
+        .strategy-box.vulnerabilities { background: {{ c.swot_weaknesses_bg }}; border-left: 4px solid {{ c.swot_weaknesses_border }}; }
+        .strategy-box.tailwinds { background: {{ c.swot_opportunities_bg }}; border-left: 4px solid {{ c.swot_opportunities_border }}; }
+        .strategy-box.headwinds { background: {{ c.swot_threats_bg }}; border-left: 4px solid {{ c.swot_threats_border }}; }
 
-        .swot-box h4 {
+        .strategy-box h4 {
             font-size: 10pt;
             margin-bottom: 6px;
         }
 
-        .swot-box ul {
+        .strategy-box ul {
             font-size: 8.5pt;
             margin: 0;
         }
@@ -382,17 +432,17 @@
         .disclaimer-page {
             page-break-before: always;
             font-size: 8.5pt;
-            color: #444;
+            color: {{ c.content_text }};
         }
 
         .disclaimer-page h2 {
-            color: #333;
+            color: {{ c.dark_text }};
         }
 
         .disclaimer-box {
-            background: #f5f5f5;
+            background: {{ c.section_bg }};
             padding: 16px;
-            border: 1px solid #ddd;
+            border: 1px solid {{ c.border_light }};
             margin: 16px 0;
         }
 
@@ -400,7 +450,7 @@
             text-align: center;
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid {{ c.border_light }};
         }
 
         .attribution .analyst-name {
@@ -414,6 +464,228 @@
             font-size: 14pt;
             font-weight: 700;
             color: {{ primary_color }};
+        }
+
+        /* ===== VALUATION COMPONENTS ===== */
+
+        /* Metric cards row */
+        .val-metrics {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .val-metric {
+            flex: 1;
+            min-width: 80px;
+            background: {{ c.section_bg }};
+            border: 1px solid {{ c.border_light }};
+            border-radius: 4px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+
+        .val-metric-label {
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: {{ c.secondary_text }};
+            margin-bottom: 3px;
+        }
+
+        .val-metric-value {
+            font-size: 14pt;
+            font-weight: 700;
+            color: {{ primary_color }};
+        }
+
+        .val-metric-value.positive { color: {{ c.positive }}; }
+        .val-metric-value.negative { color: {{ c.negative }}; }
+
+        /* Football field bar chart */
+        .ff-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .ff-label {
+            width: 90px;
+            font-size: 8pt;
+            font-weight: 600;
+            text-align: right;
+            padding-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .ff-track {
+            flex: 1;
+            height: 14px;
+            background: {{ c.section_bg }};
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .ff-bar {
+            position: absolute;
+            top: 2px;
+            height: 10px;
+            background: linear-gradient(to right, {{ primary_color }}99, {{ primary_color }});
+            border-radius: 2px;
+        }
+
+        .ff-mid {
+            position: absolute;
+            top: 0;
+            width: 1.5pt;
+            height: 14px;
+            background: {{ c.dark_text }};
+        }
+
+        .ff-price-marker {
+            position: absolute;
+            top: -2px;
+            width: 0;
+            height: 18px;
+            border-left: 1.5pt dashed {{ c.negative }};
+        }
+
+        .ff-values {
+            width: 80px;
+            font-size: 7.5pt;
+            color: {{ c.label_text }};
+            padding-left: 6px;
+            flex-shrink: 0;
+        }
+
+        /* Scenario cards */
+        .scenario-cards {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .scenario-card {
+            flex: 1;
+            border: 1px solid {{ c.border_light }};
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .scenario-card.bull { border-top: 3px solid {{ c.positive }}; }
+        .scenario-card.base { border-top: 3px solid {{ primary_color }}; }
+        .scenario-card.bear { border-top: 3px solid {{ c.negative }}; }
+
+        .scenario-card-title {
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .scenario-card.bull .scenario-card-title { color: {{ c.positive }}; }
+        .scenario-card.base .scenario-card-title { color: {{ primary_color }}; }
+        .scenario-card.bear .scenario-card-title { color: {{ c.negative }}; }
+
+        .scenario-card-fv {
+            font-size: 16pt;
+            font-weight: 700;
+            color: {{ c.dark_text }};
+            margin-bottom: 2px;
+        }
+
+        .scenario-card-detail {
+            font-size: 7.5pt;
+            color: {{ c.label_text }};
+        }
+
+        /* Sensitivity grid */
+        .sens-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            margin-bottom: 12px;
+        }
+
+        .sens-table th {
+            background: {{ c.section_bg }};
+            padding: 4px 6px;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 1.5px solid {{ c.border_light }};
+        }
+
+        .sens-table td {
+            padding: 4px 6px;
+            text-align: center;
+            border-bottom: 0.5px solid {{ c.row_separator }};
+        }
+
+        .sens-table .row-header {
+            background: {{ c.section_bg }};
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .sens-table .cell-base {
+            background: {{ c.base_case_bg }};
+            font-weight: 700;
+        }
+
+        .sens-table .cell-positive { color: {{ c.positive }}; }
+        .sens-table .cell-negative { color: {{ c.negative }}; }
+
+        /* Score bars (conviction) */
+        .score-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .score-label {
+            width: 100px;
+            font-size: 8.5pt;
+            font-weight: 600;
+            text-align: right;
+            padding-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .score-track {
+            flex: 1;
+            height: 10px;
+            background: {{ c.section_bg }};
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: {{ primary_color }};
+        }
+
+        .score-value {
+            width: 30px;
+            font-size: 9pt;
+            font-weight: 700;
+            text-align: center;
+            flex-shrink: 0;
+            color: {{ primary_color }};
+        }
+
+        /* Narrative prose after structured data */
+        .val-narrative {
+            margin-top: 12px;
+            font-size: 9pt;
+            color: {{ c.content_text }};
+        }
+
+        .val-narrative h2, .val-narrative h3, .val-narrative h4 {
+            font-size: 10pt;
         }
     </style>
 </head>
@@ -429,10 +701,21 @@
             <div class="report-type">Equity Research Report | {{ report_date }}</div>
         </div>
         <div class="header-right">
-            <div class="header-rating">
+            <div class="header-rating" style="{% if price_target %}margin-right: 6px;{% endif %}">
                 <div class="rating-label">Our Rating</div>
                 <div class="rating-value">{{ rating }}</div>
             </div>
+            {% if price_target %}
+            <div class="header-rating">
+                <div class="rating-label">Price Target</div>
+                <div class="rating-value" style="color: {{ primary_color }};">${{ "%.2f"|format(price_target) }}</div>
+                {% if target_upside_pct is not none %}
+                <div style="font-size: 7pt; color: {{ 'green' if target_upside_pct >= 0 else 'red' }}; margin-top: 1px;">
+                    {{ "%.1f"|format(target_upside_pct) }}% {{ 'upside' if target_upside_pct >= 0 else 'downside' }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -464,6 +747,20 @@
                     <span class="data-value">{{ item.value }}</span>
                 </div>
                 {% endfor %}
+                {% if price_target %}
+                <div style="border-top: 1px solid {{ c.border_light }}; margin-top: 6px; padding-top: 6px;">
+                    <div class="data-row">
+                        <span class="data-label">Price Target</span>
+                        <span class="data-value">${{ "%.2f"|format(price_target) }}</span>
+                    </div>
+                    {% if target_upside_pct is not none %}
+                    <div class="data-row">
+                        <span class="data-label">Upside/Downside</span>
+                        <span class="data-value {{ 'positive' if target_upside_pct >= 0 else 'negative' }}">{{ "%.1f"|format(target_upside_pct) }}%</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
 
             <!-- Returns -->
@@ -532,22 +829,835 @@
 </div>
 {% endif %}
 
-<!-- ===== BULL/BEAR CASE ===== -->
-{% if bull_case or bear_case %}
+<!-- ===== TABLE OF CONTENTS ===== -->
+{% if toc_entries %}
 <div class="section-page">
-    <h1 class="section-header">Appendix - Investment Cases</h1>
+    <h1 class="section-header">Table of Contents</h1>
+    <div style="columns: 2; column-gap: 40px; margin-top: 20px;">
+        {% for entry in toc_entries %}
+        <div style="padding: 8px 0; border-bottom: 1px solid {{ c.border_light }}; break-inside: avoid; font-size: 10.5pt; color: {{ c.dark_text }};">
+            {{ entry.title }}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
-    {% if bull_case %}
-    <div class="case-section bull">
-        <h3>Bull Case</h3>
-        {{ bull_case | safe }}
+<!-- ===== CONVICTION SCORE ===== -->
+{% if conviction_categories or conviction %}
+<div class="section-page">
+    <h1 class="section-header">Conviction Score</h1>
+
+    {% if conviction_categories %}
+    <!-- Structured conviction rendering -->
+    {% if conviction_structured %}
+    <div class="val-metrics">
+        {% if conviction_structured.overall_score is defined %}
+        <div class="val-metric">
+            <div class="val-metric-label">Overall Score</div>
+            <div class="val-metric-value">{{ conviction_structured.overall_score }}/100</div>
+        </div>
+        {% endif %}
+        <div class="val-metric">
+            <div class="val-metric-label">Recommendation</div>
+            <div class="val-metric-value" style="color: {{ rating_color }};">{{ rating }}</div>
+        </div>
+        {% if conviction_structured.confidence %}
+        <div class="val-metric">
+            <div class="val-metric-label">Confidence</div>
+            <div class="val-metric-value">{{ conviction_structured.confidence }}%</div>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 
-    {% if bear_case %}
-    <div class="case-section bear">
-        <h3>Bear Case</h3>
-        {{ bear_case | safe }}
+    {% for cat in conviction_categories %}
+    <div class="score-row">
+        <div class="score-label">{{ cat.name }}</div>
+        <div class="score-track">
+            <div class="score-fill" style="width: {{ cat.bar_pct }}%;"></div>
+        </div>
+        <div class="score-value">{{ cat.score }}</div>
+    </div>
+    {% if cat.evidence %}
+    <div style="font-size: 7.5pt; color: {{ c.secondary_text }}; margin: -4px 0 8px 0; padding-left: 4px;">{{ cat.evidence }}</div>
+    {% endif %}
+    {% endfor %}
+
+    {% if conviction_structured and conviction_structured.summary %}
+    <div style="margin: 12px 0; padding: 10px 14px; background: {{ c.section_bg }}; border-left: 3px solid {{ primary_color }}; font-size: 8.5pt; line-height: 1.5;">
+        {{ conviction_structured.summary }}
+    </div>
+    {% endif %}
+
+    <p style="font-size: 7.5pt; color: {{ c.secondary_text }}; margin-top: 6px; font-style: italic;">Overall score reflects proprietary fundamental and technical scoring, not a simple average of category scores.</p>
+
+    {% if conviction %}
+    <div class="val-narrative">{{ conviction | safe }}</div>
+    {% endif %}
+
+    {% else %}
+    {{ conviction | safe }}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION SUMMARY: FOOTBALL FIELD ===== -->
+{% if football_ranges or football_field %}
+<div class="section-page">
+    <h1 class="section-header">Valuation Summary</h1>
+
+    {% if football_ranges %}
+    <!-- Structured football field -->
+    <div style="margin-bottom: 16px;">
+        {% for r in football_ranges %}
+        <div class="ff-row">
+            <div class="ff-label">{{ r.method }}</div>
+            <div class="ff-track">
+                <div class="ff-bar" style="left: {{ r.bar_left_pct }}%; width: {{ r.bar_width_pct }}%;"></div>
+                <div class="ff-mid" style="left: {{ r.mid_pct }}%;"></div>
+                {% if football_current_pct is not none %}
+                <div class="ff-price-marker" style="left: {{ football_current_pct }}%;"></div>
+                {% endif %}
+            </div>
+            <div class="ff-values">
+                ${{ "%.0f"|format(r.low) }} - ${{ "%.0f"|format(r.mid) }} - ${{ "%.0f"|format(r.high) }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if football_current_price %}
+    <div style="text-align: right; font-size: 8pt; color: {{ c.negative }}; font-weight: 600; padding-right: 40px;">
+        &#9472;&#9472; Current Price: ${{ "%.2f"|format(football_current_price) }}
+    </div>
+    {% endif %}
+
+    <!-- Accessible text table -->
+    <table style="width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 8.5pt;">
+        <thead>
+            <tr style="border-bottom: 2px solid #000;">
+                <th style="text-align: left; padding: 4px 8px; font-weight: 700;">Method</th>
+                <th style="text-align: right; padding: 4px 8px; font-weight: 700;">Low</th>
+                <th style="text-align: right; padding: 4px 8px; font-weight: 700;">Mid</th>
+                <th style="text-align: right; padding: 4px 8px; font-weight: 700;">High</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in football_ranges %}
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="text-align: left; padding: 3px 8px;">{{ r.method }}</td>
+                <td style="text-align: right; padding: 3px 8px;">${{ "%.0f"|format(r.low) }}</td>
+                <td style="text-align: right; padding: 3px 8px; font-weight: 600;">${{ "%.0f"|format(r.mid) }}</td>
+                <td style="text-align: right; padding: 3px 8px;">${{ "%.0f"|format(r.high) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if football_field %}
+    <div class="val-narrative">{{ football_field | safe }}</div>
+    {% endif %}
+
+    {% else %}
+    {{ football_field | safe }}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: DCF MODEL ===== -->
+{% if dcf_summary or (dcf_valuation and 'could not be performed' not in dcf_valuation) %}
+<div class="section-page">
+    <h1 class="section-header">DCF Valuation</h1>
+
+    {% if model_audit and model_audit.warnings %}
+    {% for w in model_audit.warnings if w.severity == 'critical' and w.section == 'dcf' %}
+    <div style="margin-bottom: 10px; padding: 8px 12px; background: #FFF3CD; border-left: 4px solid #FFC107; font-size: 8pt; line-height: 1.4;">
+        <strong>Model Review Note:</strong> {{ w.message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if dcf_summary and dcf_summary.fair_value %}
+    <!-- Structured DCF metrics -->
+    <div class="val-metrics">
+        <div class="val-metric">
+            <div class="val-metric-label">Fair Value / Share</div>
+            <div class="val-metric-value">${{ "%.2f"|format(dcf_summary.fair_value) }}</div>
+        </div>
+        {% if dcf_summary.current_price %}
+        <div class="val-metric">
+            <div class="val-metric-label">Current Price</div>
+            <div class="val-metric-value" style="color: {{ c.dark_text }};">${{ "%.2f"|format(dcf_summary.current_price) }}</div>
+        </div>
+        {% endif %}
+        {% if dcf_summary.upside_pct is not none %}
+        <div class="val-metric">
+            <div class="val-metric-label">Upside / Downside</div>
+            <div class="val-metric-value {{ 'positive' if dcf_summary.upside_pct >= 0 else 'negative' }}">
+                {{ "%.1f"|format(dcf_summary.upside_pct) }}%
+            </div>
+        </div>
+        {% endif %}
+        {% if dcf_summary.wacc %}
+        <div class="val-metric">
+            <div class="val-metric-label">WACC</div>
+            <div class="val-metric-value">{{ "%.1f"|format(dcf_summary.wacc * 100) }}%</div>
+        </div>
+        {% endif %}
+        {% if dcf_summary.terminal_growth_rate %}
+        <div class="val-metric">
+            <div class="val-metric-label">Terminal Growth</div>
+            <div class="val-metric-value">{{ "%.1f"|format(dcf_summary.terminal_growth_rate * 100) }}%</div>
+        </div>
+        {% endif %}
+        {% if dcf_summary.pv_terminal_value %}
+        <div class="val-metric">
+            <div class="val-metric-label">PV of Terminal Value</div>
+            <div class="val-metric-value">${{ "%.1f"|format(dcf_summary.pv_terminal_value / 1000000000) }}B</div>
+        </div>
+        {% endif %}
+        {% if dcf_summary.tv_pct_of_ev is not none %}
+        <div class="val-metric">
+            <div class="val-metric-label">TV as % of EV</div>
+            <div class="val-metric-value">{{ "%.0f"|format(dcf_summary.tv_pct_of_ev) }}%</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if dcf_summary.wacc_components %}
+    <!-- WACC Build-Up Table -->
+    <table class="sens-table" style="width: 60%; margin: 12px 0;">
+        <thead>
+            <tr><th colspan="2" style="text-align: left; font-size: 9pt;">WACC Build-Up</th></tr>
+        </thead>
+        <tbody>
+            {% if dcf_summary.wacc_components.rf is defined %}
+            <tr>
+                <td class="row-header">Risk-Free Rate</td>
+                <td style="text-align: right;">{{ "%.1f"|format(dcf_summary.wacc_components.rf * 100) }}%</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.erp is defined %}
+            <tr>
+                <td class="row-header">Equity Risk Premium</td>
+                <td style="text-align: right;">{{ "%.1f"|format(dcf_summary.wacc_components.erp * 100) }}%</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.beta is defined %}
+            <tr>
+                <td class="row-header">Beta</td>
+                <td style="text-align: right;">{{ "%.2f"|format(dcf_summary.wacc_components.beta) }}</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.sp is defined %}
+            <tr>
+                <td class="row-header">Size Premium</td>
+                <td style="text-align: right;">{{ "%.1f"|format(dcf_summary.wacc_components.sp * 100) }}%</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.ke is defined %}
+            <tr style="border-top: 1.5px solid {{ c.border_light }};">
+                <td class="row-header" style="font-weight: 600;">Cost of Equity (Ke)</td>
+                <td style="text-align: right; font-weight: 600;">{{ "%.1f"|format(dcf_summary.wacc_components.ke * 100) }}%</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.kd is defined %}
+            <tr>
+                <td class="row-header">After-Tax Cost of Debt (Kd)</td>
+                <td style="text-align: right;">{{ "%.1f"|format(dcf_summary.wacc_components.kd * 100) }}%</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.weight_equity is defined %}
+            <tr>
+                <td class="row-header">Equity Weight</td>
+                <td style="text-align: right;">{{ "%.0f"|format(dcf_summary.wacc_components.weight_equity * 100) }}%</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.wacc_components.wacc is defined %}
+            <tr style="border-top: 2px solid {{ c.border_light }};">
+                <td class="row-header" style="font-weight: 700;">WACC</td>
+                <td style="text-align: right; font-weight: 700; color: {{ primary_color }};">{{ "%.1f"|format(dcf_summary.wacc_components.wacc * 100) }}%</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if dcf_summary.ev_bridge %}
+    <!-- EV-to-Equity Bridge -->
+    <table class="sens-table" style="width: 60%; margin: 12px 0;">
+        <thead>
+            <tr><th colspan="2" style="text-align: left; font-size: 9pt;">EV-to-Equity Bridge</th></tr>
+        </thead>
+        <tbody>
+            {% if dcf_summary.enterprise_value %}
+            <tr>
+                <td class="row-header">Enterprise Value</td>
+                <td style="text-align: right;">${{ "%.1f"|format(dcf_summary.enterprise_value / 1000000000) }}B</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.ev_bridge.net_debt is defined %}
+            <tr>
+                <td class="row-header">&nbsp;&nbsp;Less: Net Debt</td>
+                <td style="text-align: right;">(${{ "%.1f"|format(dcf_summary.ev_bridge.net_debt / 1000000000) }}B)</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.ev_bridge.minority_interest is defined and dcf_summary.ev_bridge.minority_interest %}
+            <tr>
+                <td class="row-header">&nbsp;&nbsp;Less: Minority Interest</td>
+                <td style="text-align: right;">(${{ "%.1f"|format(dcf_summary.ev_bridge.minority_interest / 1000000000) }}B)</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.ev_bridge.preferred_stock is defined and dcf_summary.ev_bridge.preferred_stock %}
+            <tr>
+                <td class="row-header">&nbsp;&nbsp;Less: Preferred Stock</td>
+                <td style="text-align: right;">(${{ "%.1f"|format(dcf_summary.ev_bridge.preferred_stock / 1000000000) }}B)</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.ev_bridge.equity_investments is defined and dcf_summary.ev_bridge.equity_investments %}
+            <tr>
+                <td class="row-header">&nbsp;&nbsp;Add: Equity Investments</td>
+                <td style="text-align: right;">${{ "%.1f"|format(dcf_summary.ev_bridge.equity_investments / 1000000000) }}B</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.equity_value %}
+            <tr style="border-top: 1.5px solid {{ c.border_light }};">
+                <td class="row-header" style="font-weight: 600;">= Equity Value</td>
+                <td style="text-align: right; font-weight: 600;">${{ "%.1f"|format(dcf_summary.equity_value / 1000000000) }}B</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.shares_outstanding %}
+            <tr>
+                <td class="row-header">&nbsp;&nbsp;/ Shares Outstanding</td>
+                <td style="text-align: right;">{{ "%.2f"|format(dcf_summary.shares_outstanding / 1000000000) }}B</td>
+            </tr>
+            {% endif %}
+            {% if dcf_summary.fair_value %}
+            <tr style="border-top: 2px solid {{ c.border_light }};">
+                <td class="row-header" style="font-weight: 700;">= Fair Value per Share</td>
+                <td style="text-align: right; font-weight: 700; color: {{ primary_color }};">${{ "%.2f"|format(dcf_summary.fair_value) }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if dcf_summary.projection_details %}
+    <!-- DCF Projection Table -->
+    <table class="sens-table" style="width: 100%; margin: 12px 0; font-size: 7.5pt;">
+        <thead>
+            <tr>
+                <th style="text-align: left;">Metric</th>
+                {% for p in dcf_summary.projection_details[:7] %}
+                <th style="text-align: right;">{{ p.year if p.year is defined else 'Yr ' ~ loop.index }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="row-header">Revenue ($M)</td>
+                {% for p in dcf_summary.projection_details[:7] %}
+                <td style="text-align: right;">{% if p.revenue is defined %}{{ "%.0f"|format(p.revenue / 1000000) }}{% else %}--{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="row-header">EBITDA ($M)</td>
+                {% for p in dcf_summary.projection_details[:7] %}
+                <td style="text-align: right;">{% if p.ebitda is defined %}{{ "%.0f"|format(p.ebitda / 1000000) }}{% else %}--{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="row-header">NOPAT ($M)</td>
+                {% for p in dcf_summary.projection_details[:7] %}
+                <td style="text-align: right;">{% if p.nopat is defined %}{{ "%.0f"|format(p.nopat / 1000000) }}{% else %}--{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="row-header">Unlevered FCF ($M)</td>
+                {% for p in dcf_summary.projection_details[:7] %}
+                <td style="text-align: right;">{% if p.unlevered_fcf is defined %}{{ "%.0f"|format(p.unlevered_fcf / 1000000) }}{% else %}--{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="border-top: 1.5px solid {{ c.border_light }}; font-weight: 600;">
+                <td class="row-header" style="font-weight: 600;">Discounted FCF ($M)</td>
+                {% for p in dcf_summary.projection_details[:7] %}
+                <td style="text-align: right;">{% if p.discounted_fcf is defined %}{{ "%.0f"|format(p.discounted_fcf / 1000000) }}{% else %}--{% endif %}</td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+    {% if dcf_summary.tv_pct_of_ev is not none %}
+    <div style="font-size: 7pt; color: {{ c.secondary_text }}; margin-top: 4px;">
+        Terminal value represents {{ "%.0f"|format(dcf_summary.tv_pct_of_ev) }}% of enterprise value{% if dcf_summary.tv_pct_of_ev > 80 %} (high reliance on terminal assumptions){% elif dcf_summary.tv_pct_of_ev < 50 %} (near-term cash flows dominate){% endif %}.
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.dcf %}
+    <div style="margin: 10px 0; padding: 8px 12px; border: 1px solid #ddd; border-left: 3px solid {{ primary_color }}; font-size: 8pt; color: {{ c.secondary_text }}; line-height: 1.5; background: {{ c.section_bg }};">
+        {{ model_audit.section_commentary.dcf }}
+    </div>
+    {% endif %}
+
+    {% if dcf_valuation %}
+    <div class="{{ 'val-narrative' if dcf_summary and dcf_summary.fair_value else '' }}">{{ dcf_valuation | safe }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: DIVIDEND DISCOUNT MODEL ===== -->
+{% if ddm_summary and ddm_summary.blended_value %}
+<div class="section-page">
+    <h1 class="section-header">Dividend Discount Model</h1>
+
+    <div class="val-metrics">
+        <div class="val-metric">
+            <div class="val-metric-label">DDM Fair Value</div>
+            <div class="val-metric-value">${{ "%.2f"|format(ddm_summary.blended_value) }}</div>
+        </div>
+        {% if ddm_summary.current_dividend %}
+        <div class="val-metric">
+            <div class="val-metric-label">Current Dividend</div>
+            <div class="val-metric-value">${{ "%.2f"|format(ddm_summary.current_dividend) }}</div>
+        </div>
+        {% endif %}
+        {% if ddm_summary.cost_of_equity %}
+        <div class="val-metric">
+            <div class="val-metric-label">Cost of Equity</div>
+            <div class="val-metric-value">{{ "%.1f"|format(ddm_summary.cost_of_equity * 100) }}%</div>
+        </div>
+        {% endif %}
+        {% if ddm_summary.long_term_growth %}
+        <div class="val-metric">
+            <div class="val-metric-label">Long-term Growth</div>
+            <div class="val-metric-value">{{ "%.1f"|format(ddm_summary.long_term_growth * 100) }}%</div>
+        </div>
+        {% endif %}
+        {% if ddm_summary.payout_ratio %}
+        <div class="val-metric">
+            <div class="val-metric-label">Payout Ratio</div>
+            <div class="val-metric-value">{{ "%.0f"|format(ddm_summary.payout_ratio * 100) }}%</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="font-size: 8pt; color: {{ c.content_text }}; margin-top: 8px; line-height: 1.5;">
+        {% if ddm_summary.gordon_growth_value %}Gordon Growth: ${{ "%.2f"|format(ddm_summary.gordon_growth_value) }}{% endif %}
+        {% if ddm_summary.h_model_value %} | H-Model: ${{ "%.2f"|format(ddm_summary.h_model_value) }}{% endif %}
+        {% if ddm_summary.blended_value %} | Blended: <strong>${{ "%.2f"|format(ddm_summary.blended_value) }}</strong>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: SCENARIO ANALYSIS ===== -->
+{% if scenario_summary or (scenario_analysis and 'could not be performed' not in scenario_analysis) %}
+<div class="section-page">
+    <h1 class="section-header">Scenario Analysis</h1>
+
+    {% if scenario_summary %}
+    <!-- Structured scenario cards -->
+    <div class="scenario-cards">
+        {% for label in ['bull', 'base', 'bear'] %}
+        {% if scenario_summary[label] is defined %}
+        {% set s = scenario_summary[label] %}
+        <div class="scenario-card {{ label }}">
+            <div class="scenario-card-title">{{ label | capitalize }}</div>
+            {% if s.fair_value %}
+            <div class="scenario-card-fv">${{ "%.2f"|format(s.fair_value) }}</div>
+            {% endif %}
+            {% if s.probability %}
+            <div class="scenario-card-detail">Probability: {{ "%.0f"|format(s.probability * 100) }}%</div>
+            {% endif %}
+            {% if s.upside_pct is defined and s.upside_pct is not none %}
+            <div class="scenario-card-detail {{ 'positive' if s.upside_pct >= 0 else 'negative' }}">
+                Upside: {{ "%.1f"|format(s.upside_pct) }}%
+            </div>
+            {% endif %}
+            {% if s.assumptions is defined and s.assumptions %}
+            <div style="border-top: 1px solid {{ c.border_light }}; margin-top: 4px; padding-top: 3px; font-size: 7pt; color: {{ c.secondary_text }};">
+                {% if s.assumptions.revenue_growth is not none %}Rev: {{ "%.1f"|format(s.assumptions.revenue_growth * 100) }}%{% endif %}
+                {% if s.assumptions.wacc is not none %} | WACC: {{ "%.1f"|format(s.assumptions.wacc * 100) }}%{% endif %}
+                {% if s.assumptions.terminal_growth is not none %} | TGR: {{ "%.1f"|format(s.assumptions.terminal_growth * 100) }}%{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if scenario_summary.weighted_fair_value %}
+    <div style="text-align: center; margin: 12px 0;">
+        <span style="font-size: 8pt; color: {{ c.secondary_text }}; text-transform: uppercase; letter-spacing: 0.5px;">Weighted Fair Value</span>
+        <br>
+        <span style="font-size: 18pt; font-weight: 700; color: {{ primary_color }};">
+            ${{ "%.2f"|format(scenario_summary.weighted_fair_value) }}
+        </span>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.scenarios %}
+    <div style="margin: 10px 0; padding: 8px 12px; border: 1px solid #ddd; border-left: 3px solid {{ primary_color }}; font-size: 8pt; color: {{ c.secondary_text }}; line-height: 1.5; background: {{ c.section_bg }};">
+        {{ model_audit.section_commentary.scenarios }}
+    </div>
+    {% endif %}
+
+    {% if scenario_analysis %}
+    <div class="{{ 'val-narrative' if scenario_summary else '' }}">{{ scenario_analysis | safe }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: COMPARABLE COMPANIES ===== -->
+{% if comp_summary or (comp_table and 'could not be performed' not in comp_table) %}
+<div class="section-page">
+    <h1 class="section-header">Comparable Company Analysis</h1>
+
+    {% if comp_summary and comp_summary.peers %}
+    {% if comp_summary.implied_values %}
+    <div class="val-metrics">
+        {% if comp_summary.implied_values.pe_implied %}
+        <div class="val-metric">
+            <div class="val-metric-label">P/E Implied Value</div>
+            <div class="val-metric-value">${{ "%.2f"|format(comp_summary.implied_values.pe_implied) }}</div>
+        </div>
+        {% endif %}
+        {% if comp_summary.implied_values.ev_ebitda_implied %}
+        <div class="val-metric">
+            <div class="val-metric-label">EV/EBITDA Implied</div>
+            <div class="val-metric-value">${{ "%.2f"|format(comp_summary.implied_values.ev_ebitda_implied) }}</div>
+        </div>
+        {% endif %}
+        {% if comp_summary.implied_values.ev_revenue_implied %}
+        <div class="val-metric">
+            <div class="val-metric-label">EV/Revenue Implied</div>
+            <div class="val-metric-value">${{ "%.2f"|format(comp_summary.implied_values.ev_revenue_implied) }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 12px;">
+        <thead>
+            <tr style="background: {{ c.section_bg }};">
+                <th style="text-align: left; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Company</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Mkt Cap</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">P/E</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Fwd P/E</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">EV/EBITDA</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">EV/Rev</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Gross Mgn</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Rev Growth</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if comp_summary.target %}
+            <tr style="background: {{ c.base_case_bg }}; font-weight: 600;">
+                <td style="padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{{ comp_summary.target.name or comp_summary.target.ticker or 'Target' }}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.market_cap %}${{ "%.0f"|format(comp_summary.target.market_cap / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.pe_ratio %}{{ "%.1f"|format(comp_summary.target.pe_ratio) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.forward_pe %}{{ "%.1f"|format(comp_summary.target.forward_pe) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.ev_to_ebitda %}{{ "%.1f"|format(comp_summary.target.ev_to_ebitda) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.ev_to_revenue %}{{ "%.1f"|format(comp_summary.target.ev_to_revenue) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.gross_margin %}{{ "%.1f"|format(comp_summary.target.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if comp_summary.target.revenue_growth %}{{ "%.1f"|format(comp_summary.target.revenue_growth * 100) }}%{% else %}N/A{% endif %}</td>
+            </tr>
+            {% endif %}
+            {% for peer in comp_summary.peers %}
+            <tr{% if loop.index is even %} style="background: {{ c.table_alt_row }};"{% endif %}>
+                <td style="padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{{ peer.name or peer.ticker or '' }}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.market_cap %}${{ "%.0f"|format(peer.market_cap / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.pe_ratio %}{{ "%.1f"|format(peer.pe_ratio) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.forward_pe %}{{ "%.1f"|format(peer.forward_pe) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.ev_to_ebitda %}{{ "%.1f"|format(peer.ev_to_ebitda) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.ev_to_revenue %}{{ "%.1f"|format(peer.ev_to_revenue) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.gross_margin %}{{ "%.1f"|format(peer.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if peer.revenue_growth %}{{ "%.1f"|format(peer.revenue_growth * 100) }}%{% else %}N/A{% endif %}</td>
+            </tr>
+            {% endfor %}
+            {% if comp_summary.medians %}
+            <tr style="border-top: 2px solid {{ c.border_light }}; font-weight: 600; font-style: italic;">
+                <td style="padding: 4px 5px;">Peer Median</td>
+                <td style="text-align: right; padding: 4px 5px;">--</td>
+                <td style="text-align: right; padding: 4px 5px;">{% if comp_summary.medians.pe_ratio %}{{ "%.1f"|format(comp_summary.medians.pe_ratio) }}x{% else %}--{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px;">{% if comp_summary.medians.forward_pe %}{{ "%.1f"|format(comp_summary.medians.forward_pe) }}x{% else %}--{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px;">{% if comp_summary.medians.ev_to_ebitda %}{{ "%.1f"|format(comp_summary.medians.ev_to_ebitda) }}x{% else %}--{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px;">{% if comp_summary.medians.ev_to_revenue %}{{ "%.1f"|format(comp_summary.medians.ev_to_revenue) }}x{% else %}--{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px;">{% if comp_summary.medians.gross_margin %}{{ "%.1f"|format(comp_summary.medians.gross_margin * 100) }}%{% else %}--{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px;">{% if comp_summary.medians.revenue_growth %}{{ "%.1f"|format(comp_summary.medians.revenue_growth * 100) }}%{% else %}--{% endif %}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if comp_table %}
+    <div class="{{ 'val-narrative' if comp_summary and comp_summary.peers else '' }}">{{ comp_table | safe }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: PRECEDENT TRANSACTIONS ===== -->
+{% if precedent_summary or (precedent_transactions and 'could not be performed' not in precedent_transactions) %}
+<div class="section-page">
+    <h1 class="section-header">Precedent Transactions</h1>
+
+    {% if precedent_summary and precedent_summary.deals %}
+    {% if precedent_summary.medians %}
+    <div class="val-metrics">
+        {% if precedent_summary.medians.ev_revenue %}
+        <div class="val-metric">
+            <div class="val-metric-label">Median EV/Revenue</div>
+            <div class="val-metric-value">{{ "%.1f"|format(precedent_summary.medians.ev_revenue) }}x</div>
+        </div>
+        {% endif %}
+        {% if precedent_summary.medians.ev_ebitda %}
+        <div class="val-metric">
+            <div class="val-metric-label">Median EV/EBITDA</div>
+            <div class="val-metric-value">{{ "%.1f"|format(precedent_summary.medians.ev_ebitda) }}x</div>
+        </div>
+        {% endif %}
+        {% if precedent_summary.medians.premium %}
+        <div class="val-metric">
+            <div class="val-metric-label">Median Premium</div>
+            <div class="val-metric-value">{{ "%.0f"|format(precedent_summary.medians.premium) }}%</div>
+        </div>
+        {% endif %}
+        {% if precedent_summary.implied_values.ev_revenue %}
+        <div class="val-metric">
+            <div class="val-metric-label">Implied (EV/Rev)</div>
+            <div class="val-metric-value">${{ "%.2f"|format(precedent_summary.implied_values.ev_revenue) }}</div>
+        </div>
+        {% endif %}
+        {% if precedent_summary.implied_values.ev_ebitda %}
+        <div class="val-metric">
+            <div class="val-metric-label">Implied (EV/EBITDA)</div>
+            <div class="val-metric-value">${{ "%.2f"|format(precedent_summary.implied_values.ev_ebitda) }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 8pt; margin-bottom: 12px;">
+        <thead>
+            <tr style="background: {{ c.section_bg }};">
+                <th style="text-align: left; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Date</th>
+                <th style="text-align: left; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Acquirer</th>
+                <th style="text-align: left; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Target</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">EV/Rev</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">EV/EBITDA</th>
+                <th style="text-align: right; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Premium</th>
+                {% if model_audit and model_audit.precedent_relevance %}
+                <th style="text-align: center; padding: 5px; border-bottom: 2px solid {{ c.border_light }};">Relevance</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for deal in precedent_summary.deals %}
+            <tr{% if loop.index is even %} style="background: {{ c.table_alt_row }};"{% endif %}>
+                <td style="padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{{ deal.date or '' }}</td>
+                <td style="padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{{ deal.acquirer or '' }}</td>
+                <td style="padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{{ deal.target or '' }}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if deal.ev_to_revenue %}{{ "%.1f"|format(deal.ev_to_revenue) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if deal.ev_to_ebitda %}{{ "%.1f"|format(deal.ev_to_ebitda) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if deal.premium_pct %}{{ "%.0f"|format(deal.premium_pct) }}%{% else %}N/A{% endif %}</td>
+                {% if model_audit and model_audit.precedent_relevance %}
+                <td style="text-align: center; padding: 4px 5px; border-bottom: 1px solid {{ c.row_separator }};">
+                    {% set deal_key = deal.acquirer ~ '/' ~ deal.target %}
+                    {% set rel = namespace(found=false, level='', color='') %}
+                    {% for pr in model_audit.precedent_relevance %}
+                        {% if pr.deal == deal_key or deal_key in pr.deal or pr.deal in deal_key %}
+                            {% set rel.found = true %}
+                            {% set rel.level = pr.relevance %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if rel.found %}
+                    <span style="display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 7pt; font-weight: 600;
+                        {% if rel.level == 'high' %}background: #C6EFCE; color: #006100;
+                        {% elif rel.level == 'medium' %}background: #FFEB9C; color: #9C6500;
+                        {% else %}background: #FFC7CE; color: #9C0006;{% endif %}">
+                        {{ rel.level | capitalize }}
+                    </span>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.precedents %}
+    <div style="margin: 10px 0; padding: 8px 12px; border: 1px solid #ddd; border-left: 3px solid {{ primary_color }}; font-size: 8pt; color: {{ c.secondary_text }}; line-height: 1.5; background: {{ c.section_bg }};">
+        {{ model_audit.section_commentary.precedents }}
+    </div>
+    {% endif %}
+
+    {% if precedent_transactions %}
+    <div class="val-narrative">{{ precedent_transactions | safe }}</div>
+    {% endif %}
+
+    {% elif precedent_transactions %}
+    {{ precedent_transactions | safe }}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: EARNINGS MODEL ===== -->
+{% if earnings_table or earnings_model %}
+<div class="section-page">
+    <h1 class="section-header">Earnings Model Summary</h1>
+
+    {% if earnings_table and earnings_table.rows %}
+    <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 12px;">
+        <thead>
+            <tr style="background: {{ c.section_bg }};">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">Fiscal Year</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">Revenue</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">Rev Growth</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">EBITDA</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">EBITDA Margin</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">EPS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in earnings_table.rows %}
+            <tr style="{% if row.is_estimate %}background: {{ c.estimate_row_bg }};{% elif loop.index is even %}background: {{ c.table_alt_row }};{% endif %}">
+                <td style="padding: 5px 6px; border-bottom: 1px solid {{ c.row_separator }}; font-weight: {% if row.is_estimate %}600{% else %}400{% endif %};">
+                    FY{{ row.fiscal_year }}{% if row.is_estimate %}E{% endif %}
+                </td>
+                <td style="text-align: right; padding: 5px 6px; border-bottom: 1px solid {{ c.row_separator }};">
+                    {% if row.revenue %}{% if row.revenue >= 1000000000 %}${{ "%.1f"|format(row.revenue / 1000000000) }}B{% elif row.revenue >= 1000000 %}${{ "%.0f"|format(row.revenue / 1000000) }}M{% else %}${{ "%.0f"|format(row.revenue) }}{% endif %}{% else %}N/A{% endif %}
+                </td>
+                <td style="text-align: right; padding: 5px 6px; border-bottom: 1px solid {{ c.row_separator }}; color: {% if row.revenue_growth is defined and row.revenue_growth is not none %}{% if row.revenue_growth >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %}{% else %}{{ c.content_text }}{% endif %};">
+                    {% if row.revenue_growth is defined and row.revenue_growth is not none %}{{ "%.1f"|format(row.revenue_growth * 100) }}%{% else %}N/A{% endif %}
+                </td>
+                <td style="text-align: right; padding: 5px 6px; border-bottom: 1px solid {{ c.row_separator }};">
+                    {% if row.ebitda %}{% if row.ebitda >= 1000000000 %}${{ "%.1f"|format(row.ebitda / 1000000000) }}B{% elif row.ebitda >= 1000000 %}${{ "%.0f"|format(row.ebitda / 1000000) }}M{% else %}${{ "%.0f"|format(row.ebitda) }}{% endif %}{% else %}N/A{% endif %}
+                </td>
+                <td style="text-align: right; padding: 5px 6px; border-bottom: 1px solid {{ c.row_separator }};">
+                    {% if row.ebitda_margin is defined and row.ebitda_margin is not none %}{{ "%.1f"|format(row.ebitda_margin * 100) }}%{% else %}N/A{% endif %}
+                </td>
+                <td style="text-align: right; padding: 5px 6px; border-bottom: 1px solid {{ c.row_separator }}; font-weight: {% if row.is_estimate %}600{% else %}400{% endif %};">
+                    {% if row.eps is defined and row.eps is not none %}${{ "%.2f"|format(row.eps) }}{% else %}N/A{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if earnings_table.has_estimates %}
+    <p style="font-size: 7.5pt; color: {{ c.secondary_text }}; font-style: italic;">Shaded rows = analyst estimates</p>
+    {% endif %}
+
+    {% if model_audit and model_audit.section_commentary and model_audit.section_commentary.earnings_model %}
+    <div style="margin: 10px 0; padding: 8px 12px; border: 1px solid #ddd; border-left: 3px solid {{ primary_color }}; font-size: 8pt; color: {{ c.secondary_text }}; line-height: 1.5; background: {{ c.section_bg }};">
+        {{ model_audit.section_commentary.earnings_model }}
+    </div>
+    {% endif %}
+
+    {% if earnings_model %}
+    <div class="val-narrative">{{ earnings_model | safe }}</div>
+    {% endif %}
+
+    {% elif earnings_model %}
+    {{ earnings_model | safe }}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== VALUATION: SENSITIVITY ANALYSIS ===== -->
+{% if sensitivity_grid or growth_margin_grid or sensitivity %}
+<div class="section-page">
+    <h1 class="section-header">Sensitivity Analysis</h1>
+
+    {% if sensitivity_grid and sensitivity_grid.grid %}
+    <h3 style="margin-bottom: 8px;">WACC vs Terminal Growth Rate</h3>
+    {% if sensitivity_grid.current_price %}
+    <p style="font-size: 8pt; color: {{ c.secondary_text }}; margin-bottom: 6px;">Current Price: ${{ "%.2f"|format(sensitivity_grid.current_price) }}</p>
+    {% endif %}
+    <table class="sens-table">
+        <thead>
+            <tr>
+                <th style="text-align: right;">WACC \ TGR</th>
+                {% for tgr in sensitivity_grid.col_values %}
+                <th{% if loop.index0 == sensitivity_grid.base_col_idx %} style="background: {{ c.base_case_bg }};"{% endif %}>{{ "%.1f"|format(tgr * 100) }}%</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for wacc_row in sensitivity_grid.grid %}
+            {% set row_idx = loop.index0 %}
+            <tr>
+                <td class="row-header"{% if row_idx == sensitivity_grid.base_row_idx %} style="background: {{ c.base_case_bg }}; font-weight: 700;"{% endif %}>{{ "%.1f"|format(sensitivity_grid.row_values[row_idx] * 100) }}%</td>
+                {% for fv in wacc_row %}
+                <td class="{{ sensitivity_grid.cell_classes[row_idx][loop.index0] }}">
+                    {% if fv %}${{ "%.0f"|format(fv) }}{% else %}N/A{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if growth_margin_grid and growth_margin_grid.grid %}
+    <h3 style="margin-top: 16px; margin-bottom: 8px;">Revenue Growth vs Operating Margin</h3>
+    <table class="sens-table">
+        <thead>
+            <tr>
+                <th style="text-align: right;">Growth \ Margin</th>
+                {% for mg in growth_margin_grid.col_values %}
+                <th{% if loop.index0 == growth_margin_grid.base_col_idx %} style="background: {{ c.base_case_bg }};"{% endif %}>{{ "%.1f"|format(mg * 100) }}%</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in growth_margin_grid.grid %}
+            {% set row_idx = loop.index0 %}
+            <tr>
+                <td class="row-header"{% if row_idx == growth_margin_grid.base_row_idx %} style="background: {{ c.base_case_bg }}; font-weight: 700;"{% endif %}>{{ "%.1f"|format(growth_margin_grid.row_values[row_idx] * 100) }}%</td>
+                {% for fv in row %}
+                <td class="{{ growth_margin_grid.cell_classes[row_idx][loop.index0] }}">
+                    {% if fv %}${{ "%.0f"|format(fv) }}{% else %}N/A{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if sensitivity %}
+    <div class="{{ 'val-narrative' if (sensitivity_grid and sensitivity_grid.grid) or (growth_margin_grid and growth_margin_grid.grid) else '' }}">{{ sensitivity | safe }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== FUNDAMENTAL ANALYSIS ===== -->
+{% if fundamentals %}
+<div class="section-page">
+    <h1 class="section-header">Fundamental Analysis</h1>
+    {{ fundamentals | safe }}
+
+    {% if earnings_quality and earnings_quality.quality_score is not none %}
+    <div style="margin: 14px 0; padding: 10px 14px; border-left: 4px solid {% if earnings_quality.accrual_quality == 'clean' %}{{ c.positive }}{% elif earnings_quality.accrual_quality == 'aggressive' %}{{ c.negative }}{% else %}{{ primary_color }}{% endif %}; background: {{ c.section_bg }}; font-size: 8.5pt; line-height: 1.5;">
+        <div style="font-weight: 700; margin-bottom: 4px;">Earnings Quality Score: {{ "%.0f"|format(earnings_quality.quality_score) }}/100
+            <span style="font-weight: 400; color: {{ c.secondary_text }}; margin-left: 8px;">Accrual Quality: {{ earnings_quality.accrual_quality | capitalize }}</span>
+            {% if earnings_quality.cash_conversion_ratio is not none %}
+            <span style="font-weight: 400; color: {{ c.secondary_text }}; margin-left: 8px;">Cash Conversion: {{ "%.0f"|format(earnings_quality.cash_conversion_ratio * 100) }}%</span>
+            {% endif %}
+        </div>
+        {% if earnings_quality.red_flags %}
+        <div style="margin-top: 4px; color: {{ c.content_text }};">
+            {% for flag in earnings_quality.red_flags %}
+            <div style="margin-top: 2px;">
+                <span style="color: {% if flag.severity == 'high' %}{{ c.negative }}{% else %}{{ c.secondary_text }}{% endif %}; font-weight: 600;">{{ flag.severity | capitalize }}:</span>
+                {{ flag.description }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </div>
@@ -556,7 +1666,7 @@
 <!-- ===== FINANCIAL STATEMENTS (US Companies Only) ===== -->
 {% if financial_statements and financial_statements.is_available %}
 <div class="section-page">
-    <h1 class="section-header">Appendix - Financial Statements</h1>
+    <h1 class="section-header">Financial Statements</h1>
 
     <!-- Key Findings/Highlights -->
     {% if financial_statements.highlights %}
@@ -564,7 +1674,7 @@
         <h3>Key Findings</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             {% for h in financial_statements.highlights[:6] %}
-            <div style="padding: 10px; border-radius: 4px; border-left: 3px solid {% if h.type == 'positive' %}#16a34a{% elif h.type == 'negative' %}#dc2626{% else %}#d97706{% endif %}; background: {% if h.type == 'positive' %}#dcfce7{% elif h.type == 'negative' %}#fee2e2{% else %}#fef3c7{% endif %};">
+            <div style="padding: 10px; border-radius: 4px; border-left: 3px solid {% if h.type == 'positive' %}{{ c.positive }}{% elif h.type == 'negative' %}{{ c.negative }}{% else %}{{ c.swot_threats_border }}{% endif %}; background: {% if h.type == 'positive' %}{{ c.bull_case_bg }}{% elif h.type == 'negative' %}{{ c.bear_case_bg }}{% else %}{{ c.swot_threats_bg }}{% endif %};">
                 <strong style="font-size: 9pt;">{{ h.title }}</strong>
                 <p style="font-size: 8pt; margin: 4px 0 0 0;">{{ h.description }}</p>
             </div>
@@ -578,42 +1688,54 @@
     <h3>Income Statement (in millions)</h3>
     <table class="financials-table" style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 16px;">
         <thead>
-            <tr style="background: #f5f5f5;">
-                <th style="text-align: left; padding: 6px; border-bottom: 2px solid #ddd;">Metric</th>
+            <tr style="background: {{ c.section_bg }};">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">Metric</th>
                 {% for stmt in financial_statements.income_statements[:5] %}
-                <th style="text-align: right; padding: 6px; border-bottom: 2px solid #ddd;">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Revenue</td>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Revenue</td>
                 {% for stmt in financial_statements.income_statements[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.revenue %}${{ "%.1f"|format(stmt.revenue / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.revenue %}${{ "%.1f"|format(stmt.revenue / 1000000000) }}B{% if stmt.revenue_yoy is not none %}<br><span style="font-size: 7pt; color: {% if stmt.revenue_yoy >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %};">{{ "%+.1f"|format(stmt.revenue_yoy * 100) }}% YoY</span>{% endif %}{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #fafafa;">
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Net Income</td>
+            <tr style="background: {{ c.table_alt_row }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Gross Profit</td>
                 {% for stmt in financial_statements.income_statements[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.net_income %}${{ "%.1f"|format(stmt.net_income / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.gross_profit %}${{ "%.1f"|format(stmt.gross_profit / 1000000000) }}B{% if stmt.gross_profit_yoy is not none %}<br><span style="font-size: 7pt; color: {% if stmt.gross_profit_yoy >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %};">{{ "%+.1f"|format(stmt.gross_profit_yoy * 100) }}% YoY</span>{% endif %}{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
             <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">EPS</td>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Operating Income</td>
                 {% for stmt in financial_statements.income_statements[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.eps %}${{ "%.2f"|format(stmt.eps) }}{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.operating_income %}${{ "%.1f"|format(stmt.operating_income / 1000000000) }}B{% if stmt.operating_income_yoy is not none %}<br><span style="font-size: 7pt; color: {% if stmt.operating_income_yoy >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %};">{{ "%+.1f"|format(stmt.operating_income_yoy * 100) }}% YoY</span>{% endif %}{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #e0f2fe;">
-                <td style="padding: 5px; border-bottom: 1px solid #ddd; font-weight: 600;">Gross Margin</td>
+            <tr style="background: {{ c.table_alt_row }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Net Income</td>
                 {% for stmt in financial_statements.income_statements[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd; color: #0369a1; font-weight: 600;">{% if stmt.gross_margin %}{{ "%.1f"|format(stmt.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.net_income %}${{ "%.1f"|format(stmt.net_income / 1000000000) }}B{% if stmt.net_income_yoy is not none %}<br><span style="font-size: 7pt; color: {% if stmt.net_income_yoy >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %};">{{ "%+.1f"|format(stmt.net_income_yoy * 100) }}% YoY</span>{% endif %}{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #e0f2fe;">
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">EPS</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.eps %}${{ "%.2f"|format(stmt.eps) }}{% if stmt.eps_yoy is not none %}<br><span style="font-size: 7pt; color: {% if stmt.eps_yoy >= 0 %}{{ c.positive }}{% else %}{{ c.negative }}{% endif %};">{{ "%+.1f"|format(stmt.eps_yoy * 100) }}% YoY</span>{% endif %}{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: {{ c.margin_highlight_bg }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.border_light }}; font-weight: 600;">Gross Margin</td>
+                {% for stmt in financial_statements.income_statements[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.border_light }}; color: {{ c.margin_highlight_text }}; font-weight: 600;">{% if stmt.gross_margin %}{{ "%.1f"|format(stmt.gross_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: {{ c.margin_highlight_bg }};">
                 <td style="padding: 5px; font-weight: 600;">Net Margin</td>
                 {% for stmt in financial_statements.income_statements[:5] %}
-                <td style="text-align: right; padding: 5px; color: #0369a1; font-weight: 600;">{% if stmt.net_margin %}{{ "%.1f"|format(stmt.net_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; color: {{ c.margin_highlight_text }}; font-weight: 600;">{% if stmt.net_margin %}{{ "%.1f"|format(stmt.net_margin * 100) }}%{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
         </tbody>
@@ -625,42 +1747,48 @@
     <h3>Balance Sheet (in millions)</h3>
     <table class="financials-table" style="width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 16px;">
         <thead>
-            <tr style="background: #f5f5f5;">
-                <th style="text-align: left; padding: 6px; border-bottom: 2px solid #ddd;">Metric</th>
+            <tr style="background: {{ c.section_bg }};">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">Metric</th>
                 {% for stmt in financial_statements.balance_sheets[:5] %}
-                <th style="text-align: right; padding: 6px; border-bottom: 2px solid #ddd;">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Total Assets</td>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Total Assets</td>
                 {% for stmt in financial_statements.balance_sheets[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.total_assets %}${{ "%.1f"|format(stmt.total_assets / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.total_assets %}${{ "%.1f"|format(stmt.total_assets / 1000000000) }}B{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #fafafa;">
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Total Equity</td>
+            <tr style="background: {{ c.table_alt_row }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Total Equity</td>
                 {% for stmt in financial_statements.balance_sheets[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.total_equity %}${{ "%.1f"|format(stmt.total_equity / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.total_equity %}${{ "%.1f"|format(stmt.total_equity / 1000000000) }}B{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
             <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Cash</td>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Cash</td>
                 {% for stmt in financial_statements.balance_sheets[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.cash %}${{ "%.1f"|format(stmt.cash / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.cash %}${{ "%.1f"|format(stmt.cash / 1000000000) }}B{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #fafafa;">
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Total Debt</td>
+            <tr style="background: {{ c.table_alt_row }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Total Debt</td>
                 {% for stmt in financial_statements.balance_sheets[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.total_debt %}${{ "%.1f"|format(stmt.total_debt / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.total_debt %}${{ "%.1f"|format(stmt.total_debt / 1000000000) }}B{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #dcfce7;">
+            <tr style="background: {{ c.debt_highlight_bg }};">
                 <td style="padding: 5px; font-weight: 600;">Debt/Equity</td>
                 {% for stmt in financial_statements.balance_sheets[:5] %}
-                <td style="text-align: right; padding: 5px; color: #16a34a; font-weight: 600;">{% if stmt.debt_to_equity %}{{ "%.2f"|format(stmt.debt_to_equity) }}x{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; color: {{ c.debt_highlight_text }}; font-weight: 600;">{% if stmt.debt_to_equity %}{{ "%.2f"|format(stmt.debt_to_equity) }}x{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Current Ratio</td>
+                {% for stmt in financial_statements.balance_sheets[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.current_ratio %}{{ "%.2f"|format(stmt.current_ratio) }}x{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
         </tbody>
@@ -672,30 +1800,42 @@
     <h3>Cash Flow Statement (in millions)</h3>
     <table class="financials-table" style="width: 100%; border-collapse: collapse; font-size: 8.5pt;">
         <thead>
-            <tr style="background: #f5f5f5;">
-                <th style="text-align: left; padding: 6px; border-bottom: 2px solid #ddd;">Metric</th>
+            <tr style="background: {{ c.section_bg }};">
+                <th style="text-align: left; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">Metric</th>
                 {% for stmt in financial_statements.cash_flows[:5] %}
-                <th style="text-align: right; padding: 6px; border-bottom: 2px solid #ddd;">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
+                <th style="text-align: right; padding: 6px; border-bottom: 2px solid {{ c.border_light }};">{{ stmt.period[:7] if stmt.period else 'FY' ~ stmt.fiscal_year }}</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Operating CF</td>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Operating CF</td>
                 {% for stmt in financial_statements.cash_flows[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.operating_cf %}${{ "%.1f"|format(stmt.operating_cf / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.operating_cf %}${{ "%.1f"|format(stmt.operating_cf / 1000000000) }}B{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #fafafa;">
-                <td style="padding: 5px; border-bottom: 1px solid #eee;">Free Cash Flow</td>
+            <tr style="background: {{ c.table_alt_row }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Investing CF</td>
                 {% for stmt in financial_statements.cash_flows[:5] %}
-                <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">{% if stmt.free_cash_flow %}${{ "%.1f"|format(stmt.free_cash_flow / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.investing_cf %}${{ "%.1f"|format(stmt.investing_cf / 1000000000) }}B{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
-            <tr style="background: #f3e8ff;">
+            <tr>
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Financing CF</td>
+                {% for stmt in financial_statements.cash_flows[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.financing_cf %}${{ "%.1f"|format(stmt.financing_cf / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: {{ c.table_alt_row }};">
+                <td style="padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">Free Cash Flow</td>
+                {% for stmt in financial_statements.cash_flows[:5] %}
+                <td style="text-align: right; padding: 5px; border-bottom: 1px solid {{ c.row_separator }};">{% if stmt.free_cash_flow %}${{ "%.1f"|format(stmt.free_cash_flow / 1000000000) }}B{% else %}N/A{% endif %}</td>
+                {% endfor %}
+            </tr>
+            <tr style="background: {{ c.fcf_highlight_bg }};">
                 <td style="padding: 5px; font-weight: 600;">FCF Margin</td>
                 {% for stmt in financial_statements.cash_flows[:5] %}
-                <td style="text-align: right; padding: 5px; color: #7c3aed; font-weight: 600;">{% if stmt.fcf_margin %}{{ "%.1f"|format(stmt.fcf_margin * 100) }}%{% else %}N/A{% endif %}</td>
+                <td style="text-align: right; padding: 5px; color: {{ c.fcf_highlight_text }}; font-weight: 600;">{% if stmt.fcf_margin %}{{ "%.1f"|format(stmt.fcf_margin * 100) }}%{% else %}N/A{% endif %}</td>
                 {% endfor %}
             </tr>
         </tbody>
@@ -704,9 +1844,117 @@
 </div>
 {% endif %}
 
+<!-- ===== STRATEGIC ASSESSMENT ===== -->
+{% if strategy_grid and (strategy_grid.advantages or strategy_grid.vulnerabilities or strategy_grid.tailwinds or strategy_grid.headwinds) %}
+<div class="section-page">
+    <h1 class="section-header">Strategic Assessment</h1>
+    <div class="strategy-grid">
+        <div class="strategy-box advantages">
+            <h4>Advantages</h4>
+            {{ strategy_grid.advantages | safe }}
+        </div>
+        <div class="strategy-box vulnerabilities">
+            <h4>Vulnerabilities</h4>
+            {{ strategy_grid.vulnerabilities | safe }}
+        </div>
+        <div class="strategy-box tailwinds">
+            <h4>Tailwinds</h4>
+            {{ strategy_grid.tailwinds | safe }}
+        </div>
+        <div class="strategy-box headwinds">
+            <h4>Headwinds</h4>
+            {{ strategy_grid.headwinds | safe }}
+        </div>
+    </div>
+</div>
+{% elif strategy_content %}
+<div class="section-page">
+    <h1 class="section-header">Strategic Assessment</h1>
+    <div class="analysis-content">
+        {{ strategy_content | safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== INDUSTRY DYNAMICS ===== -->
+{% if strategic_assessment %}
+<div class="section-page">
+    <h1 class="section-header">Industry Dynamics</h1>
+    <div class="analysis-content">
+        {{ strategic_assessment | safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== COMPETITIVE MOAT ===== -->
+{% if moat_analysis %}
+<div class="section-page">
+    <h1 class="section-header">Competitive Moat</h1>
+    {{ moat_analysis | safe }}
+</div>
+{% endif %}
+
+<!-- ===== BULL/BEAR CASE ===== -->
+{% if bull_case or bear_case %}
+<div class="section-page">
+    <h1 class="section-header">Investment Scenarios</h1>
+    {% if bull_case and bear_case %}
+    <div style="display: flex; gap: 16px;">
+        <div style="flex: 1; max-height: 500px; overflow: hidden;">
+            <div class="case-section bull">
+                <h3>Bull Case</h3>
+                {{ bull_case | safe }}
+            </div>
+        </div>
+        <div style="flex: 1; max-height: 500px; overflow: hidden;">
+            <div class="case-section bear">
+                <h3>Bear Case</h3>
+                {{ bear_case | safe }}
+            </div>
+        </div>
+    </div>
+    {% elif bull_case %}
+    <div class="case-section bull">
+        <h3>Bull Case</h3>
+        {{ bull_case | safe }}
+    </div>
+    {% elif bear_case %}
+    <div class="case-section bear">
+        <h3>Bear Case</h3>
+        {{ bear_case | safe }}
+    </div>
+    {% endif %}
+    {% if scenario_summary and scenario_summary.weighted_fair_value %}
+    <div style="text-align: center; margin: 16px 0 0;">
+        <span style="font-size: 8pt; color: {{ c.secondary_text }}; text-transform: uppercase; letter-spacing: 0.5px;">Probability-Weighted Fair Value</span>
+        <br>
+        <span style="font-size: 16pt; font-weight: 700; color: {{ primary_color }};">
+            ${{ "%.2f"|format(scenario_summary.weighted_fair_value) }}
+        </span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ===== TECHNICAL ANALYSIS ===== -->
+{% if technicals %}
+<div class="section-page">
+    <h1 class="section-header">Technical Analysis</h1>
+
+    {% if technical_chart %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ technical_chart }}" alt="Technical Chart">
+    </div>
+    {% endif %}
+
+    {{ technicals | safe }}
+</div>
+{% endif %}
+
 <!-- ===== SOURCES & REFERENCES ===== -->
+{% if research_sources or analyst_sources %}
 <div class="section-page sources-section">
-    <h1 class="section-header">Appendix - Sources & References</h1>
+    <h1 class="section-header">Sources & References</h1>
 
     {% if research_sources %}
     <h3>Research Sources</h3>
@@ -727,136 +1975,6 @@
     </div>
     {% endfor %}
     {% endif %}
-</div>
-
-<!-- ===== APPENDIX: STRATEGY ANALYSIS ===== -->
-<div class="section-page">
-    <h1 class="section-header">Appendix - Strategy Analysis</h1>
-
-    <!-- SWOT Analysis -->
-    {% if swot %}
-    <h2>SWOT Analysis</h2>
-    <div class="swot-grid">
-        <div class="swot-box strengths">
-            <h4>Strengths</h4>
-            {{ swot.strengths | safe }}
-        </div>
-        <div class="swot-box weaknesses">
-            <h4>Weaknesses</h4>
-            {{ swot.weaknesses | safe }}
-        </div>
-        <div class="swot-box opportunities">
-            <h4>Opportunities</h4>
-            {{ swot.opportunities | safe }}
-        </div>
-        <div class="swot-box threats">
-            <h4>Threats</h4>
-            {{ swot.threats | safe }}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Moat Analysis -->
-    {% if moat_analysis %}
-    <h2>Competitive Moat</h2>
-    {{ moat_analysis | safe }}
-    {% endif %}
-</div>
-
-<!-- ===== VALUATION: DCF MODEL ===== -->
-{% if dcf_valuation %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - DCF Valuation</h1>
-    {{ dcf_valuation | safe }}
-</div>
-{% endif %}
-
-<!-- ===== VALUATION: COMPARABLE COMPANIES ===== -->
-{% if comp_table %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Comparable Company Analysis</h1>
-    {{ comp_table | safe }}
-</div>
-{% endif %}
-
-<!-- ===== VALUATION: EARNINGS MODEL ===== -->
-{% if earnings_model %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Earnings Model Summary</h1>
-    {{ earnings_model | safe }}
-</div>
-{% endif %}
-
-<!-- ===== VALUATION: SCENARIO ANALYSIS ===== -->
-{% if scenario_analysis %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Scenario Analysis</h1>
-    {{ scenario_analysis | safe }}
-</div>
-{% endif %}
-
-<!-- ===== VALUATION: PRECEDENT TRANSACTIONS ===== -->
-{% if precedent_transactions %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Precedent Transactions</h1>
-    {{ precedent_transactions | safe }}
-</div>
-{% endif %}
-
-<!-- ===== VALUATION: SENSITIVITY ANALYSIS ===== -->
-{% if sensitivity %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Sensitivity Analysis</h1>
-    {{ sensitivity | safe }}
-</div>
-{% endif %}
-
-<!-- ===== VALUATION SUMMARY: FOOTBALL FIELD ===== -->
-{% if football_field %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Valuation Summary</h1>
-    {{ football_field | safe }}
-</div>
-{% endif %}
-
-<!-- ===== EXTERNAL FORCES ===== -->
-{% if strategic_assessment %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - External Forces</h1>
-    <div class="analysis-content">
-        {{ strategic_assessment | safe }}
-    </div>
-</div>
-{% endif %}
-
-<!-- ===== VALUATION: CONVICTION SCORE ===== -->
-{% if conviction %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Conviction Score</h1>
-    {{ conviction | safe }}
-</div>
-{% endif %}
-
-<!-- ===== APPENDIX CONTINUED: FUNDAMENTALS ===== -->
-{% if fundamentals %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Fundamental Analysis</h1>
-    {{ fundamentals | safe }}
-</div>
-{% endif %}
-
-<!-- ===== APPENDIX: TECHNICAL ANALYSIS ===== -->
-{% if technicals %}
-<div class="section-page">
-    <h1 class="section-header">Appendix - Technical Analysis</h1>
-
-    {% if technical_chart %}
-    <div class="chart-container">
-        <img src="data:image/png;base64,{{ technical_chart }}" alt="Technical Chart">
-    </div>
-    {% endif %}
-
-    {{ technicals | safe }}
 </div>
 {% endif %}
 
@@ -886,8 +2004,8 @@
         <div>{{ analyst_email }}</div>
 
         <div class="firm-logo">{{ firm_name }}</div>
-        <div style="font-size: 9pt; color: #666; margin-top: 4px;">{{ tool_branding }}</div>
-        <div style="font-size: 8pt; color: #888; margin-top: 12px;">Generated: {{ generation_time }}</div>
+        <div style="font-size: 9pt; color: {{ c.label_text }}; margin-top: 4px;">{{ tool_branding }}</div>
+        <div style="font-size: 8pt; color: {{ c.secondary_text }}; margin-top: 12px;">Generated: {{ generation_time }}</div>
     </div>
 </div>
 

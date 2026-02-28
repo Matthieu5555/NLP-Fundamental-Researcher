@@ -10,8 +10,17 @@ Aggregates all valuation methods into a single comparable range view:
 Pure aggregation — no LLM calls.
 """
 
+import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
+
+# Implied values outside this ratio to current_price are treated as data errors.
+# A 5x ratio means the implied value is 5x the stock price, which is implausible
+# for any single valuation method.
+MAX_PRICE_RATIO = 5.0
+MIN_PRICE_RATIO = 0.05
 
 
 @dataclass(frozen=True)
@@ -62,9 +71,14 @@ def build_football_field(
     comp_fwd_pe_implied: Optional[float] = None,
     comp_ev_revenue_implied: Optional[float] = None,
     comp_ev_ebitda_implied: Optional[float] = None,
-    # Precedent transaction implied
+    # Precedent transaction implied (includes control premium)
     precedent_ev_revenue: Optional[float] = None,
     precedent_ev_ebitda: Optional[float] = None,
+    # Precedent minority-adjusted (control premium stripped)
+    precedent_minority_ev_revenue: Optional[float] = None,
+    precedent_minority_ev_ebitda: Optional[float] = None,
+    # DDM
+    ddm_value: Optional[float] = None,
     # Analyst consensus
     consensus_target: Optional[float] = None,
 ) -> FootballFieldResult:
@@ -94,6 +108,21 @@ def build_football_field(
     # Precedent transactions (include control premium note)
     _add_comp_range(ranges, "M&A - EV/Revenue", precedent_ev_revenue, source="Incl. control premium")
     _add_comp_range(ranges, "M&A - EV/EBITDA", precedent_ev_ebitda, source="Incl. control premium")
+
+    # Precedent minority-adjusted (control premium stripped)
+    _add_comp_range(ranges, "M&A - EV/Rev (minority)", precedent_minority_ev_revenue, source="Premium stripped")
+    _add_comp_range(ranges, "M&A - EV/EBITDA (minority)", precedent_minority_ev_ebitda, source="Premium stripped")
+
+    # DDM (with sanity check — DDM can produce absurd values from bad dividend data)
+    if ddm_value is not None and current_price > 0:
+        ratio = ddm_value / current_price
+        if ratio > MAX_PRICE_RATIO or ratio < MIN_PRICE_RATIO:
+            logger.warning(
+                "DDM value $%.2f is %.1fx current price $%.2f — excluding from football field",
+                ddm_value, ratio, current_price,
+            )
+            ddm_value = None
+    _add_comp_range(ranges, "DDM", ddm_value, spread=0.10, source="Dividend discount model")
 
     # Analyst consensus as a tight range
     if consensus_target and consensus_target > 0:

@@ -21,7 +21,6 @@ Contradiction Categories:
 """
 
 import logging
-import json
 from typing import List, Dict, Any, TYPE_CHECKING
 from dataclasses import dataclass, asdict
 
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
 
 # sys.path configured in backend/main.py
 from backend.agents.llm_wrapper import get_llm_response
+from src_george_researcher.analysis.shared.parsing import safe_extract_json
 
 logger = logging.getLogger(__name__)
 
@@ -147,8 +147,12 @@ def find_contradictions_llm(full_analysis: Any) -> List[Contradiction]:
             logger.warning(f"LLM contradiction detection failed: {response}")
             return []
 
-        # Parse JSON response
-        result = json.loads(response)
+        # Parse JSON response, handling code fences and truncation
+        result = safe_extract_json(response)
+        if result is None:
+            logger.warning("Failed to parse LLM contradiction response (not valid JSON)")
+            return []
+
         contradictions = []
 
         for item in result.get("contradictions", []):
@@ -169,9 +173,6 @@ def find_contradictions_llm(full_analysis: Any) -> List[Contradiction]:
         logger.info(f"LLM detected {len(contradictions)} contradictions")
         return contradictions
 
-    except json.JSONDecodeError as e:
-        logger.warning(f"Failed to parse LLM contradiction response: {e}")
-        return []
     except Exception as e:
         logger.error(f"LLM contradiction detection error: {e}")
         return []

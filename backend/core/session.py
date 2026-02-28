@@ -23,6 +23,45 @@ from .report_builder import ReportState, SectionType, AnalystSource
 
 logger = logging.getLogger(__name__)
 
+# Migration mapping for old section keys and SectionType values from before
+# the canonical naming unification. Old persisted sessions use these values;
+# we translate them on load so the rest of the codebase only sees canonical keys.
+_LEGACY_SECTION_ID_MAP: Dict[str, str] = {
+    "full_report": "investment_thesis",
+    "external_forces": "industry",
+    "dcf_valuation": "dcf",
+    "scenario_analysis": "scenarios",
+    "comp_table": "comps",
+    "precedent_transactions": "precedents",
+    "moat_analysis": "moat",
+}
+
+_LEGACY_SECTION_TYPE_MAP: Dict[str, str] = {
+    "executive_summary": "investment_thesis",
+    "external_forces": "industry",
+    "dcf_valuation": "dcf",
+    "scenario_analysis": "scenarios",
+    "comp_table": "comps",
+    "precedent_transactions": "precedents",
+    "moat_analysis": "moat",
+    "financial_statements": "financials",
+    "sentiment": "custom",
+    "risks": "custom",
+}
+
+_LEGACY_METADATA_KEY_MAP: Dict[str, str] = {
+    "dcf_model": "dcf",
+    "scenario_data": "scenarios",
+    "sensitivity_data": "sensitivity",
+    "growth_margin_sensitivity_data": "sensitivity_operating",
+    "comp_table_data": "comps",
+    "precedent_data": "precedents",
+    "earnings_model_data": "earnings_model",
+    "football_field_data": "football_field",
+    "conviction_data": "conviction",
+    "ddm_data": "ddm",
+}
+
 class SessionMetadata(TypedDict, total=False):
     """
     Typed metadata for analysis sessions.
@@ -260,6 +299,11 @@ class SessionManager:
             metadata=data.get('metadata', {})
         )
 
+        # Migrate legacy metadata keys to canonical names
+        for old_key, new_key in _LEGACY_METADATA_KEY_MAP.items():
+            if old_key in session.metadata and new_key not in session.metadata:
+                session.metadata[new_key] = session.metadata.pop(old_key)
+
         # Reconstruct conversation history
         for msg_data in data.get('conversation_history', []):
             try:
@@ -280,17 +324,25 @@ class SessionManager:
                 try:
                     from .report_builder import Section
                     title = section_data.get('title', 'Untitled')
+                    # Migrate legacy section_type values to canonical names
+                    raw_type = section_data.get('section_type', 'custom')
+                    canonical_type = _LEGACY_SECTION_TYPE_MAP.get(raw_type, raw_type)
+                    try:
+                        section_type = SectionType(canonical_type)
+                    except ValueError:
+                        section_type = SectionType.CUSTOM
                     section = Section(
                         title=title,
                         content=section_data.get('content', ''),
-                        section_type=SectionType(section_data.get('section_type', 'general')),
+                        section_type=section_type,
                         sources=section_data.get('sources', []),
                         last_updated=datetime.fromisoformat(section_data.get('last_updated', datetime.now().isoformat())),
                         confidence=section_data.get('confidence', 0.7),
                         version=section_data.get('version', 1)
                     )
-                    # Generate section_id from title (same as original)
-                    section_id = section_data.get('section_id', title.lower().replace(' ', '_'))
+                    # Migrate legacy section_id to canonical key
+                    raw_id = section_data.get('section_id', title.lower().replace(' ', '_'))
+                    section_id = _LEGACY_SECTION_ID_MAP.get(raw_id, raw_id)
                     session.report_state.sections[section_id] = section
                 except (KeyError, ValueError) as e:
                     logger.warning(f"Skipping malformed section in session {data['session_id']}: {e}")

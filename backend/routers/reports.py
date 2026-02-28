@@ -1,12 +1,14 @@
-"""
-Reports API router.
+"""Reports API router.
 
-Handles report retrieval and export (markdown, PDF, slides).
+Handles report retrieval and export (markdown, PDF, slides, Excel).
 
 Endpoints:
     GET  /{session_id}                  - Get full report
     POST /{session_id}/export/pdf       - Export as PDF
     POST /{session_id}/export/slides    - Export as slide deck (PDF)
+    POST /{session_id}/export/excel     - Export as Excel workbook
+    POST /{session_id}/export/docx      - Export as editable Word document
+    POST /{session_id}/export/pptx     - Export as editable PowerPoint deck
     GET  /{session_id}/sections         - List all sections
     GET  /{session_id}/sections/{id}    - Get specific section
     PUT  /{session_id}/sections/{id}    - Update section content
@@ -16,7 +18,6 @@ Endpoints:
 """
 
 import logging
-from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Depends
@@ -25,10 +26,13 @@ from pydantic import BaseModel
 
 from backend.core.session import session_manager, AnalysisSession
 from backend.dependencies import get_user_session_with_report
+from backend.services.export_service import ExportService, ExportFormat
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_export_service = ExportService()
 
 
 class UpdateSectionRequest(BaseModel):
@@ -39,10 +43,24 @@ class UpdateSectionRequest(BaseModel):
 
 
 class ExportPdfRequest(BaseModel):
-    """Request body for PDF export."""
+    """Request body for PDF/slides/Excel export."""
 
     firm_id: Optional[str] = "george"
     analyst_id: Optional[str] = "default"
+
+
+def _export_response(session: AnalysisSession, fmt: ExportFormat, request: ExportPdfRequest) -> Response:
+    """Run an export and build the HTTP response with appropriate headers."""
+    request = request or ExportPdfRequest()
+    result = _export_service.export(session, fmt, request.firm_id, request.analyst_id)
+
+    headers = {"Content-Disposition": f"attachment; filename={result.filename}"}
+    if result.is_fallback:
+        fallback_prefix = fmt.value.upper()
+        headers[f"X-{fallback_prefix}-Fallback"] = "true"
+        headers[f"X-{fallback_prefix}-Error"] = result.fallback_reason or ""
+
+    return Response(content=result.content, media_type=result.media_type, headers=headers)
 
 
 @router.get("/{session_id}")
@@ -50,19 +68,11 @@ async def get_report(
     format: str = Query(default="json"),
     session: AnalysisSession = Depends(get_user_session_with_report),
 ):
-    """
-    Get the current report for a session.
-
-    User must own the session.
-
-    Query parameters:
-        format: 'json' (default) or 'markdown'
-    """
+    """Get the current report for a session. User must own the session."""
     if format == "markdown":
         markdown = session.report_state.to_markdown()
         return Response(content=markdown, media_type="text/markdown")
-    else:
-        return session.report_state.to_dict()
+    return session.report_state.to_dict()
 
 
 @router.post("/{session_id}/export/pdf")
@@ -70,92 +80,11 @@ async def export_pdf(
     request: ExportPdfRequest = None,
     session: AnalysisSession = Depends(get_user_session_with_report),
 ):
-    """
-    Export report as PDF with white-labeling support.
-
-    User must own the session.
-
-    Returns PDF file download with:
-    - Header banner with firm branding and key metrics
-    - 15-year price chart
-    - Full investment analysis
-    - Sources section
-    - Modular appendix
-    - Analyst attribution
-    """
-    import traceback
-
-    request = request or ExportPdfRequest()
-
+    """Export report as branded PDF. User must own the session."""
     try:
-        from backend.core.pdf_generator_v2 import generate_pdf
-        from backend.core.branding_config import load_branding_config
-
-        # sys.path configured in backend/main.py
-        from src_george_researcher.data_fetchers.stock_data import fetch_stock_info
-
-        branding = load_branding_config(request.firm_id, request.analyst_id)
-        logger.info(f"Using branding: {branding.firm.name} / {branding.analyst.full_name}")
-
-        stock_info, stock_error = fetch_stock_info(session.ticker)
-        if stock_error:
-            logger.warning(f"Could not fetch stock info: {stock_error}")
-            stock_info = None
-
-        financial_statements = session.metadata.get("financial_statements", None)
-
-        pdf_bytes = generate_pdf(
-            session.report_state,
-            session.ticker,
-            stock_info=stock_info,
-            branding=branding,
-            analyst_sources=session.analyst_sources,
-            financial_statements=financial_statements,
-        )
-
-        logger.info(f"PDF generated: {len(pdf_bytes)} bytes")
-
-        filename = f"{session.ticker}_analysis_{datetime.now().strftime('%Y%m%d')}.pdf"
-
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
-        )
-
-    except (ImportError, OSError) as e:
-        # Fallback to markdown export if PDF libraries not available
-        logger.warning(f"PDF dependency missing, falling back to markdown: {e}")
-        markdown = session.report_state.to_markdown()
-        filename = f"{session.ticker}_analysis_{datetime.now().strftime('%Y%m%d')}.md"
-        return Response(
-            content=markdown,
-            media_type="text/markdown",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "X-PDF-Fallback": "true",
-                "X-PDF-Error": str(e)[:100],
-            },
-        )
+        return _export_response(session, ExportFormat.PDF, request)
     except Exception as e:
-        logger.error(f"PDF generation failed: {e}")
-        logger.error(traceback.format_exc())
-        error_msg = str(e)
-        # Also fallback to markdown for other PDF errors
-        if "libgobject" in error_msg or "cannot load library" in error_msg or "weasyprint" in error_msg.lower():
-            logger.warning("PDF library error, falling back to markdown")
-            markdown = session.report_state.to_markdown()
-            filename = f"{session.ticker}_analysis_{datetime.now().strftime('%Y%m%d')}.md"
-            return Response(
-                content=markdown,
-                media_type="text/markdown",
-                headers={
-                    "Content-Disposition": f"attachment; filename={filename}",
-                    "X-PDF-Fallback": "true",
-                    "X-PDF-Error": error_msg[:100],
-                },
-            )
-        raise HTTPException(status_code=500, detail=f"PDF generation failed: {error_msg}")
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {e}")
 
 
 @router.post("/{session_id}/export/slides")
@@ -163,81 +92,47 @@ async def export_slides(
     request: ExportPdfRequest = None,
     session: AnalysisSession = Depends(get_user_session_with_report),
 ):
-    """
-    Export report as a McKinsey-style slide deck (PDF, landscape 16:9).
-
-    User must own the session. Uses the same data pipeline as PDF export
-    but renders a slide-per-page layout.
-    """
-    import traceback
-
-    request = request or ExportPdfRequest()
-
+    """Export report as McKinsey-style slide deck (PDF). User must own the session."""
     try:
-        from backend.core.slides_generator import generate_slides
-        from backend.core.branding_config import load_branding_config
-        from src_george_researcher.data_fetchers.stock_data import fetch_stock_info
-
-        branding = load_branding_config(request.firm_id, request.analyst_id)
-        logger.info(f"Slides using branding: {branding.firm.name} / {branding.analyst.full_name}")
-
-        stock_info, stock_error = fetch_stock_info(session.ticker)
-        if stock_error:
-            logger.warning(f"Could not fetch stock info: {stock_error}")
-            stock_info = None
-
-        financial_statements = session.metadata.get("financial_statements", None)
-
-        slides_bytes = generate_slides(
-            session.report_state,
-            session.ticker,
-            stock_info=stock_info,
-            branding=branding,
-            analyst_sources=session.analyst_sources,
-            financial_statements=financial_statements,
-        )
-
-        logger.info(f"Slides generated: {len(slides_bytes)} bytes")
-
-        filename = f"{session.ticker}_slides_{datetime.now().strftime('%Y%m%d')}.pdf"
-
-        return Response(
-            content=slides_bytes,
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
-        )
-
-    except (ImportError, OSError) as e:
-        logger.warning(f"Slides dependency missing, falling back to markdown: {e}")
-        markdown = session.report_state.to_markdown()
-        filename = f"{session.ticker}_slides_{datetime.now().strftime('%Y%m%d')}.md"
-        return Response(
-            content=markdown,
-            media_type="text/markdown",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "X-Slides-Fallback": "true",
-                "X-Slides-Error": str(e)[:100],
-            },
-        )
+        return _export_response(session, ExportFormat.SLIDES, request)
     except Exception as e:
-        logger.error(f"Slides generation failed: {e}")
-        logger.error(traceback.format_exc())
-        error_msg = str(e)
-        if "libgobject" in error_msg or "cannot load library" in error_msg or "weasyprint" in error_msg.lower():
-            logger.warning("Slides library error, falling back to markdown")
-            markdown = session.report_state.to_markdown()
-            filename = f"{session.ticker}_slides_{datetime.now().strftime('%Y%m%d')}.md"
-            return Response(
-                content=markdown,
-                media_type="text/markdown",
-                headers={
-                    "Content-Disposition": f"attachment; filename={filename}",
-                    "X-Slides-Fallback": "true",
-                    "X-Slides-Error": error_msg[:100],
-                },
-            )
-        raise HTTPException(status_code=500, detail=f"Slides generation failed: {error_msg}")
+        raise HTTPException(status_code=500, detail=f"Slides generation failed: {e}")
+
+
+@router.post("/{session_id}/export/excel")
+async def export_excel(
+    request: ExportPdfRequest = None,
+    session: AnalysisSession = Depends(get_user_session_with_report),
+):
+    """Export structured valuation data as Excel. User must own the session."""
+    try:
+        return _export_response(session, ExportFormat.EXCEL, request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Excel generation failed: {e}")
+
+
+@router.post("/{session_id}/export/docx")
+async def export_docx(
+    request: ExportPdfRequest = None,
+    session: AnalysisSession = Depends(get_user_session_with_report),
+):
+    """Export report as editable Word document. User must own the session."""
+    try:
+        return _export_response(session, ExportFormat.DOCX, request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DOCX generation failed: {e}")
+
+
+@router.post("/{session_id}/export/pptx")
+async def export_pptx(
+    request: ExportPdfRequest = None,
+    session: AnalysisSession = Depends(get_user_session_with_report),
+):
+    """Export report as editable PowerPoint deck. User must own the session."""
+    try:
+        return _export_response(session, ExportFormat.PPTX, request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PPTX generation failed: {e}")
 
 
 @router.get("/{session_id}/sections")
@@ -266,10 +161,8 @@ async def get_section(
 ):
     """Get a specific report section. User must own the session."""
     section = session.report_state.get_section(section_id)
-
     if not section:
         raise HTTPException(status_code=404, detail="Section not found")
-
     return section.to_dict()
 
 
@@ -290,10 +183,8 @@ async def update_section(
     try:
         session.report_state.update_section(section_id, request.content, request.sources)
         session_manager.update_session(session.session_id)
-
         section = session.report_state.get_section(section_id)
         return section.to_dict()
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
 
@@ -310,20 +201,18 @@ async def get_stats(
 async def get_valuation_data(
     session: AnalysisSession = Depends(get_user_session_with_report),
 ):
-    """
-    Get structured valuation data for interactive frontend components.
-
-    Returns DCF model, sensitivity grid, conviction scores from session metadata.
-    """
+    """Get structured valuation data for interactive frontend components."""
     return {
-        "dcf_model": session.metadata.get("dcf_model"),
-        "sensitivity_data": session.metadata.get("sensitivity_data"),
-        "conviction_data": session.metadata.get("conviction_data"),
-        "scenario_data": session.metadata.get("scenario_data"),
-        "football_field_data": session.metadata.get("football_field_data"),
-        "earnings_model_data": session.metadata.get("earnings_model_data"),
-        "precedent_data": session.metadata.get("precedent_data"),
-        "growth_margin_sensitivity_data": session.metadata.get("growth_margin_sensitivity_data"),
+        "dcf": session.metadata.get("dcf"),
+        "sensitivity": session.metadata.get("sensitivity"),
+        "conviction": session.metadata.get("conviction"),
+        "scenarios": session.metadata.get("scenarios"),
+        "football_field": session.metadata.get("football_field"),
+        "earnings_model": session.metadata.get("earnings_model"),
+        "precedents": session.metadata.get("precedents"),
+        "sensitivity_operating": session.metadata.get("sensitivity_operating"),
+        "ddm": session.metadata.get("ddm"),
+        "earnings_quality_data": session.metadata.get("earnings_quality_data"),
     }
 
 
@@ -332,11 +221,7 @@ async def exclude_source(
     source_id: int,
     session: AnalysisSession = Depends(get_user_session_with_report),
 ):
-    """
-    Exclude a news source from the analysis.
-
-    User must own the session. Only sources with source_type 'news' or 'search' can be excluded.
-    """
+    """Exclude a news source from the analysis. User must own the session."""
     sources_section = session.report_state.get_section("sources")
     if not sources_section:
         raise HTTPException(status_code=404, detail="No sources section found")

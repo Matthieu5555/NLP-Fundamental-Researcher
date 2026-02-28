@@ -19,8 +19,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id TEXT PRIMARY KEY,
     master_system_prompt TEXT DEFAULT '',
-    llm_model TEXT DEFAULT 'moonshotai/kimi-k2.5',
-    temperature REAL DEFAULT 0.7,
+    llm_model TEXT DEFAULT 'google/gemini-3-flash-preview',
+    temperature REAL DEFAULT 0.3,
     theme TEXT DEFAULT 'light',
     show_cost_tracking BOOLEAN DEFAULT TRUE,
     default_chart_timeframe TEXT DEFAULT '1y',
@@ -36,8 +36,8 @@ CREATE INDEX IF NOT EXISTS idx_settings_user ON user_settings(user_id);
 # Default settings values
 DEFAULTS = {
     "master_system_prompt": "",
-    "llm_model": "moonshotai/kimi-k2.5",
-    "temperature": 0.7,
+    "llm_model": "google/gemini-3-flash-preview",
+    "temperature": 0.3,
     "theme": "light",
     "show_cost_tracking": True,
     "default_chart_timeframe": "1y",
@@ -51,8 +51,8 @@ class UserSettings:
     """User settings data model."""
     user_id: str
     master_system_prompt: str = ""
-    llm_model: str = "moonshotai/kimi-k2.5"
-    temperature: float = 0.7
+    llm_model: str = "google/gemini-3-flash-preview"
+    temperature: float = 0.3
     theme: str = "light"
     show_cost_tracking: bool = True
     default_chart_timeframe: str = "1y"
