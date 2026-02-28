@@ -49,6 +49,8 @@ class ChatTurnResult:
     report_edited: bool = False
     edit_section: str | None = None
     rag_search_performed: bool = False
+    valuation_updated: bool = False
+    updated_fair_value: float | None = None
 
 
 class ChatService:
@@ -220,6 +222,18 @@ class ChatService:
             extracted_beliefs = self._extract_beliefs(
                 sess, message, response_text
             )
+
+            # Trigger valuation repropagation if any belief is a valuation view
+            valuation_updated = False
+            updated_fair_value = None
+            has_valuation_view = any(
+                getattr(b, "insight_type", None)
+                and b.insight_type.value == "valuation_view"
+                for b in extracted_beliefs
+            )
+            if has_valuation_view:
+                valuation_updated, updated_fair_value = self._try_repropagation(sess)
+
             total_cost = self._accumulate_cost(sess)
             message_count = len(sess.conversation_history)
 
@@ -236,9 +250,56 @@ class ChatService:
             total_chat_cost_usd=total_cost,
             tokens_used=input_tokens + output_tokens,
             rag_search_performed=rag_context.search_performed,
+            valuation_updated=valuation_updated,
+            updated_fair_value=updated_fair_value,
         )
 
     # --- Helpers ---
+
+    @staticmethod
+    def _try_repropagation(sess: AnalysisSession) -> tuple[bool, float | None]:
+        """Attempt valuation repropagation if DCF overrides can be parsed from beliefs.
+
+        Returns (valuation_updated, fair_value_per_share). Non-fatal: logs
+        warnings and returns (False, None) on any failure.
+        """
+        if not sess.analyst_sources or not sess.metadata.get("dcf"):
+            return False, None
+
+        try:
+            from backend.core.belief_overrides import parse_analyst_overrides
+            from backend.core.valuation_repropagation import run_valuation_repropagation
+
+            overrides = parse_analyst_overrides(
+                beliefs=list(sess.belief_graph.beliefs.values()) if hasattr(sess.belief_graph, "beliefs") else [],
+                analyst_sources=sess.analyst_sources,
+                llm_func=call_llm,
+                api_key=os.getenv("OPENROUTER_API_KEY", ""),
+                model=BELIEF_EXTRACTION_MODEL,
+            )
+
+            if not overrides.dcf_overrides:
+                return False, None
+
+            outcome = run_valuation_repropagation(
+                session_metadata=sess.metadata,
+                dcf_overrides=overrides.dcf_overrides,
+            )
+
+            if outcome:
+                sess.metadata.update(outcome.metadata_updates)
+                changelog = sess.metadata.setdefault("assumption_changelog", [])
+                changelog.extend(outcome.assumption_changes)
+                logger.info(
+                    "Chat-triggered repropagation: fair_value=%.2f",
+                    outcome.fair_value_per_share or 0,
+                )
+                return True, outcome.fair_value_per_share
+
+        except Exception as e:
+            logger.warning("Chat valuation repropagation failed (non-fatal): %s", e)
+
+        return False, None
 
     def _accumulate_cost(self, sess: AnalysisSession) -> float:
         prev_cost = sess.metadata.get("chat_cost_usd", 0.0)

@@ -573,113 +573,32 @@ async def update_analysis(
                 except Exception as e:
                     logger.warning(f"Research fetching during update failed (non-fatal): {e}")
 
-            # --- Step 3: Re-run DCF if dirty ---
-            dcf_result_obj = None
+            # --- Steps 3-4: Re-run DCF + downstream valuation (if dirty) ---
+            reprop_outcome = None
             if "dcf" in dirty and overrides.dcf_overrides:
-                yield emit("stage", {"stage": "dcf", "message": "Recalculating DCF with analyst overrides..."})
+                yield emit("stage", {"stage": "dcf", "message": "Recalculating valuation with analyst overrides..."})
                 await asyncio.sleep(0)
 
-                from src_george_researcher.valuation.dcf_engine import DCFAssumptions, calculate_dcf
+                from backend.core.valuation_repropagation import run_valuation_repropagation
 
-                # Get the existing DCF model from session metadata
-                existing_dcf = session.metadata.get("dcf")
-                if existing_dcf and "assumptions" in existing_dcf:
-                    # Reconstruct existing assumptions, apply overrides
-                    base_assumptions_dict = existing_dcf["assumptions"]
-                    # Build DCFAssumptions from stored dict
-                    constructor_fields = {
-                        "revenue_growth_rates", "wacc", "terminal_growth_rate",
-                        "projection_years", "fcf_margin", "gross_margins",
-                        "opex_as_pct_revenue", "da_as_pct_revenue", "sbc_as_pct_revenue",
-                        "capex_as_pct_revenue", "nwc_change_pct", "tax_rate",
-                        "revenue_growth_rationale", "fcf_margin_rationale",
-                        "margin_rationale", "wacc_rationale", "terminal_growth_rationale",
-                    }
-                    base_kwargs = {
-                        k: v for k, v in base_assumptions_dict.items()
-                        if k in constructor_fields and v is not None
-                    }
-                    base_assumptions = DCFAssumptions(**base_kwargs)
-                    overridden = base_assumptions.with_overrides(overrides.dcf_overrides)
+                reprop_outcome = await asyncio.to_thread(
+                    run_valuation_repropagation,
+                    session_metadata=session.metadata,
+                    dcf_overrides=overrides.dcf_overrides,
+                )
 
-                    # Re-run calculation (pure math, no LLM needed)
-                    dcf_result_obj = calculate_dcf(
-                        base_revenue=existing_dcf["base_revenue"],
-                        net_debt=existing_dcf["net_debt"],
-                        shares_outstanding=existing_dcf["shares_outstanding"],
-                        current_price=existing_dcf["current_price"],
-                        assumptions=overridden,
-                    )
-                    stages_updated.append("dcf")
+                if reprop_outcome:
+                    stages_updated.extend(["dcf", "sensitivity", "scenarios", "football_field"])
+
+                    # Append assumption changelog
+                    if reprop_outcome.assumption_changes:
+                        changelog = session.metadata.setdefault("assumption_changelog", [])
+                        changelog.extend(reprop_outcome.assumption_changes)
 
                     yield emit("dcf_updated", {
-                        "fair_value": round(dcf_result_obj.fair_value_per_share, 2),
-                        "upside_pct": round(dcf_result_obj.upside_downside_pct, 1),
+                        "fair_value": round(reprop_outcome.fair_value_per_share, 2) if reprop_outcome.fair_value_per_share else None,
                     })
                     await asyncio.sleep(0)
-
-            # --- Step 4: Sensitivity + Scenarios + Football Field (if DCF changed) ---
-            sensitivity_result = None
-            growth_margin_sensitivity = None
-            scenario_result = None
-            football_field_result = None
-
-            if dcf_result_obj and "sensitivity" in dirty:
-                yield emit("stage", {"stage": "sensitivity", "message": "Recalculating sensitivity grids..."})
-                await asyncio.sleep(0)
-
-                from src_george_researcher.valuation.sensitivity import run_sensitivity_analysis
-                sensitivity_result, growth_margin_sensitivity, _ = run_sensitivity_analysis(dcf_result_obj)
-                stages_updated.append("sensitivity")
-
-            if dcf_result_obj and "scenarios" in dirty:
-                yield emit("stage", {"stage": "scenarios", "message": "Recalculating scenario analysis..."})
-                await asyncio.sleep(0)
-
-                from src_george_researcher.valuation.scenarios import run_scenarios
-                scenario_result = run_scenarios(
-                    base_revenue=dcf_result_obj.base_revenue,
-                    net_debt=dcf_result_obj.net_debt,
-                    shares_outstanding=dcf_result_obj.shares_outstanding,
-                    current_price=dcf_result_obj.current_price,
-                    base_assumptions=dcf_result_obj.assumptions,
-                )
-                stages_updated.append("scenarios")
-
-            if dcf_result_obj and "football_field" in dirty:
-                yield emit("stage", {"stage": "football_field", "message": "Rebuilding football field..."})
-                await asyncio.sleep(0)
-
-                from src_george_researcher.valuation.football_field import build_football_field, format_football_field_markdown
-
-                ff_kwargs = {"current_price": dcf_result_obj.current_price}
-                if scenario_result:
-                    ff_kwargs["dcf_bear"] = scenario_result.bear_case.fair_value
-                    ff_kwargs["dcf_base"] = scenario_result.base_case.fair_value
-                    ff_kwargs["dcf_bull"] = scenario_result.bull_case.fair_value
-                    ff_kwargs["weighted_fair_value"] = scenario_result.weighted_fair_value
-                else:
-                    # Use existing scenario data if we didn't re-run scenarios
-                    existing_scenario = session.metadata.get("scenarios", {})
-                    if existing_scenario:
-                        ff_kwargs["dcf_bear"] = existing_scenario.get("bear_case", {}).get("fair_value")
-                        ff_kwargs["dcf_base"] = existing_scenario.get("base_case", {}).get("fair_value")
-                        ff_kwargs["dcf_bull"] = existing_scenario.get("bull_case", {}).get("fair_value")
-                        ff_kwargs["weighted_fair_value"] = existing_scenario.get("weighted_fair_value")
-
-                # Pull comp/precedent data from existing metadata (not re-run)
-                existing_ff = session.metadata.get("football_field", {})
-                for key in ["comp_pe_implied", "comp_fwd_pe_implied", "comp_ev_revenue_implied",
-                           "comp_ev_ebitda_implied", "precedent_ev_revenue", "precedent_ev_ebitda",
-                           "consensus_target"]:
-                    for r in existing_ff.get("ranges", []):
-                        pass  # Football field stores ranges, not raw values
-                    # Use existing football field raw inputs if stored
-                    if key in existing_ff:
-                        ff_kwargs[key] = existing_ff[key]
-
-                football_field_result = build_football_field(**ff_kwargs)
-                stages_updated.append("football_field")
 
             # --- Step 5: Re-run bull/bear if dirty ---
             bull_content = get_content("bull_case")
@@ -748,12 +667,46 @@ async def update_analysis(
                     technicals=get_content("technicals"),
                     bull_thesis=bull_content,
                     bear_thesis=bear_content,
-                    dcf_result=dcf_result_obj,
+                    dcf_result=None,  # DCF recalc handled by repropagation; conviction uses prose
                     sentiment_report="",
                 )
                 if conviction_analysis.success:
                     total_cost += conviction_analysis.cost_usd
                     stages_updated.append("conviction")
+
+            # --- Step 6.5: Regenerate recommendation if dirty ---
+            recommendation_content = get_content("recommendation")
+            if "recommendation" in dirty:
+                yield emit("stage", {"stage": "recommendation", "message": "Regenerating recommendation..."})
+                await asyncio.sleep(0)
+
+                from src_george_researcher.analysis_agents import (
+                    AnalysisContext as RecContext,
+                    synthesize_recommendation,
+                )
+
+                update_conviction_data = conviction_result.to_dict() if conviction_result else session.metadata.get("conviction", {})
+                rec_conviction_summary = _format_conviction_summary(update_conviction_data)
+
+                rec_context = RecContext(
+                    api_key=api_key,
+                    model=model,
+                    stock_info=stock_info,
+                    fundamentals_analysis=get_content("fundamentals"),
+                    technicals_analysis=get_content("technicals"),
+                    strategy_analysis=strategy_content,
+                    moat_analysis=moat_content,
+                    bull_thesis=bull_content,
+                    bear_thesis=bear_content,
+                    analyst_directives=overrides.qualitative_directives,
+                    conviction_summary=rec_conviction_summary,
+                )
+
+                rec_result = await asyncio.to_thread(synthesize_recommendation, rec_context)
+                if rec_result.success:
+                    recommendation_content = rec_result.content
+                    total_cost += rec_result.cost_usd
+                    stages_updated.append("recommendation")
 
             # --- Step 7: Contradiction re-detection ---
             yield emit("stage", {"stage": "contradictions", "message": "Refreshing contradictions..."})
@@ -821,6 +774,8 @@ async def update_analysis(
                 if "bull_bear" in stages_updated:
                     sess.report_state.update_section("bull_case", bull_content)
                     sess.report_state.update_section("bear_case", bear_content)
+                if "recommendation" in stages_updated:
+                    sess.report_state.update_section("recommendation", recommendation_content)
 
                 if report_result.success:
                     sess.report_state.add_section(
@@ -828,17 +783,10 @@ async def update_analysis(
                         SectionType.INVESTMENT_THESIS,
                     )
 
-                # Update structured valuation data
-                if dcf_result_obj:
-                    sess.metadata["dcf"] = dcf_result_obj.to_dict()
-                if sensitivity_result:
-                    sess.metadata["sensitivity"] = sensitivity_result.to_dict()
-                if growth_margin_sensitivity:
-                    sess.metadata["sensitivity_operating"] = growth_margin_sensitivity.to_dict()
-                if scenario_result:
-                    sess.metadata["scenarios"] = scenario_result.to_dict()
-                if football_field_result:
-                    sess.metadata["football_field"] = football_field_result.to_dict()
+                # Update structured valuation data (from repropagation)
+                if reprop_outcome:
+                    sess.metadata.update(reprop_outcome.metadata_updates)
+                    total_cost += reprop_outcome.cost_usd
                 if conviction_result:
                     sess.metadata["conviction"] = conviction_result.to_dict()
                     if conviction_analysis.success:

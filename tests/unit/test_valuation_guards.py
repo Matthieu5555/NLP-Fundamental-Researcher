@@ -273,12 +273,12 @@ class TestValuationDisplayEdgeCases:
 
     def test_empty_metadata(self):
         result = build_valuation_display({})
-        assert result["dcf_summary"] == {}
-        assert result["scenario_summary"] == {}
-        assert result["football_ranges"] == []
-        assert result["sensitivity_grid"] == {}
-        assert result["earnings_table"] == {}
-        assert result["precedent_summary"] == {}
+        assert result.dcf_summary == {}
+        assert result.scenario_summary == {}
+        assert result.football_ranges == []
+        assert result.sensitivity_grid == {}
+        assert result.earnings_table == {}
+        assert result.precedent_summary == {}
 
     def test_football_field_empty_ranges(self):
         ranges, pct, price = _build_football_field({"ranges": []}, 100.0)
@@ -402,11 +402,11 @@ class TestBuildValuationDisplayIntegration:
             },
         }
         result = build_valuation_display(metadata, current_price=130.0)
-        assert result["dcf_summary"]["fair_value"] == 150
-        assert len(result["football_ranges"]) == 1
-        assert result["sensitivity_grid"]["grid"] is not None
-        assert len(result["earnings_table"]["rows"]) == 2
-        assert len(result["precedent_summary"]["deals"]) == 1
+        assert result.dcf_summary["fair_value"] == 150
+        assert len(result.football_ranges) == 1
+        assert result.sensitivity_grid["grid"] is not None
+        assert len(result.earnings_table["rows"]) == 2
+        assert len(result.precedent_summary["deals"]) == 1
 
     def test_partial_metadata_no_crash(self):
         """Only DCF succeeded, everything else missing."""
@@ -417,8 +417,8 @@ class TestBuildValuationDisplayIntegration:
             },
         }
         result = build_valuation_display(metadata, current_price=90.0)
-        assert result["dcf_summary"]["fair_value"] == 100
-        assert result["football_ranges"] == []
-        assert result["sensitivity_grid"] == {}
-        assert result["earnings_table"] == {}
-        assert result["precedent_summary"] == {}
+        assert result.dcf_summary["fair_value"] == 100
+        assert result.football_ranges == []
+        assert result.sensitivity_grid == {}
+        assert result.earnings_table == {}
+        assert result.precedent_summary == {}

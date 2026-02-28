@@ -1027,18 +1027,20 @@ def generate_docx(
         current_price = first_page_data.current_price
 
     # Valuation display data
-    val_display = {}
+    from .valuation_display import ValuationDisplay
+
+    val_display = ValuationDisplay()
     if session_metadata:
         val_display = build_valuation_display(session_metadata, current_price=current_price)
 
     # Price target
     price_target = None
     target_upside = None
-    scenario_sum = val_display.get("scenario_summary", {})
+    scenario_sum = val_display.scenario_summary
     if scenario_sum.get("weighted_fair_value"):
         price_target = scenario_sum["weighted_fair_value"]
-    elif val_display.get("dcf_summary", {}).get("fair_value"):
-        price_target = val_display["dcf_summary"]["fair_value"]
+    elif val_display.dcf_summary.get("fair_value"):
+        price_target = val_display.dcf_summary["fair_value"]
 
     if price_target and current_price and current_price > 0:
         target_upside = round(((price_target - current_price) / current_price) * 100, 1)
@@ -1269,14 +1271,14 @@ def generate_docx(
     # ===== VALUATION SECTIONS =====
 
     # Football Field / Valuation Summary
-    football_ranges = val_display.get("football_ranges", [])
+    football_ranges = val_display.football_ranges
     if football_ranges:
         _add_section_heading(doc, "Valuation Summary", brand_color, page_break=True)
         _add_football_field_table(doc, football_ranges,
-                                  val_display.get("football_current_price"), brand_color)
+                                  val_display.football_current_price, brand_color)
 
     # DCF
-    dcf_summary = val_display.get("dcf_summary", {})
+    dcf_summary = val_display.dcf_summary
     if dcf_summary:
         _add_section_heading(doc, "DCF Valuation", brand_color)
         # Prose section if available
@@ -1286,7 +1288,7 @@ def generate_docx(
         _add_dcf_summary_table(doc, dcf_summary, brand_color)
 
     # Scenario Analysis
-    scenario_summary = val_display.get("scenario_summary", {})
+    scenario_summary = val_display.scenario_summary
     if scenario_summary:
         _add_section_heading(doc, "Scenario Analysis", brand_color)
         scen_sec = report_state.sections.get("scenarios")
@@ -1295,7 +1297,7 @@ def generate_docx(
         _add_scenario_table(doc, scenario_summary, brand_color)
 
     # Comparable Companies
-    comp_summary = val_display.get("comp_summary", {})
+    comp_summary = val_display.comp_summary
     if comp_summary:
         _add_section_heading(doc, "Comparable Companies", brand_color)
         comps_sec = report_state.sections.get("comps")
@@ -1304,7 +1306,7 @@ def generate_docx(
         _add_comps_table(doc, comp_summary, brand_color)
 
     # Precedent Transactions
-    precedent_summary = val_display.get("precedent_summary", {})
+    precedent_summary = val_display.precedent_summary
     if precedent_summary:
         _add_section_heading(doc, "Precedent Transactions", brand_color)
         prec_sec = report_state.sections.get("precedents")
@@ -1327,7 +1329,7 @@ def generate_docx(
             _add_data_table(doc, headers, rows, brand_color)
 
     # Earnings Model
-    earnings_table = val_display.get("earnings_table", {})
+    earnings_table = val_display.earnings_table
     if earnings_table:
         _add_section_heading(doc, "Earnings Model", brand_color)
         earn_sec = report_state.sections.get("earnings_model")
@@ -1336,20 +1338,20 @@ def generate_docx(
         _add_earnings_table(doc, earnings_table, brand_color)
 
     # Sensitivity Analysis
-    sensitivity_grid = val_display.get("sensitivity_grid", {})
+    sensitivity_grid = val_display.sensitivity_grid
     if sensitivity_grid:
         _add_section_heading(doc, "Sensitivity Analysis", brand_color)
         _add_sensitivity_grid_table(doc, sensitivity_grid, brand_color,
                                     title="WACC vs Terminal Growth Rate")
 
-    growth_margin_grid = val_display.get("growth_margin_grid", {})
+    growth_margin_grid = val_display.growth_margin_grid
     if growth_margin_grid:
         _add_sensitivity_grid_table(doc, growth_margin_grid, brand_color,
                                     title="Revenue Growth vs Operating Margin")
 
     # Conviction & Rating
-    conviction_data = val_display.get("conviction_structured", {})
-    conviction_categories = val_display.get("conviction_categories", [])
+    conviction_data = val_display.conviction_structured
+    conviction_categories = val_display.conviction_categories
     if conviction_data:
         _add_section_heading(doc, "Conviction & Rating", brand_color)
         conv_sec = report_state.sections.get("conviction")

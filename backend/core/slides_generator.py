@@ -350,12 +350,12 @@ def build_slides_context(
         session_metadata,
         current_price=first_page_data.current_price if first_page_data else None,
     )
-    dcf_summary = val["dcf_summary"]
-    scenario_summary = val["scenario_summary"]
-    football_ranges = val["football_ranges"]
-    football_current_pct = val["football_current_pct"]
-    conviction_data = val["conviction_structured"]
-    conviction_categories = val["conviction_categories"]
+    dcf_summary = val.dcf_summary
+    scenario_summary = val.scenario_summary
+    football_ranges = val.football_ranges
+    football_current_pct = val.football_current_pct
+    conviction_data = val.conviction_structured
+    conviction_categories = val.conviction_categories
 
     # --- Executive summary (defensive assembly from multiple sources) ---
     current_price = first_page_data.current_price if first_page_data else None
@@ -377,22 +377,22 @@ def build_slides_context(
     }
 
     # --- Investment context (structured thesis data) ---
-    investment_context = val.get("investment_context", {})
+    investment_context = val.investment_context
 
     # --- Forward snapshot table (cover page) ---
     # Built from earnings model rows: extract forward EPS, P/E, EV/EBITDA for 2-3 years
     forward_snapshot = _build_forward_snapshot(
-        val["earnings_table"],
+        val.earnings_table,
         current_price,
         scenario_summary,
     )
 
     # --- Analytical takeaways for data tables ---
     earnings_takeaway = _compute_earnings_takeaway(
-        val["earnings_table"].get("rows", []) if val["earnings_table"] else []
+        val.earnings_table.get("rows", []) if val.earnings_table else []
     )
     precedent_takeaway = _compute_precedent_takeaway(
-        val["precedent_summary"],
+        val.precedent_summary,
         exec_upside_pct,
     )
 
@@ -472,14 +472,14 @@ def build_slides_context(
         "scenario_summary": scenario_summary,
         "football_ranges": football_ranges,
         "football_current_pct": football_current_pct,
-        "football_current_price": val["football_current_price"],
-        "sensitivity_grid": val["sensitivity_grid"],
-        "growth_margin_grid": val["growth_margin_grid"],
+        "football_current_price": val.football_current_price,
+        "sensitivity_grid": val.sensitivity_grid,
+        "growth_margin_grid": val.growth_margin_grid,
         "conviction_structured": conviction_data,
         "conviction_categories": conviction_categories,
-        "earnings_table": val["earnings_table"],
-        "precedent_summary": val["precedent_summary"],
-        "comp_summary": val["comp_summary"],
+        "earnings_table": val.earnings_table,
+        "precedent_summary": val.precedent_summary,
+        "comp_summary": val.comp_summary,
         "earnings_takeaway": earnings_takeaway,
         "precedent_takeaway": precedent_takeaway,
 

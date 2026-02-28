@@ -249,48 +249,14 @@ class ReportState:
             self.last_updated = datetime.now()
             self.version += 1
         else:
-            # Create the section with a default title based on section_id
-            # Display names and types use canonical keys from shared/section_registry.json
-            section_titles = {
-                "investment_thesis": "Investment Thesis",
-                "recommendation": "Recommendation",
-                "fundamentals": "Fundamental Analysis",
-                "moat": "Competitive Moat",
-                "strategy": "Strategic Assessment",
-                "industry": "Industry Dynamics",
-                "bull_case": "Bull Case",
-                "bear_case": "Bear Case",
-                "technicals": "Technical Analysis",
-                "dcf": "DCF Valuation",
-                "comps": "Comparable Companies",
-                "earnings_model": "Earnings Model",
-                "sensitivity": "Sensitivity Analysis",
-                "conviction": "Conviction & Rating",
-                "scenarios": "Scenario Analysis",
-                "precedents": "Precedent Transactions",
-                "football_field": "Valuation Summary",
-            }
-            section_types = {
-                "investment_thesis": SectionType.INVESTMENT_THESIS,
-                "recommendation": SectionType.RECOMMENDATION,
-                "fundamentals": SectionType.FUNDAMENTALS,
-                "moat": SectionType.MOAT,
-                "strategy": SectionType.STRATEGY,
-                "industry": SectionType.INDUSTRY,
-                "bull_case": SectionType.BULL_CASE,
-                "bear_case": SectionType.BEAR_CASE,
-                "technicals": SectionType.TECHNICALS,
-                "dcf": SectionType.DCF,
-                "comps": SectionType.COMPS,
-                "earnings_model": SectionType.EARNINGS_MODEL,
-                "sensitivity": SectionType.SENSITIVITY,
-                "conviction": SectionType.CONVICTION,
-                "scenarios": SectionType.SCENARIOS,
-                "precedents": SectionType.PRECEDENTS,
-                "football_field": SectionType.FOOTBALL_FIELD,
-            }
-            title = section_titles.get(section_id, section_id.replace("_", " ").title())
-            section_type = section_types.get(section_id, SectionType.CUSTOM)
+            from backend.core.section_registry import SECTIONS
+
+            entry = SECTIONS.get(section_id)
+            title = entry.display if entry else section_id.replace("_", " ").title()
+            try:
+                section_type = SectionType(section_id)
+            except ValueError:
+                section_type = SectionType.CUSTOM
             self.add_section(section_id, title, new_content, section_type, sources)
 
     def get_section(self, section_id: str) -> Optional[Section]:

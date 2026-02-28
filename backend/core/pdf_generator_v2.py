@@ -443,11 +443,11 @@ def build_template_context(
 
         cp = first_page_data.current_price if first_page_data else None
         val_display = build_valuation_display(session_metadata, current_price=cp)
-        context.update(val_display)
+        context.update(val_display.to_template_context())
 
         # Derive price target: prefer weighted fair value from scenarios, fall back to DCF
-        scenario_sum = val_display.get("scenario_summary", {})
-        dcf_sum = val_display.get("dcf_summary", {})
+        scenario_sum = val_display.scenario_summary
+        dcf_sum = val_display.dcf_summary
         price_target = scenario_sum.get("weighted_fair_value") or dcf_sum.get("fair_value")
         target_upside_pct = None
         if price_target and cp and cp > 0:

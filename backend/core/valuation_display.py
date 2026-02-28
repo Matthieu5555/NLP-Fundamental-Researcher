@@ -5,11 +5,43 @@ Extracts structured valuation data from session_metadata into template-ready
 dicts used by both PDF reports and slide decks. Centralizes the computation
 so formatting logic is not duplicated across generators.
 
-Single entry point: build_valuation_display() -> dict
+Single entry point: build_valuation_display() -> ValuationDisplay
 """
 
+import dataclasses
 import re
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+
+
+@dataclass(frozen=True)
+class ValuationDisplay:
+    """Template-ready valuation display data built from session metadata.
+
+    Each field corresponds to a section of the valuation output. Fields
+    default to empty containers so callers can safely iterate or test
+    truthiness without None checks.
+    """
+
+    dcf_summary: Dict[str, Any] = field(default_factory=dict)
+    scenario_summary: Dict[str, Any] = field(default_factory=dict)
+    football_ranges: List[Dict[str, Any]] = field(default_factory=list)
+    football_current_pct: Optional[float] = None
+    football_current_price: Optional[float] = None
+    conviction_structured: Dict[str, Any] = field(default_factory=dict)
+    conviction_categories: List[Dict[str, Any]] = field(default_factory=list)
+    sensitivity_grid: Dict[str, Any] = field(default_factory=dict)
+    growth_margin_grid: Dict[str, Any] = field(default_factory=dict)
+    earnings_table: Dict[str, Any] = field(default_factory=dict)
+    precedent_summary: Dict[str, Any] = field(default_factory=dict)
+    comp_summary: Dict[str, Any] = field(default_factory=dict)
+    ddm_summary: Dict[str, Any] = field(default_factory=dict)
+    earnings_quality: Dict[str, Any] = field(default_factory=dict)
+    investment_context: Dict[str, Any] = field(default_factory=dict)
+
+    def to_template_context(self) -> Dict[str, Any]:
+        """Flatten to a dict for Jinja2 template contexts that need dict unpacking."""
+        return dataclasses.asdict(self)
 
 
 def _safe_float(val: Any) -> Optional[float]:
@@ -337,19 +369,19 @@ def _build_precedent_summary(precedent_data: Optional[Dict]) -> Dict:
 
 def build_valuation_display(
     session_metadata: Dict[str, Any], current_price: Optional[float] = None
-) -> Dict[str, Any]:
+) -> ValuationDisplay:
     """
     Build template-ready valuation display data from session metadata.
 
-    Called by both the PDF report generator and the slide deck generator
-    so that valuation visualizations are computed once, identically.
+    Called by PDF, slide, DOCX, and PPTX generators so that valuation
+    visualizations are computed once, identically.
 
     Args:
         session_metadata: session.metadata dict with valuation pipeline outputs.
         current_price: current stock price for upside/downside calculations.
 
     Returns:
-        Dict of template context keys for valuation sections.
+        ValuationDisplay with all template-ready valuation fields.
     """
     dcf_model = session_metadata.get("dcf", {})
     scenario_data = session_metadata.get("scenarios", {})
@@ -393,20 +425,20 @@ def build_valuation_display(
 
     investment_context = session_metadata.get("investment_context", {})
 
-    return {
-        "dcf_summary": dcf_summary,
-        "scenario_summary": scenario_summary,
-        "football_ranges": football_ranges,
-        "football_current_pct": football_current_pct,
-        "football_current_price": football_current_price,
-        "conviction_structured": conviction_data,
-        "conviction_categories": conviction_categories,
-        "sensitivity_grid": sensitivity_grid,
-        "growth_margin_grid": growth_margin_grid,
-        "earnings_table": earnings_table,
-        "precedent_summary": precedent_summary,
-        "comp_summary": comp_summary,
-        "ddm_summary": ddm_summary,
-        "earnings_quality": earnings_quality,
-        "investment_context": investment_context,
-    }
+    return ValuationDisplay(
+        dcf_summary=dcf_summary,
+        scenario_summary=scenario_summary,
+        football_ranges=football_ranges,
+        football_current_pct=football_current_pct,
+        football_current_price=football_current_price,
+        conviction_structured=conviction_data,
+        conviction_categories=conviction_categories,
+        sensitivity_grid=sensitivity_grid,
+        growth_margin_grid=growth_margin_grid,
+        earnings_table=earnings_table,
+        precedent_summary=precedent_summary,
+        comp_summary=comp_summary,
+        ddm_summary=ddm_summary,
+        earnings_quality=earnings_quality,
+        investment_context=investment_context,
+    )
