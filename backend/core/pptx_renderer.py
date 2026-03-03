@@ -38,6 +38,7 @@ from backend.core.pptx_template import (
     apply_font,
     apply_gradient_fill,
     build_colors,
+    centered_left,
     create_table,
     font_styles,
     hex_to_pptx,
@@ -261,7 +262,7 @@ def _slide_exec_summary(new_slide, ctx: dict, colors: PptxColors, styles: dict) 
     # Metric cards row: Rating, Target Price, Current Price, Upside
     card_w = Inches(2.5)
     card_h = Inches(1.1)
-    card_y = Inches(1.7)
+    card_y = Inches(1.2)
     card_gap = Inches(0.3)
 
     cards = [
@@ -271,12 +272,16 @@ def _slide_exec_summary(new_slide, ctx: dict, colors: PptxColors, styles: dict) 
         ("Upside / Downside", _fmt_pct(exec_data.get("upside_pct")),
          _pct_color(exec_data.get("upside_pct"), colors)),
     ]
-    for i, (label, value, vc) in enumerate(cards):
-        left = CONTENT_LEFT + i * (card_w + card_gap)
+    active_cards = [(l, v, vc) for l, v, vc in cards if v and v != "N/A"]
+    if not active_cards:
+        active_cards = cards
+    x0 = centered_left(len(active_cards), card_w, card_gap)
+    for i, (label, value, vc) in enumerate(active_cards):
+        left = x0 + i * (card_w + card_gap)
         add_metric_card(slide, left, card_y, card_w, card_h, label, value, colors, styles,
                         value_color=vc)
 
-    y = Inches(3.1)
+    y = Inches(2.6)
 
     # Forward snapshot table (forward EPS / P/E for estimated years)
     forward_snapshot = ctx.get("forward_snapshot", [])
@@ -300,7 +305,7 @@ def _slide_exec_summary(new_slide, ctx: dict, colors: PptxColors, styles: dict) 
         bbb_headers = ["", "Fair Value", "Upside", "Prob"]
         bbb_left = CONTENT_LEFT + Inches(6.0) if forward_snapshot else CONTENT_LEFT
         bbb_w = CONTENT_WIDTH - Inches(6.0) if forward_snapshot else Inches(5.5)
-        bbb_top = Inches(3.1) if forward_snapshot else y
+        bbb_top = Inches(2.6) if forward_snapshot else y
 
         case_rows = []
         for label in ("bull", "base", "bear"):
@@ -474,8 +479,9 @@ def _slide_conviction(new_slide, ctx: dict, colors: PptxColors, styles: dict) ->
             ("Confidence", f"{confidence}%" if confidence else "N/A", None),
             ("Rating", rating, hex_to_pptx(ctx["rating_color"]) if ctx.get("rating_color") else None),
         ]
+        x0 = centered_left(len(cards_data), card_w, gap)
         for i, (label, val, vc) in enumerate(cards_data):
-            add_metric_card(slide, CONTENT_LEFT + i * (card_w + gap), y, card_w, card_h,
+            add_metric_card(slide, x0 + i * (card_w + gap), y, card_w, card_h,
                             label, val, colors, styles, value_color=vc)
         y += card_h + Inches(0.4)
 
@@ -619,7 +625,7 @@ def _slide_dcf(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None:
     slide = new_slide()
     add_slide_title(slide, "DCF Valuation", styles, colors)
 
-    card_w = Inches(2.8)
+    card_w = Inches(2.7)
     card_h = Inches(1.1)
     gap = Inches(0.3)
     cards_per_row = 4
@@ -636,13 +642,17 @@ def _slide_dcf(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None:
         ("TV % of EV", format_percent(dcf.get("tv_pct_of_ev")), None),
     ]
 
-    for i, (label, value, vc) in enumerate(card_data):
-        col = i % cards_per_row
-        row = i // cards_per_row
-        left = CONTENT_LEFT + col * (card_w + gap)
-        top = y + row * (card_h + gap)
-        add_metric_card(slide, left, top, card_w, card_h, label, value, colors, styles,
-                        value_color=vc)
+    # Lay out in rows of cards_per_row, centered horizontally
+    for row_start in range(0, len(card_data), cards_per_row):
+        row_cards = card_data[row_start:row_start + cards_per_row]
+        n = len(row_cards)
+        x0 = centered_left(n, card_w, gap)
+        row_idx = row_start // cards_per_row
+        for i, (label, value, vc) in enumerate(row_cards):
+            left = x0 + i * (card_w + gap)
+            top = y + row_idx * (card_h + gap)
+            add_metric_card(slide, left, top, card_w, card_h, label, value, colors, styles,
+                            value_color=vc)
 
 
 def _slide_scenarios(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None:
@@ -674,11 +684,11 @@ def _slide_scenarios(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> 
         left = CONTENT_LEFT + i * (col_w + col_gap)
         y = CONTENT_TOP
 
-        # Subtle gradient background panel (colored to white, top to bottom)
-        panel = slide.shapes.add_shape(5, left, y, col_w, col_h)
-        apply_gradient_fill(panel, bg_color, hex_to_pptx("FFFFFF"), angle_degrees=90.0)
+        # Flat background panel (sharp corners for institutional look)
+        panel = slide.shapes.add_shape(1, left, y, col_w, col_h)
+        panel.fill.solid()
+        panel.fill.fore_color.rgb = bg_color
         panel.line.fill.background()
-        panel.adjustments[0] = 0.03
         slide.shapes._spTree.remove(panel._element)
         slide.shapes._spTree.insert(2, panel._element)
 
@@ -920,8 +930,12 @@ def _slide_comps(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None
             ("EV/EBITDA Implied", _fmt_price(implied.get("ev_ebitda_implied"))),
             ("EV/Revenue Implied", _fmt_price(implied.get("ev_revenue_implied"))),
         ]
-        for i, (label, val) in enumerate(iv_cards):
-            add_metric_card(slide, CONTENT_LEFT + i * (card_w + gap), y, card_w, card_h,
+        active_iv = [(l, v) for l, v in iv_cards if v and v != "N/A"]
+        if not active_iv:
+            active_iv = iv_cards
+        x0 = centered_left(len(active_iv), card_w, gap)
+        for i, (label, val) in enumerate(active_iv):
+            add_metric_card(slide, x0 + i * (card_w + gap), y, card_w, card_h,
                             label, val, colors, styles)
         y += card_h + Inches(0.3)
 
@@ -997,12 +1011,13 @@ def _slide_precedents(new_slide, ctx: dict, colors: PptxColors, styles: dict) ->
         card_w = Inches(3.0)
         card_h = Inches(0.9)
         gap = Inches(0.3)
-        cards = [
+        prec_cards = [
             ("EV/Revenue Implied", _fmt_price(implied.get("ev_revenue"))),
             ("EV/EBITDA Implied", _fmt_price(implied.get("ev_ebitda"))),
         ]
-        for i, (label, val) in enumerate(cards):
-            add_metric_card(slide, CONTENT_LEFT + i * (card_w + gap), y, card_w, card_h,
+        x0 = centered_left(len(prec_cards), card_w, gap)
+        for i, (label, val) in enumerate(prec_cards):
+            add_metric_card(slide, x0 + i * (card_w + gap), y, card_w, card_h,
                             label, val, colors, styles)
         y += card_h + Inches(0.3)
 
@@ -1238,11 +1253,11 @@ def _slide_investment_cases(new_slide, ctx: dict, colors: PptxColors, styles: di
 
     # Bull case
     if bull:
-        # Gradient background box (light green to white, left to right)
-        bg = slide.shapes.add_shape(5, CONTENT_LEFT, y, half_w, box_h)
-        apply_gradient_fill(bg, colors.bull_bg, hex_to_pptx("FFFFFF"), angle_degrees=0.0)
+        # Flat background box (sharp corners)
+        bg = slide.shapes.add_shape(1, CONTENT_LEFT, y, half_w, box_h)
+        bg.fill.solid()
+        bg.fill.fore_color.rgb = colors.bull_bg
         bg.line.fill.background()
-        bg.adjustments[0] = 0.03
         # Push behind text
         slide.shapes._spTree.remove(bg._element)
         slide.shapes._spTree.insert(2, bg._element)
@@ -1267,11 +1282,11 @@ def _slide_investment_cases(new_slide, ctx: dict, colors: PptxColors, styles: di
     if bear:
         right_left = CONTENT_LEFT + half_w + Inches(0.5)
 
-        # Gradient background box (light red to white, left to right)
-        bg = slide.shapes.add_shape(5, right_left, y, half_w, box_h)
-        apply_gradient_fill(bg, colors.bear_bg, hex_to_pptx("FFFFFF"), angle_degrees=0.0)
+        # Flat background box (sharp corners)
+        bg = slide.shapes.add_shape(1, right_left, y, half_w, box_h)
+        bg.fill.solid()
+        bg.fill.fore_color.rgb = colors.bear_bg
         bg.line.fill.background()
-        bg.adjustments[0] = 0.03
         slide.shapes._spTree.remove(bg._element)
         slide.shapes._spTree.insert(2, bg._element)
 
@@ -1467,8 +1482,8 @@ def _render_football_field_native(
             5, bar_left, y + Inches(0.05),
             bar_w, _FF_BAR_HEIGHT - Inches(0.1),
         )
-        apply_gradient_fill(bar, _lighten(colors.brand, 0.6), _lighten(colors.brand, 0.3),
-                            angle_degrees=0.0)
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = _lighten(colors.brand, 0.4)
         bar.line.color.rgb = colors.brand
         bar.line.width = Pt(0.75)
         bar.adjustments[0] = 0.5  # rounded ends

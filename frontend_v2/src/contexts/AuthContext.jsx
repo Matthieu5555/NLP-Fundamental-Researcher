@@ -6,6 +6,7 @@
  * - loading: Whether auth is being initialized
  * - error: Any auth error message
  * - isAuthenticated: Boolean shorthand for !!user
+ * - authRequired: Whether the server requires login
  * - login: Authenticate with email/password
  * - register: Create new account
  * - logout: Sign out and clear tokens
@@ -13,40 +14,63 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authAPI, getAccessToken, getRefreshToken, clearTokens } from '../utils/api'
+import api from '../utils/api'
 
 const AuthContext = createContext(null)
+
+const LOCAL_USER = {
+  id: 'local',
+  email: 'local@localhost',
+  display_name: 'Local User',
+  is_active: true,
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [authRequired, setAuthRequired] = useState(true) // assume true until server says otherwise
 
-  // Initialize auth state on mount
+  // Fetch auth config from server, then initialize auth state
   useEffect(() => {
-    const initAuth = async () => {
+    const init = async () => {
+      try {
+        const { data } = await api.get('/api/auth/config')
+        const serverRequiresAuth = data.require_auth === true
+
+        setAuthRequired(serverRequiresAuth)
+
+        if (!serverRequiresAuth) {
+          // Auth disabled: use local user, skip token logic entirely
+          setUser(LOCAL_USER)
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        // If the config endpoint is unreachable, fall back to requiring auth
+        // (the server is probably down anyway so the user will see errors elsewhere)
+        console.warn('Could not fetch auth config, assuming auth required:', err)
+      }
+
+      // Auth is enabled: check tokens
       const accessToken = getAccessToken()
       const refreshToken = getRefreshToken()
 
       if (!accessToken && !refreshToken) {
-        // No tokens, user is not authenticated
         setLoading(false)
         return
       }
 
       try {
-        // Try to get current user info
         const userData = await authAPI.getMe()
         setUser(userData)
-      } catch (error) {
-        // Token might be expired, try to refresh
+      } catch (err) {
         if (refreshToken) {
           try {
             await authAPI.refresh()
-            // Retry getting user info
             const userData = await authAPI.getMe()
             setUser(userData)
           } catch (refreshError) {
-            // Refresh failed, clear tokens
             console.warn('Token refresh failed:', refreshError)
             clearTokens()
           }
@@ -58,28 +82,28 @@ export function AuthProvider({ children }) {
       }
     }
 
-    initAuth()
+    init()
   }, [])
 
-  // Token refresh timer
+  // Token refresh timer (only when auth is enabled and user is logged in)
   useEffect(() => {
-    if (!user) return
+    if (!user || !authRequired) return
 
-    // Refresh token 5 minutes before expiry (25 minutes after login)
     const refreshInterval = setInterval(async () => {
       try {
         await authAPI.refresh()
-      } catch (error) {
-        console.warn('Background token refresh failed:', error)
-        // Will be handled by API interceptor on next request
+      } catch (err) {
+        console.warn('Background token refresh failed:', err)
       }
-    }, 25 * 60 * 1000) // 25 minutes
+    }, 25 * 60 * 1000)
 
     return () => clearInterval(refreshInterval)
-  }, [user])
+  }, [user, authRequired])
 
   // Listen for forced logout events (from API interceptor)
   useEffect(() => {
+    if (!authRequired) return
+
     const handleLogout = () => {
       setUser(null)
       setError(null)
@@ -87,7 +111,7 @@ export function AuthProvider({ children }) {
 
     window.addEventListener('auth:logout', handleLogout)
     return () => window.removeEventListener('auth:logout', handleLogout)
-  }, [])
+  }, [authRequired])
 
   const login = useCallback(async (email, password) => {
     setError(null)
@@ -95,8 +119,8 @@ export function AuthProvider({ children }) {
       const { user: userData } = await authAPI.login(email, password)
       setUser(userData)
       return userData
-    } catch (error) {
-      const message = error.response?.data?.detail || 'Login failed'
+    } catch (err) {
+      const message = err.response?.data?.detail || 'Login failed'
       setError(message)
       throw new Error(message)
     }
@@ -108,8 +132,8 @@ export function AuthProvider({ children }) {
       const { user: userData } = await authAPI.register(email, password, displayName)
       setUser(userData)
       return userData
-    } catch (error) {
-      const message = error.response?.data?.detail || 'Registration failed'
+    } catch (err) {
+      const message = err.response?.data?.detail || 'Registration failed'
       setError(message)
       throw new Error(message)
     }
@@ -118,9 +142,8 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try {
       await authAPI.logout()
-    } catch (error) {
-      // Ignore errors, still clear local state
-      console.warn('Logout error:', error)
+    } catch (err) {
+      console.warn('Logout error:', err)
     }
     setUser(null)
     setError(null)
@@ -135,6 +158,7 @@ export function AuthProvider({ children }) {
     loading,
     error,
     isAuthenticated: !!user,
+    authRequired,
     login,
     register,
     logout,

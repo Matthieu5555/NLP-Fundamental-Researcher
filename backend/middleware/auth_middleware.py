@@ -2,9 +2,12 @@
 Authentication middleware for FastAPI.
 
 Provides dependencies for protecting routes with JWT authentication.
+When REQUIRE_AUTH is not "true" (the default), all routes receive a synthetic
+local user so the app works out of the box without registration.
 """
 
 import logging
+import os
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Header, Query
@@ -23,34 +26,54 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
+def _auth_required() -> bool:
+    """Check whether authentication is enforced."""
+    return os.getenv("REQUIRE_AUTH", "false").lower() == "true"
+
+
+# Synthetic user returned when auth is disabled, matching the User dataclass shape.
+_LOCAL_USER = User(
+    id="local",
+    email="local@localhost",
+    password_hash="",
+    display_name="Local User",
+    company=None,
+    is_active=True,
+)
+
+
+def _extract_token(
+    authorization: Optional[str],
+    token_param: Optional[str],
+) -> Optional[str]:
+    """Extract bearer token from header or query parameter."""
+    if authorization:
+        parts = authorization.split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            return parts[1]
+    return token_param or None
+
+
 async def get_current_user(
     authorization: Optional[str] = Header(None, alias="Authorization"),
     token_param: Optional[str] = Query(None, alias="token"),
 ) -> User:
     """
-    FastAPI dependency that validates JWT and returns the current user.
+    FastAPI dependency that returns the current user.
 
-    Checks for token in:
-    1. Authorization header (Bearer token)
-    2. Query parameter 'token' (for SSE/EventSource which can't set headers)
-
-    Raises:
-        HTTPException(401): If no token provided or token is invalid
-
-    Returns:
-        User object for the authenticated user
+    When REQUIRE_AUTH is false (default), returns a local user without
+    checking tokens. If a valid token is present it still decodes it,
+    so auth works transparently when someone opts in.
     """
-    token = None
+    token = _extract_token(authorization, token_param)
 
-    # Try Authorization header first
-    if authorization:
-        parts = authorization.split()
-        if len(parts) == 2 and parts[0].lower() == "bearer":
-            token = parts[1]
-
-    # Fall back to query parameter (for SSE)
-    if not token and token_param:
-        token = token_param
+    if not _auth_required():
+        # Even with auth disabled, honour a valid token if one is supplied
+        if token:
+            user = await get_user_from_token(token)
+            if user:
+                return user
+        return _LOCAL_USER
 
     if not token:
         raise HTTPException(
@@ -59,9 +82,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Validate token and get user
     user = await get_user_from_token(token)
-
     if not user:
         raise HTTPException(
             status_code=401,
@@ -78,47 +99,27 @@ async def get_current_user_optional(
 ) -> Optional[User]:
     """
     FastAPI dependency that returns the current user if authenticated,
-    or None if not authenticated.
-
-    Use this for endpoints that work with or without authentication,
-    but provide enhanced features for authenticated users.
-
-    Returns:
-        User object if authenticated, None otherwise
+    or the local user when auth is disabled, or None when auth is
+    enabled but no token is present.
     """
-    token = None
+    token = _extract_token(authorization, token_param)
 
-    # Try Authorization header first
-    if authorization:
-        parts = authorization.split()
-        if len(parts) == 2 and parts[0].lower() == "bearer":
-            token = parts[1]
-
-    # Fall back to query parameter (for SSE)
-    if not token and token_param:
-        token = token_param
+    if not _auth_required():
+        if token:
+            user = await get_user_from_token(token)
+            if user:
+                return user
+        return _LOCAL_USER
 
     if not token:
         return None
 
-    # Try to validate token
     try:
-        user = await get_user_from_token(token)
-        return user
+        return await get_user_from_token(token)
     except Exception:
         return None
 
 
 def require_auth(user: User = Depends(get_current_user)) -> User:
-    """
-    Explicit dependency that requires authentication.
-
-    This is equivalent to using Depends(get_current_user) directly,
-    but provides a more explicit name for route definitions.
-
-    Usage:
-        @router.get("/protected")
-        async def protected_route(user: User = Depends(require_auth)):
-            return {"user_id": user.id}
-    """
+    """Explicit dependency that requires authentication."""
     return user

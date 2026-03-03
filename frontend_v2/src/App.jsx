@@ -91,7 +91,7 @@ function appReducer(state, action) {
 }
 
 function AppContent() {
-  const { isAuthenticated, user, logout, loading: authLoading } = useAuth()
+  const { isAuthenticated, user, logout, authRequired, loading: authLoading } = useAuth()
   const [state, dispatch] = useReducer(appReducer, initialState)
 
   const {
@@ -259,32 +259,36 @@ function AppContent() {
                     New analysis
                   </button>
                 )}
-                <button
-                  onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showUsageStats', value: true })}
-                  className="text-sm text-secondary hover:text-primary transition-colors flex items-center gap-1.5"
-                  title="View usage statistics"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="max-w-[120px] truncate">{user?.display_name || user?.email}</span>
-                </button>
-                <button
-                  onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showSettings', value: true })}
-                  className="text-secondary hover:text-primary transition-colors"
-                  title="Settings"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={logout}
-                  className="text-sm text-secondary hover:text-primary transition-colors"
-                >
-                  Sign out
-                </button>
+                {authRequired && (
+                  <>
+                    <button
+                      onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showUsageStats', value: true })}
+                      className="text-sm text-secondary hover:text-primary transition-colors flex items-center gap-1.5"
+                      title="View usage statistics"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="max-w-[120px] truncate">{user?.display_name || user?.email}</span>
+                    </button>
+                    <button
+                      onClick={() => dispatch({ type: 'TOGGLE_MODAL', modal: 'showSettings', value: true })}
+                      className="text-secondary hover:text-primary transition-colors"
+                      title="Settings"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={logout}
+                      className="text-sm text-secondary hover:text-primary transition-colors"
+                    >
+                      Sign out
+                    </button>
+                  </>
+                )}
               </>
             ) : (
               <button

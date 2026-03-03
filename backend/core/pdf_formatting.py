@@ -69,6 +69,39 @@ def format_percent(value, sign: bool = False, decimals: int = 1) -> str:
     return f"{prefix}{v:.{decimals}f}%"
 
 
+def strip_markdown_tables(text: str) -> str:
+    """Remove markdown table blocks from prose text, preserving surrounding paragraphs.
+
+    Detects tables as: a line containing '|' followed by a separator line matching
+    the pattern |---|---|. Removes the header row, separator row, and all contiguous
+    data rows. This allows structured Word tables to be the sole table rendering
+    when prose also contains markdown-formatted tables from the LLM.
+    """
+    if not text:
+        return text
+
+    lines = text.split("\n")
+    result = []
+    i = 0
+    while i < len(lines):
+        # Check if this line starts a markdown table (has | and next line is separator)
+        if ("|" in lines[i]
+                and i + 1 < len(lines)
+                and re.match(r'\s*\|[\s\-:|]+\|', lines[i + 1])):
+            # Skip header row
+            i += 1
+            # Skip separator row
+            i += 1
+            # Skip all contiguous data rows
+            while i < len(lines) and "|" in lines[i] and lines[i].strip():
+                i += 1
+        else:
+            result.append(lines[i])
+            i += 1
+
+    return "\n".join(result)
+
+
 def strip_markup(text: str) -> str:
     """Remove HTML tags and markdown formatting from prose text.
 

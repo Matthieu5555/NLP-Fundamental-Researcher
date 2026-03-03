@@ -2,14 +2,14 @@
   "_comment": "Single source of truth for all colors. Frontend theme.css and backend colors.py derive from this file.",
 
   "brand": {
-    "primary": "#2563EB",
-    "primaryDark": "#1D4ED8",
-    "primaryLight": "#3B82F6",
-    "gradientFrom": "#1B2559",
-    "gradientTo": "#131B42",
-    "surface": "#EFF6FF",
-    "surfaceDark": "#DBEAFE",
-    "border": "#BFDBFE",
+    "primary": "#1E3A5F",
+    "primaryDark": "#152D4A",
+    "primaryLight": "#2E5C8A",
+    "gradientFrom": "#0F1F35",
+    "gradientTo": "#0A1628",
+    "surface": "#F0F4F8",
+    "surfaceDark": "#DCE4ED",
+    "border": "#B0C4D8",
     "dark": "#0F1629",
     "darkLight": "#151F41"
   },
@@ -54,7 +54,7 @@
     "info": "#3b82f6",
     "infoLight": "#eff6ff",
     "infoMuted": "#60a5fa",
-    "infoDark": "#2563eb"
+    "infoDark": "#1E3A5F"
   },
 
   "chart": {
@@ -100,7 +100,7 @@
     "insight": { "label": "INSIGHT", "color": "#7C3AED", "bg": "#f5f3ff" },
     "risk": { "label": "RISK", "color": "#DC2626", "bg": "#fef2f2" },
     "opportunity": { "label": "OPPORTUNITY", "color": "#D97706", "bg": "#fffbeb" },
-    "valuation": { "label": "VALUATION", "color": "#2563EB", "bg": "#eff6ff" },
+    "valuation": { "label": "VALUATION", "color": "#1E3A5F", "bg": "#F0F4F8" },
     "competitive": { "label": "COMPETITIVE", "color": "#0891B2", "bg": "#f0fdfa" },
     "default": { "label": "NOTE", "color": "#6B7280", "bg": "#F8FAFC" }
   },
@@ -123,7 +123,7 @@
     "swot": {
       "strengths": { "bg": "#dcfce7", "border": "#16a34a" },
       "weaknesses": { "bg": "#fee2e2", "border": "#dc2626" },
-      "opportunities": { "bg": "#dbeafe", "border": "#2563eb" },
+      "opportunities": { "bg": "#dbeafe", "border": "#1E3A5F" },
       "threats": { "bg": "#fef3c7", "border": "#d97706" }
     },
     "financials": {

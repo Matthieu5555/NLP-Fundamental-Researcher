@@ -2,14 +2,16 @@
 Authentication API router.
 
 Endpoints:
+    GET  /config   - Public auth configuration (is login required?)
     POST /register - Create new user account
-    POST /login - Authenticate and get tokens
-    POST /refresh - Exchange refresh token for new access token
-    POST /logout - Revoke refresh token
-    GET /me - Get current user info
+    POST /login    - Authenticate and get tokens
+    POST /refresh  - Exchange refresh token for new access token
+    POST /logout   - Revoke refresh token
+    GET  /me       - Get current user info
 """
 
 import logging
+import os
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Header
 
@@ -34,6 +36,12 @@ from backend.core.auth_db import auth_db, User
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get("/config")
+async def auth_config():
+    """Public endpoint: tells the frontend whether login is required."""
+    return {"require_auth": os.getenv("REQUIRE_AUTH", "false").lower() == "true"}
 
 
 # Dependency to get current user (will be defined in middleware)

@@ -30,6 +30,7 @@ from .pdf_formatting import (
     format_number,
     format_percent,
     get_exchange_name,
+    strip_markdown_tables,
     strip_markup,
 )
 from .valuation_display import build_valuation_display
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Brand blue — sourced from branding config at runtime, this is the fallback
-_DEFAULT_BRAND_COLOR = RGBColor(0x25, 0x63, 0xEB)
+_DEFAULT_BRAND_COLOR = RGBColor(0x1E, 0x3A, 0x5F)
 
 # Typography constants
 _FONT_BODY = "Calibri"
@@ -62,7 +63,7 @@ _COLOR_LIGHT_BG = RGBColor(0xF8, 0xFA, 0xFC)
 
 
 def _hex_to_rgb(hex_color: str) -> RGBColor:
-    """Convert '#2563EB' to RGBColor."""
+    """Convert '#1E3A5F' to RGBColor."""
     h = hex_color.lstrip("#")
     return RGBColor(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
 
@@ -377,32 +378,24 @@ def _write_markdown_to_doc(doc: Document, md_text: str, brand_color: RGBColor) -
             _write_markdown_table(doc, table_lines, brand_color)
             continue
 
-        # Headings
+        # Headings — use proper Word heading styles for outline and ToC
         if line.startswith("#### "):
-            p = doc.add_paragraph()
-            _add_run(p, line[5:].strip(), bold=True, size=_FONT_SIZE_H3, color=brand_color)
-            _set_paragraph_spacing(p, before=Pt(8), after=Pt(4))
+            doc.add_paragraph(line[5:].strip(), style='Heading 3')
             i += 1
             continue
 
         if line.startswith("### "):
-            p = doc.add_paragraph()
-            _add_run(p, line[4:].strip(), bold=True, size=_FONT_SIZE_H3, color=brand_color)
-            _set_paragraph_spacing(p, before=Pt(10), after=Pt(4))
+            doc.add_paragraph(line[4:].strip(), style='Heading 3')
             i += 1
             continue
 
         if line.startswith("## "):
-            p = doc.add_paragraph()
-            _add_run(p, line[3:].strip(), bold=True, size=_FONT_SIZE_H2, color=brand_color)
-            _set_paragraph_spacing(p, before=Pt(14), after=Pt(6))
+            doc.add_paragraph(line[3:].strip(), style='Heading 2')
             i += 1
             continue
 
         if line.startswith("# "):
-            p = doc.add_paragraph()
-            _add_run(p, line[2:].strip(), bold=True, size=_FONT_SIZE_H1, color=brand_color)
-            _set_paragraph_spacing(p, before=Pt(16), after=Pt(8))
+            doc.add_paragraph(line[2:].strip(), style='Heading 2')
             i += 1
             continue
 
@@ -509,12 +502,10 @@ def _write_markdown_table(doc: Document, table_lines: List[str],
 
 def _add_section_heading(doc: Document, title: str, brand_color: RGBColor,
                          page_break: bool = False) -> None:
-    """Add a styled section heading with bottom border accent."""
+    """Add a styled section heading using Heading 1 style with bottom border accent."""
     if page_break:
         doc.add_page_break()
-    p = doc.add_paragraph()
-    _add_run(p, title, bold=True, size=_FONT_SIZE_H2, color=brand_color)
-    _set_paragraph_spacing(p, before=Pt(18), after=Pt(8))
+    p = doc.add_paragraph(title, style='Heading 1')
 
     # Bottom border line in brand color
     hex_clean = f"{brand_color[0]:02x}{brand_color[1]:02x}{brand_color[2]:02x}"
@@ -742,11 +733,20 @@ def _add_comps_table(doc: Document, comp_summary: Dict,
 
 def _add_earnings_table(doc: Document, earnings_data: Dict,
                         brand_color: RGBColor) -> None:
-    """Add earnings model table."""
+    """Add earnings model table, filtering out rows where all value fields are null."""
     if not earnings_data:
         return
 
     rows_data = earnings_data.get("rows", [])
+    if not rows_data:
+        return
+
+    # Filter out rows where all numeric fields are None (e.g. fiscal_year: 0 placeholders)
+    _value_fields = ("revenue", "ebitda", "net_income", "eps", "revenue_growth", "ebitda_margin")
+    rows_data = [
+        r for r in rows_data
+        if any(r.get(k) is not None for k in _value_fields)
+    ]
     if not rows_data:
         return
 
@@ -878,7 +878,8 @@ def _add_data_table(doc: Document, headers: List[str], rows: List[List[str]],
         for j, val in enumerate(row[:n_cols]):
             cell = table.rows[i + 1].cells[j]
             cell.text = ""
-            _add_run(cell.paragraphs[0], str(val), size=_FONT_SIZE_SMALL, color=_COLOR_BODY)
+            _add_run(cell.paragraphs[0], strip_markup(str(val)),
+                     size=_FONT_SIZE_SMALL, color=_COLOR_BODY)
             if j > 0:
                 cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
             if i % 2 == 0:
@@ -979,6 +980,21 @@ def generate_docx(
     font.name = _FONT_BODY
     font.size = _FONT_SIZE_BODY
     font.color.rgb = _COLOR_BODY
+
+    # Configure heading styles for proper document outline and ToC support
+    for level, size, sp_before, sp_after in [
+        (1, _FONT_SIZE_H1, Pt(18), Pt(8)),
+        (2, _FONT_SIZE_H2, Pt(14), Pt(6)),
+        (3, _FONT_SIZE_H3, Pt(10), Pt(4)),
+    ]:
+        h_style = doc.styles[f"Heading {level}"]
+        h_style.font.name = _FONT_BODY
+        h_style.font.size = size
+        h_style.font.bold = True
+        h_style.font.color.rgb = brand_color
+        h_style.paragraph_format.space_before = sp_before
+        h_style.paragraph_format.space_after = sp_after
+        h_style.paragraph_format.keep_with_next = True
 
     # Page margins and footer
     for section in doc.sections:
@@ -1218,21 +1234,43 @@ def generate_docx(
             _write_inline_formatting(bp, h)
             _set_paragraph_spacing(bp, before=Pt(1), after=Pt(1))
 
-    # Investment thesis intro (first ~1500 chars, mirroring PDF)
+    # Investment thesis summary on cover (short preview, full version in body)
     if thesis_md:
         main.add_paragraph()  # spacing
         tp = main.add_paragraph()
-        _add_run(tp, "Investment Analysis", bold=True, size=_FONT_SIZE_H2, color=brand_color)
+        _add_run(tp, "Investment Summary", bold=True, size=_FONT_SIZE_H2, color=brand_color)
         _set_paragraph_spacing(tp, after=Pt(6))
-        # Truncate for cover page, full version follows on body pages
-        intro_text = thesis_md[:1500]
-        # Try to cut at paragraph boundary
-        boundary = intro_text.rfind("\n\n", 800)
+        intro_text = thesis_md[:600]
+        boundary = intro_text.rfind("\n\n", 300)
         if boundary > 0:
             intro_text = intro_text[:boundary]
         _write_markdown_to_doc(main, intro_text, brand_color)
 
     # Page break after cover
+    doc.add_page_break()
+
+    # ===== TABLE OF CONTENTS =====
+    doc.add_paragraph("Contents", style='Heading 1')
+    toc_para = doc.add_paragraph()
+    _add_run(toc_para, "Right-click and select 'Update Field' to generate table of contents.",
+             size=_FONT_SIZE_SMALL, color=_COLOR_SECONDARY, italic=True)
+
+    # Insert TOC field code (same pattern as PAGE field in _add_page_number_run)
+    from docx.oxml import OxmlElement
+    toc_run = toc_para.add_run()
+    fld_begin = OxmlElement('w:fldChar')
+    fld_begin.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fldCharType', 'begin')
+    toc_run._r.append(fld_begin)
+
+    instr = OxmlElement('w:instrText')
+    instr.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+    instr.text = ' TOC \\o "1-3" \\h \\z \\u '
+    toc_run._r.append(instr)
+
+    fld_end = OxmlElement('w:fldChar')
+    fld_end.set('{http://schemas.openxmlformats.org/wordprocessingml/2006/main}fldCharType', 'end')
+    toc_run._r.append(fld_end)
+
     doc.add_page_break()
 
     # ===== BODY: Prose sections =====
@@ -1245,18 +1283,22 @@ def generate_docx(
         ("industry", "Industry Dynamics"),
     ]
 
+    first_body_section = True
     for key, title in section_order:
         section = report_state.sections.get(key)
         if section and hasattr(section, "content") and section.content:
-            _add_section_heading(doc, title, brand_color)
+            _add_section_heading(doc, title, brand_color,
+                                 page_break=(not first_body_section))
             _write_markdown_to_doc(doc, section.content, brand_color)
+            first_body_section = False
 
     # Bull / Bear cases
     bull_sec = report_state.sections.get("bull_case")
     bear_sec = report_state.sections.get("bear_case")
     if (bull_sec and hasattr(bull_sec, "content") and bull_sec.content) or \
        (bear_sec and hasattr(bear_sec, "content") and bear_sec.content):
-        _add_section_heading(doc, "Bull & Bear Cases", brand_color)
+        _add_section_heading(doc, "Bull & Bear Cases", brand_color,
+                             page_break=(not first_body_section))
 
         if bull_sec and hasattr(bull_sec, "content") and bull_sec.content:
             cell = _add_accent_box(doc, bg_hex="#dcfce7", border_hex="#16a34a")
@@ -1284,29 +1326,28 @@ def generate_docx(
     # DCF
     dcf_summary = val_display.dcf_summary
     if dcf_summary:
-        _add_section_heading(doc, "DCF Valuation", brand_color)
-        # Prose section if available
+        _add_section_heading(doc, "DCF Valuation", brand_color, page_break=True)
         dcf_sec = report_state.sections.get("dcf")
         if dcf_sec and hasattr(dcf_sec, "content") and dcf_sec.content:
-            _write_markdown_to_doc(doc, dcf_sec.content, brand_color)
+            _write_markdown_to_doc(doc, strip_markdown_tables(dcf_sec.content), brand_color)
         _add_dcf_summary_table(doc, dcf_summary, brand_color)
 
     # Scenario Analysis
     scenario_summary = val_display.scenario_summary
     if scenario_summary:
-        _add_section_heading(doc, "Scenario Analysis", brand_color)
+        _add_section_heading(doc, "Scenario Analysis", brand_color, page_break=True)
         scen_sec = report_state.sections.get("scenarios")
         if scen_sec and hasattr(scen_sec, "content") and scen_sec.content:
-            _write_markdown_to_doc(doc, scen_sec.content, brand_color)
+            _write_markdown_to_doc(doc, strip_markdown_tables(scen_sec.content), brand_color)
         _add_scenario_table(doc, scenario_summary, brand_color)
 
     # Comparable Companies
     comp_summary = val_display.comp_summary
     if comp_summary:
-        _add_section_heading(doc, "Comparable Companies", brand_color)
+        _add_section_heading(doc, "Comparable Companies", brand_color, page_break=True)
         comps_sec = report_state.sections.get("comps")
         if comps_sec and hasattr(comps_sec, "content") and comps_sec.content:
-            _write_markdown_to_doc(doc, comps_sec.content, brand_color)
+            _write_markdown_to_doc(doc, strip_markdown_tables(comps_sec.content), brand_color)
         _add_comps_table(doc, comp_summary, brand_color)
 
     # Precedent Transactions
@@ -1315,7 +1356,7 @@ def generate_docx(
         _add_section_heading(doc, "Precedent Transactions", brand_color)
         prec_sec = report_state.sections.get("precedents")
         if prec_sec and hasattr(prec_sec, "content") and prec_sec.content:
-            _write_markdown_to_doc(doc, prec_sec.content, brand_color)
+            _write_markdown_to_doc(doc, strip_markdown_tables(prec_sec.content), brand_color)
 
         deals = precedent_summary.get("deals", [])
         if deals:
@@ -1332,14 +1373,16 @@ def generate_docx(
                 ])
             _add_data_table(doc, headers, rows, brand_color)
 
-    # Earnings Model
+    # Earnings Model — prose and structured data rendered independently
     earnings_table = val_display.earnings_table
-    if earnings_table:
+    earn_sec = report_state.sections.get("earnings_model")
+    has_earnings_prose = earn_sec and hasattr(earn_sec, "content") and earn_sec.content
+    if has_earnings_prose or earnings_table:
         _add_section_heading(doc, "Earnings Model", brand_color)
-        earn_sec = report_state.sections.get("earnings_model")
-        if earn_sec and hasattr(earn_sec, "content") and earn_sec.content:
-            _write_markdown_to_doc(doc, earn_sec.content, brand_color)
-        _add_earnings_table(doc, earnings_table, brand_color)
+        if has_earnings_prose:
+            _write_markdown_to_doc(doc, strip_markdown_tables(earn_sec.content), brand_color)
+        if earnings_table:
+            _add_earnings_table(doc, earnings_table, brand_color)
 
     # Sensitivity Analysis
     sensitivity_grid = val_display.sensitivity_grid
@@ -1360,7 +1403,7 @@ def generate_docx(
         _add_section_heading(doc, "Conviction & Rating", brand_color)
         conv_sec = report_state.sections.get("conviction")
         if conv_sec and hasattr(conv_sec, "content") and conv_sec.content:
-            _write_markdown_to_doc(doc, conv_sec.content, brand_color)
+            _write_markdown_to_doc(doc, strip_markdown_tables(conv_sec.content), brand_color)
 
         if conviction_categories:
             headers = ["Category", "Score", "Evidence"]
@@ -1404,7 +1447,7 @@ def generate_docx(
         for source in sources_section.sources:
             if isinstance(source, Source):
                 p = doc.add_paragraph()
-                _add_run(p, f"[{source.id}] ", bold=True, size=_FONT_SIZE_SMALL, color=brand_color)
+                _add_run(p, f"[{source.id}] ", bold=True, size=_FONT_SIZE_SMALL, color=_COLOR_BODY)
                 _add_run(p, source.title, size=_FONT_SIZE_SMALL, color=_COLOR_BODY)
                 if source.url:
                     _add_run(p, f" — {source.url}", size=_FONT_SIZE_SMALL, color=_COLOR_SECONDARY)
@@ -1413,7 +1456,7 @@ def generate_docx(
                 _set_paragraph_spacing(p, after=Pt(2))
             elif isinstance(source, dict):
                 p = doc.add_paragraph()
-                _add_run(p, f"[{source.get('id', '')}] ", bold=True, size=_FONT_SIZE_SMALL, color=brand_color)
+                _add_run(p, f"[{source.get('id', '')}] ", bold=True, size=_FONT_SIZE_SMALL, color=_COLOR_BODY)
                 _add_run(p, source.get("title", ""), size=_FONT_SIZE_SMALL, color=_COLOR_BODY)
                 _set_paragraph_spacing(p, after=Pt(2))
 

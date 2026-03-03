@@ -36,11 +36,11 @@ MARGIN_BOTTOM = Inches(0.45)
 
 CONTENT_LEFT = MARGIN_LEFT
 CONTENT_WIDTH = SLIDE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT
-CONTENT_TOP = Inches(1.55)  # below slide title
+CONTENT_TOP = Inches(1.05)  # below header band
 CONTENT_HEIGHT = SLIDE_HEIGHT - CONTENT_TOP - MARGIN_BOTTOM
 
-# Brand stripe at slide top
-STRIPE_HEIGHT = Inches(0.1)
+# Brand header band at slide top (contains slide title as white text)
+STRIPE_HEIGHT = Inches(0.55)
 
 # Footer positioning
 FOOTER_TOP = SLIDE_HEIGHT - Inches(0.35)
@@ -138,16 +138,16 @@ class FontStyle:
 def font_styles(colors: PptxColors) -> dict:
     """Return a dict of named FontStyle presets keyed to the given color set."""
     return {
-        "slide_title": FontStyle(Pt(22), bold=True, color=colors.brand),
-        "body": FontStyle(Pt(12), color=colors.dark_text),
-        "body_small": FontStyle(Pt(10), color=colors.dark_text),
-        "metric_value": FontStyle(Pt(24), bold=True, color=colors.brand),
-        "metric_value_sm": FontStyle(Pt(18), bold=True, color=colors.brand),
+        "slide_title": FontStyle(Pt(16), bold=True, color=colors.white),
+        "body": FontStyle(Pt(10), color=colors.dark_text),
+        "body_small": FontStyle(Pt(9), color=colors.dark_text),
+        "metric_value": FontStyle(Pt(18), bold=True, color=colors.brand),
+        "metric_value_sm": FontStyle(Pt(14), bold=True, color=colors.brand),
         "metric_label": FontStyle(Pt(8), color=colors.secondary_text),
-        "table_header": FontStyle(Pt(9), bold=True, color=colors.white),
-        "table_cell": FontStyle(Pt(9), color=colors.dark_text),
+        "table_header": FontStyle(Pt(8), bold=True, color=colors.white),
+        "table_cell": FontStyle(Pt(8), color=colors.dark_text),
         "footer": FontStyle(Pt(7), color=colors.secondary_text),
-        "bullet": FontStyle(Pt(11), color=colors.dark_text),
+        "bullet": FontStyle(Pt(9), color=colors.dark_text),
         "section_label": FontStyle(Pt(10), bold=True, color=colors.label_text),
         "disclaimer": FontStyle(Pt(8), color=colors.secondary_text, italic=True),
     }
@@ -204,7 +204,14 @@ def add_brand_stripe(slide: Slide, colors: PptxColors) -> None:
 
 
 def add_footer(slide: Slide, firm_name: str, slide_num: int, colors: PptxColors, styles: dict) -> None:
-    """Add firm name (bottom-left) and slide number (bottom-right)."""
+    """Add a separator line above the footer, firm name (left) and slide number (right)."""
+    # Thin separator line above footer
+    sep_top = FOOTER_TOP - Inches(0.08)
+    sep = slide.shapes.add_shape(1, CONTENT_LEFT, sep_top, CONTENT_WIDTH, Pt(0.5))
+    sep.fill.solid()
+    sep.fill.fore_color.rgb = colors.border_light
+    sep.line.fill.background()
+
     # Firm name
     txbox = slide.shapes.add_textbox(MARGIN_LEFT, FOOTER_TOP, Inches(4), FOOTER_HEIGHT)
     set_text(txbox.text_frame, firm_name, styles["footer"])
@@ -217,24 +224,28 @@ def add_footer(slide: Slide, firm_name: str, slide_num: int, colors: PptxColors,
 
 
 def add_slide_title(slide: Slide, title: str, styles: dict, colors: Optional["PptxColors"] = None) -> None:
-    """Add a slide title below the brand stripe with a subtle separator line.
+    """Place the slide title as white text inside the brand header band.
 
-    The separator line mirrors the PDF template's dotted border-bottom under
-    .slide-title. When colors is provided the line uses border_light; otherwise
-    it falls back to a neutral gray.
+    The title text is vertically centered within the stripe shape. Word wrap
+    is enabled to handle long titles (tested up to ~80 characters).
     """
-    txbox = slide.shapes.add_textbox(MARGIN_LEFT, Inches(0.3), CONTENT_WIDTH, Inches(0.5))
-    set_text(txbox.text_frame, title, styles["slide_title"])
-
-    # Thin separator line beneath the title
-    line_top = Inches(0.85)
-    sep = slide.shapes.add_shape(
-        1, MARGIN_LEFT, line_top, CONTENT_WIDTH, Pt(0.75),  # 1 = RECTANGLE
+    txbox = slide.shapes.add_textbox(
+        MARGIN_LEFT, Emu(0), CONTENT_WIDTH, STRIPE_HEIGHT,
     )
-    line_color = colors.border_light if colors else RGBColor(0xD1, 0xD5, 0xDB)
-    sep.fill.solid()
-    sep.fill.fore_color.rgb = line_color
-    sep.line.fill.background()
+    tf = txbox.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.05)
+    tf.margin_top = Inches(0.05)
+    tf.margin_bottom = Inches(0.05)
+    # Vertically center text within the header band
+    body_pr = tf._txBody.find(qn("a:bodyPr"))
+    if body_pr is not None:
+        body_pr.set("anchor", "ctr")
+    para = tf.paragraphs[0]
+    para.alignment = PP_ALIGN.LEFT
+    run = para.add_run()
+    run.text = str(title)
+    apply_font(run, styles["slide_title"])
 
 
 def add_metric_card(
@@ -255,15 +266,13 @@ def add_metric_card(
     breathe rather than butting up against the edges.
     """
     shape = slide.shapes.add_shape(
-        5,  # MSO_SHAPE.ROUNDED_RECTANGLE
+        1,  # MSO_SHAPE.RECTANGLE (sharp corners for institutional look)
         left, top, width, height,
     )
     shape.fill.solid()
     shape.fill.fore_color.rgb = colors.section_bg
     shape.line.color.rgb = colors.border_light
     shape.line.width = Pt(0.5)
-    # Tighter corner radius for a cleaner look (default is often too bubbly)
-    shape.adjustments[0] = 0.06
 
     tf = shape.text_frame
     tf.word_wrap = True
@@ -422,7 +431,7 @@ def style_table(
             else:
                 if row_idx % 2 == 0:
                     cell.fill.solid()
-                    cell.fill.fore_color.rgb = colors.table_alt_row
+                    cell.fill.fore_color.rgb = hex_to_pptx("F7F8FA")
                 else:
                     cell.fill.background()
                 # Light dotted bottom border, no side borders
@@ -526,6 +535,20 @@ def _disable_table_style(table) -> None:
 def _rgb_to_hex(color: RGBColor) -> str:
     """Convert an RGBColor to a six-char hex string (no '#' prefix)."""
     return f"{color[0]:02X}{color[1]:02X}{color[2]:02X}"
+
+
+# =============================================================================
+# CENTERING HELPER
+# =============================================================================
+
+def centered_left(n_items: int, item_width: int, gap: int) -> int:
+    """Return the left position that centers a row of equally-sized items within CONTENT_WIDTH.
+
+    All values are in EMU. The row total is n_items * item_width + (n_items - 1) * gap,
+    and the returned position is the left edge of the first item.
+    """
+    total = n_items * item_width + max(0, n_items - 1) * gap
+    return int(CONTENT_LEFT + (CONTENT_WIDTH - total) // 2)
 
 
 # =============================================================================

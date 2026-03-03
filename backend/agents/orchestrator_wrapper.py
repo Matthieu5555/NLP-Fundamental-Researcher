@@ -105,34 +105,13 @@ def synthesize_investment_thesis(
             return s.content or ""
         return str(s.get("content", ""))
 
-    # Build minimal StockInfo for the context
+    # Build minimal StockInfo — only required fields; all others default to None
+    stock_info = session_metadata.get("stock_info", {})
     minimal_stock_info = StockInfo(
         symbol=ticker,
         name=session_metadata.get("company_name", ticker),
-        sector=session_metadata.get("stock_info", {}).get("sector", ""),
-        industry=session_metadata.get("stock_info", {}).get("industry", ""),
-        country="",
-        business_summary="",
-        current_price=None,
-        market_cap=None,
-        pe_ratio=None,
-        forward_pe=None,
-        peg_ratio=None,
-        price_to_book=None,
-        profit_margin=None,
-        operating_margin=None,
-        roe=None,
-        roa=None,
-        revenue_growth=None,
-        earnings_growth=None,
-        debt_to_equity=None,
-        current_ratio=None,
-        dividend_yield=None,
-        beta=None,
-        fifty_two_week_high=None,
-        fifty_two_week_low=None,
-        analyst_target_price=None,
-        analyst_recommendation=None,
+        sector=stock_info.get("sector", ""),
+        industry=stock_info.get("industry", ""),
     )
 
     context = AnalysisContext(

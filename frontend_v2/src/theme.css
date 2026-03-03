@@ -19,14 +19,14 @@
 
 :root {
   /* BRAND COLORS — buttons, links, highlights */
-  --brand-primary: #2563EB;
-  --brand-primary-dark: #1D4ED8;
-  --brand-primary-light: #3B82F6;
-  --brand-gradient-from: #1B2559;
-  --brand-gradient-to: #131B42;
-  --brand-surface: #EFF6FF;
-  --brand-surface-dark: #DBEAFE;
-  --brand-border: #BFDBFE;
+  --brand-primary: #1E3A5F;
+  --brand-primary-dark: #152D4A;
+  --brand-primary-light: #2E5C8A;
+  --brand-gradient-from: #0F1F35;
+  --brand-gradient-to: #0A1628;
+  --brand-surface: #F0F4F8;
+  --brand-surface-dark: #DCE4ED;
+  --brand-border: #B0C4D8;
   --brand-dark: #0F1629;
   --brand-dark-light: #151F41;
   /* SURFACE COLORS — backgrounds */
@@ -64,7 +64,7 @@
   --accent-info: #3b82f6;
   --accent-info-light: #eff6ff;
   --accent-info-muted: #60a5fa;
-  --accent-info-dark: #2563eb;
+  --accent-info-dark: #1E3A5F;
   /* CHART COLORS */
   --chart-background: #FFFFFF;
   --chart-grid: #D5DCE5;

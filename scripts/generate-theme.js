@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const COLORS_PATH = resolve(ROOT, 'shared', 'colors.json');
-const THEME_PATH = resolve(ROOT, 'frontend', 'src', 'theme.css');
+const THEME_PATH = resolve(ROOT, 'frontend_v2', 'src', 'theme.css');
 
 const colors = JSON.parse(readFileSync(COLORS_PATH, 'utf-8'));
 

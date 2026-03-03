@@ -12,7 +12,6 @@ from pptx import Presentation
 from backend.core.pptx_renderer import (
     _fmt_large_number,
     _fmt_pct,
-    _fmt_pct_val,
     _fmt_price,
     _lighten,
     _parse_html_list,
@@ -29,7 +28,7 @@ from backend.core.pptx_template import PptxColors, build_colors, font_styles, he
 def minimal_context() -> dict:
     """Context with only required fields: produces title + disclaimer slides."""
     return {
-        "primary_color": "#2563EB",
+        "primary_color": "#1E3A5F",
         "firm_name": "Test Firm",
         "tool_branding": "Platform",
         "analyst_name": "Analyst",
@@ -168,10 +167,10 @@ def full_context(minimal_context) -> dict:
 
 class TestPptxTemplate:
     def test_hex_to_pptx_valid(self):
-        color = hex_to_pptx("#2563EB")
-        assert color[0] == 0x25
-        assert color[1] == 0x63
-        assert color[2] == 0xEB
+        color = hex_to_pptx("#1E3A5F")
+        assert color[0] == 0x1E
+        assert color[1] == 0x3A
+        assert color[2] == 0x5F
 
     def test_hex_to_pptx_no_hash(self):
         color = hex_to_pptx("FF0000")
@@ -222,13 +221,6 @@ class TestFormatters:
         assert _fmt_pct(val) == expected
 
     @pytest.mark.parametrize("val,expected", [
-        (9.5, "9.5%"),
-        (None, "N/A"),
-    ])
-    def test_fmt_pct_val(self, val, expected):
-        assert _fmt_pct_val(val) == expected
-
-    @pytest.mark.parametrize("val,expected", [
         (3_200_000_000_000, "$3,200.0B"),
         (50_000_000, "$50.0M"),
         (1234, "$1,234"),
@@ -239,7 +231,7 @@ class TestFormatters:
 
     def test_lighten(self):
         from pptx.dml.color import RGBColor
-        color = RGBColor(0x25, 0x63, 0xEB)
+        color = RGBColor(0x1E, 0x3A, 0x5F)
         lightened = _lighten(color, 0.5)
         # Should be closer to white
         assert lightened[0] > color[0]

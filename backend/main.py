@@ -61,6 +61,19 @@ logger = logging.getLogger(__name__)
 _start_time = datetime.now()
 
 
+_PLACEHOLDER_VALUES = frozenset({
+    "your_key_here",
+    "your_google_api_key_here",
+    "change-this-to-a-strong-secret-key",
+})
+
+
+def _is_set(var: str) -> bool:
+    """Return True if the env var is set to a real value (not empty or a placeholder)."""
+    val = os.getenv(var, "")
+    return bool(val) and val not in _PLACEHOLDER_VALUES
+
+
 def validate_config() -> dict:
     """
     Validate required environment variables at startup.
@@ -77,18 +90,17 @@ def validate_config() -> dict:
     recommended = {
         "GOOGLE_API_KEY": "Enables Gemini search grounding for real-time news",
         "FDS_API_KEY": "Enables detailed US company financials (FinancialDatasets.ai)",
-        "JWT_SECRET": "Secret key for JWT tokens (defaults to dev secret)",
     }
 
     missing = []
     warnings = []
 
     for var, desc in required.items():
-        if not os.getenv(var):
+        if not _is_set(var):
             missing.append(f"{var}: {desc}")
 
     for var, desc in recommended.items():
-        if not os.getenv(var):
+        if not _is_set(var):
             warnings.append(f"{var}: {desc}")
 
     return {

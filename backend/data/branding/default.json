@@ -3,13 +3,13 @@
     "george": {
       "firm_id": "george",
       "name": "George Research LTD",
-      "primary_color": "#2563EB",
+      "primary_color": "#1E3A5F",
       "tool_branding": "Research Platform"
     },
     "default": {
       "firm_id": "default",
       "name": "Research Firm",
-      "primary_color": "#2563EB",
+      "primary_color": "#1E3A5F",
       "tool_branding": "George Research"
     }
   },
