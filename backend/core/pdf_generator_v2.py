@@ -28,6 +28,7 @@ from .pdf_formatting import (
     parse_strategy_grid,
     format_number,
     remove_key_questions_section,
+    strip_markup,
 )
 
 if TYPE_CHECKING:
@@ -54,8 +55,8 @@ def generate_report_headline(
         # Build context for LLM
         highlights_text = "\n".join(f"- {h}" for h in highlights[:4]) if highlights else ""
 
-        # Strip HTML from thesis for cleaner context
-        thesis_plain = re.sub(r'<[^>]+>', '', thesis_content or '')[:500]
+        # Strip HTML/markdown from thesis for cleaner context
+        thesis_plain = strip_markup(thesis_content or '')[:500]
 
         prompt = f"""Generate a single catchy, professional headline for an equity research report.
 
@@ -210,14 +211,6 @@ def build_template_context(
             else:
                 thesis_content = md_to_html(full_content)
                 full_analysis = ''
-
-    # Fallback to recommendation if no investment_thesis
-    if not thesis_content and 'recommendation' in report_state.sections:
-        rec = report_state.sections['recommendation']
-        if hasattr(rec, 'content') and rec.content:
-            thesis_content = md_to_html(rec.content)
-            raw_highlights = extract_highlights(rec.content)
-            highlights = [md_to_html(h) for h in raw_highlights]
 
     # Bull/Bear cases
     bull_case = ''

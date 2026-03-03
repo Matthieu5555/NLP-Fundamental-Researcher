@@ -49,6 +49,7 @@ class USStep(IntEnum):
     # Phase E: Synthesis
     RECOMMENDATION = 26
     CONVICTION = 27
+    INVESTMENT_THESIS = 28
 
 
 # These are the values used everywhere: job models, queue defaults, SSE streams.

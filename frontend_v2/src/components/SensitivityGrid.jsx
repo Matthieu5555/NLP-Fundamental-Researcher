@@ -59,12 +59,22 @@ function SensitivityGrid({ data, title, subtitle, rowLabel, colLabel }) {
                 </td>
                 {row.map((fv, j) => {
                   const isBase = i === baseRowIdx && j === baseColIdx
+                  const pctChange = fv > 0 && currentPrice > 0 ? ((fv / currentPrice - 1) * 100) : null
                   return (
                     <td
                       key={j}
-                      className={`px-3 py-2 text-center font-medium ${getColor(fv)} ${isBase ? 'ring-2 ring-accent-warning ring-inset' : ''}`}
+                      className={`px-2 py-1.5 text-center font-medium ${getColor(fv)} ${isBase ? 'ring-2 ring-accent-warning ring-inset' : ''}`}
                     >
-                      {fv > 0 ? `$${fv.toFixed(0)}` : 'N/A'}
+                      {fv > 0 ? (
+                        <>
+                          <div>${fv.toFixed(0)}</div>
+                          {pctChange !== null && (
+                            <div className="text-[10px] opacity-75">
+                              {pctChange >= 0 ? '+' : ''}{pctChange.toFixed(1)}%
+                            </div>
+                          )}
+                        </>
+                      ) : 'N/A'}
                     </td>
                   )
                 })}

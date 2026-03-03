@@ -16,6 +16,7 @@ from pptx import Presentation
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
+from backend.core.pdf_formatting import format_percent, strip_markup
 from backend.core.pptx_template import (
     CONTENT_HEIGHT,
     CONTENT_LEFT,
@@ -290,7 +291,7 @@ def _slide_exec_summary(new_slide, ctx: dict, colors: PptxColors, styles: dict) 
             set_cell(tbl.cell(ri, 0), str(row.get("year", "")), styles["table_cell"])
             set_cell(tbl.cell(ri, 1), _fmt_number(row.get("eps")), styles["table_cell"], PP_ALIGN.RIGHT)
             set_cell(tbl.cell(ri, 2), _fmt_number(row.get("forward_pe")), styles["table_cell"], PP_ALIGN.RIGHT)
-            set_cell(tbl.cell(ri, 3), _fmt_pct_val(row.get("ebitda_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
+            set_cell(tbl.cell(ri, 3), format_percent(row.get("ebitda_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
         y += n_snap_rows * Inches(0.3) + Inches(0.2)
 
     # Compact bull/base/bear table (right side if snapshot present, else full width)
@@ -521,7 +522,7 @@ def _slide_conviction(new_slide, ctx: dict, colors: PptxColors, styles: dict) ->
         y += Inches(0.2)
         txbox = slide.shapes.add_textbox(CONTENT_LEFT, y, CONTENT_WIDTH, Inches(0.8))
         txbox.text_frame.word_wrap = True
-        set_text(txbox.text_frame, summary, styles["disclaimer"])
+        set_text(txbox.text_frame, strip_markup(summary), styles["disclaimer"])
 
 
 def _slide_financial_overview(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None:
@@ -629,10 +630,10 @@ def _slide_dcf(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None:
          _pct_color(dcf.get("upside_pct"), colors)),
         ("Upside / Downside", _fmt_pct(dcf.get("upside_pct")),
          _pct_color(dcf.get("upside_pct"), colors)),
-        ("WACC", _fmt_pct_val(dcf.get("wacc")), None),
-        ("Terminal Growth", _fmt_pct_val(dcf.get("terminal_growth_rate")), None),
+        ("WACC", format_percent(dcf.get("wacc")), None),
+        ("Terminal Growth", format_percent(dcf.get("terminal_growth_rate")), None),
         ("Enterprise Value", _fmt_large_number(dcf.get("enterprise_value")), None),
-        ("TV % of EV", _fmt_pct_val(dcf.get("tv_pct_of_ev")), None),
+        ("TV % of EV", format_percent(dcf.get("tv_pct_of_ev")), None),
     ]
 
     for i, (label, value, vc) in enumerate(card_data):
@@ -699,14 +700,15 @@ def _slide_scenarios(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> 
         # Probability and upside
         txbox = slide.shapes.add_textbox(left, y, col_w, Inches(0.3))
         prob = case_data.get("probability", "")
-        prob_text = f"Probability: {prob}%" if prob else ""
+        prob_text = f"Probability: {format_percent(prob)}" if prob else ""
         set_text(txbox.text_frame, prob_text, styles["body_small"], PP_ALIGN.CENTER)
         y += Inches(0.35)
 
         upside = case_data.get("upside_pct")
         if upside is not None:
             txbox = slide.shapes.add_textbox(left, y, col_w, Inches(0.3))
-            set_text(txbox.text_frame, f"Upside: {_fmt_pct(upside)}",
+            upside_label = "Downside" if float(upside) < 0 else "Upside"
+            set_text(txbox.text_frame, f"{upside_label}: {_fmt_pct(upside)}",
                      FontStyle(Pt(10), color=_pct_color(upside, colors)), PP_ALIGN.CENTER)
             y += Inches(0.4)
 
@@ -719,7 +721,7 @@ def _slide_scenarios(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> 
             set_text(tf, "Assumptions:", FontStyle(Pt(9), bold=True, color=colors.label_text))
             for a_key, a_val in assumptions.items():
                 label = a_key.replace("_", " ").title()
-                add_paragraph(tf, f"{label}: {_fmt_assumption(a_val)}",
+                add_paragraph(tf, f"{label}: {format_percent(a_val)}",
                               FontStyle(Pt(8), color=colors.secondary_text, italic=True))
 
     # Bottom row: weighted fair value + risk/reward ratio
@@ -800,7 +802,7 @@ def _render_sensitivity_grid(
         cell = tbl.cell(0, ci + 1)
         cell.fill.solid()
         cell.fill.fore_color.rgb = colors.brand
-        set_cell(cell, _fmt_pct_val(cv), styles["table_header"], PP_ALIGN.CENTER)
+        set_cell(cell, format_percent(cv), styles["table_header"], PP_ALIGN.CENTER)
 
     # Data rows
     for ri, rv in enumerate(row_values):
@@ -808,7 +810,7 @@ def _render_sensitivity_grid(
         label_cell = tbl.cell(ri + 1, 0)
         label_cell.fill.solid()
         label_cell.fill.fore_color.rgb = colors.section_bg
-        set_cell(label_cell, _fmt_pct_val(rv),
+        set_cell(label_cell, format_percent(rv),
                  FontStyle(Pt(9), bold=True, color=colors.dark_text))
 
         for ci in range(len(col_values)):
@@ -869,10 +871,10 @@ def _slide_earnings(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> N
         rg = row.get("revenue_growth")
         rg_color = _pct_color(rg, colors)
         rg_style = FontStyle(Pt(9), color=rg_color) if rg_color else styles["table_cell"]
-        set_cell(tbl.cell(ri, 2), _fmt_pct_val(rg), rg_style, PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(ri, 2), format_percent(rg), rg_style, PP_ALIGN.RIGHT)
 
         set_cell(tbl.cell(ri, 3), _fmt_large_number(row.get("ebitda")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(ri, 4), _fmt_pct_val(row.get("ebitda_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(ri, 4), format_percent(row.get("ebitda_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(ri, 5), _fmt_number(row.get("eps")), styles["table_cell"], PP_ALIGN.RIGHT)
 
         # Shade estimate rows
@@ -951,8 +953,8 @@ def _slide_comps(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None
         set_cell(tbl.cell(ri, 3), _fmt_number(row.get("forward_pe")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(ri, 4), _fmt_number(row.get("ev_to_ebitda")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(ri, 5), _fmt_number(row.get("ev_to_revenue")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(ri, 6), _fmt_pct_val(row.get("gross_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(ri, 7), _fmt_pct_val(row.get("revenue_growth")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(ri, 6), format_percent(row.get("gross_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(ri, 7), format_percent(row.get("revenue_growth")), styles["table_cell"], PP_ALIGN.RIGHT)
 
         # Highlight target row
         if is_target:
@@ -970,8 +972,8 @@ def _slide_comps(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None
         set_cell(tbl.cell(mi, 3), _fmt_number(medians.get("forward_pe")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(mi, 4), _fmt_number(medians.get("ev_to_ebitda")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(mi, 5), _fmt_number(medians.get("ev_to_revenue")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(mi, 6), _fmt_pct_val(medians.get("gross_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(mi, 7), _fmt_pct_val(medians.get("revenue_growth")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(mi, 6), format_percent(medians.get("gross_margin")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(mi, 7), format_percent(medians.get("revenue_growth")), styles["table_cell"], PP_ALIGN.RIGHT)
 
 
 def _slide_precedents(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> None:
@@ -1017,7 +1019,7 @@ def _slide_precedents(new_slide, ctx: dict, colors: PptxColors, styles: dict) ->
         set_cell(tbl.cell(ri, 2), str(deal.get("target", "")), styles["table_cell"])
         set_cell(tbl.cell(ri, 3), _fmt_number(deal.get("ev_to_revenue")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(ri, 4), _fmt_number(deal.get("ev_to_ebitda")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(ri, 5), _fmt_pct_val(deal.get("premium_pct")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(ri, 5), format_percent(deal.get("premium_pct")), styles["table_cell"], PP_ALIGN.RIGHT)
 
     # Median row
     medians = prec.get("medians", {})
@@ -1029,7 +1031,7 @@ def _slide_precedents(new_slide, ctx: dict, colors: PptxColors, styles: dict) ->
         set_cell(tbl.cell(mi, 2), "", styles["table_cell"])
         set_cell(tbl.cell(mi, 3), _fmt_number(medians.get("ev_revenue")), styles["table_cell"], PP_ALIGN.RIGHT)
         set_cell(tbl.cell(mi, 4), _fmt_number(medians.get("ev_ebitda")), styles["table_cell"], PP_ALIGN.RIGHT)
-        set_cell(tbl.cell(mi, 5), _fmt_pct_val(medians.get("premium")), styles["table_cell"], PP_ALIGN.RIGHT)
+        set_cell(tbl.cell(mi, 5), format_percent(medians.get("premium")), styles["table_cell"], PP_ALIGN.RIGHT)
 
     # Takeaway
     takeaway = ctx.get("precedent_takeaway")
@@ -1187,7 +1189,7 @@ def _slide_strategy(new_slide, ctx: dict, colors: PptxColors, styles: dict) -> N
             # Parse HTML list items into plain text bullets
             items = _parse_html_list(content)
             for item in items[:5]:
-                add_paragraph(tf, f"\u2022  {item}", styles["body_small"])
+                add_paragraph(tf, f"\u2022  {strip_markup(item)}", styles["body_small"])
     else:
         add_bullet_list(slide, CONTENT_LEFT, CONTENT_TOP, CONTENT_WIDTH, bullets,
                         colors.brand, colors, styles)
@@ -1558,17 +1560,6 @@ def _fmt_pct(val) -> str:
         return str(val)
 
 
-def _fmt_pct_val(val) -> str:
-    """Format a raw percentage value (already in % form) like '12.3%'."""
-    if val is None:
-        return "N/A"
-    try:
-        v = float(val)
-        return f"{v:.1f}%"
-    except (ValueError, TypeError):
-        return str(val)
-
-
 def _fmt_number(val) -> str:
     """Format a numeric value with 1 decimal place."""
     if val is None:
@@ -1591,20 +1582,6 @@ def _fmt_large_number(val) -> str:
         if abs(v) >= 1e6:
             return f"${v / 1e6:,.1f}M"
         return f"${v:,.0f}"
-    except (ValueError, TypeError):
-        return str(val)
-
-
-def _fmt_assumption(val) -> str:
-    """Format an assumption value (could be pct or number)."""
-    if val is None:
-        return "N/A"
-    try:
-        v = float(val)
-        # Heuristic: values < 1 are likely decimals (e.g. 0.08 = 8%)
-        if abs(v) < 1:
-            return f"{v * 100:.1f}%"
-        return f"{v:.1f}%"
     except (ValueError, TypeError):
         return str(val)
 
@@ -1638,9 +1615,8 @@ def _parse_html_list(html_content: str) -> List[str]:
     # Try <li> tags first
     items = re.findall(r'<li[^>]*>(.*?)</li>', html_content, re.DOTALL)
     if items:
-        # Strip any remaining HTML tags
-        return [re.sub(r'<[^>]+>', '', item).strip() for item in items if item.strip()]
+        return [strip_markup(item) for item in items if item.strip()]
     # Fall back to line splitting
     lines = [line.strip() for line in html_content.split('\n') if line.strip()]
-    # Strip bullet characters
-    return [re.sub(r'^[\u2022\-\*]\s*', '', line) for line in lines]
+    # Strip bullet characters and any remaining markup
+    return [strip_markup(re.sub(r'^[\u2022\-\*]\s*', '', line)) for line in lines]

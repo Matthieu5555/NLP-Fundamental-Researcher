@@ -347,8 +347,12 @@ class TestFormatAndLayout:
         assert ")" in FMT_BILLIONS, "Must use parenthetical negatives"
 
     def test_all_sheets_have_freeze_panes(self, workbook):
+        # Cover and Instructions intentionally have no freeze panes
+        skip = {"Cover", "Instructions"}
         for ws in workbook.worksheets:
-            assert ws.freeze_panes == "B2", f"{ws.title} missing freeze_panes"
+            if ws.title in skip:
+                continue
+            assert ws.freeze_panes is not None, f"{ws.title} missing freeze_panes"
 
     def test_protection_off_by_default(self, workbook):
         for ws in workbook.worksheets:

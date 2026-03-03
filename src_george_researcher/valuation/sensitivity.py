@@ -138,9 +138,10 @@ def run_sensitivity(dcf_result: DCFResult) -> SensitivityResult:
         min(base_wacc - WACC_STEP_SMALL, base_tgr + TGR_STEP_LARGE),
     ], step=TGR_STEP_SMALL)
 
-    # Locate base case in the (possibly shifted) deduped lists
-    base_wacc_idx = wacc_values.index(base_wacc)
-    base_tgr_idx = tgr_values.index(base_tgr)
+    # Locate base case in the (possibly shifted) deduped lists.
+    # _deduplicate_axis rounds to 6 decimals, so match with the same precision.
+    base_wacc_idx = wacc_values.index(round(base_wacc, 6))
+    base_tgr_idx = tgr_values.index(round(base_tgr, 6))
 
     grid = []
     for wacc in wacc_values:
@@ -215,8 +216,12 @@ def run_growth_margin_sensitivity(dcf_result: DCFResult) -> GrowthMarginSensitiv
     for growth in growth_values:
         row = []
         for margin in margin_values:
-            # Build uniform growth rates at this level
-            uniform_growth = [growth] * base_assumptions.projection_years
+            # Shift each year's growth rate by the delta from base average,
+            # preserving the trajectory shape (deceleration/acceleration).
+            growth_delta = growth - base_growth
+            shifted_growth = [
+                r + growth_delta for r in base_assumptions.revenue_growth_rates
+            ]
 
             if base_assumptions.is_decomposed:
                 # Distribute margin change: adjust gross margin to hit target op margin
@@ -226,7 +231,7 @@ def run_growth_margin_sensitivity(dcf_result: DCFResult) -> GrowthMarginSensitiv
                     for m in (base_assumptions.gross_margins or [0.50])
                 ]
                 assumptions = DCFAssumptions(
-                    revenue_growth_rates=uniform_growth,
+                    revenue_growth_rates=shifted_growth,
                     wacc=base_assumptions.wacc,
                     terminal_growth_rate=base_assumptions.terminal_growth_rate,
                     projection_years=base_assumptions.projection_years,
@@ -240,7 +245,7 @@ def run_growth_margin_sensitivity(dcf_result: DCFResult) -> GrowthMarginSensitiv
                 )
             else:
                 assumptions = DCFAssumptions(
-                    revenue_growth_rates=uniform_growth,
+                    revenue_growth_rates=shifted_growth,
                     fcf_margin=margin,
                     wacc=base_assumptions.wacc,
                     terminal_growth_rate=base_assumptions.terminal_growth_rate,
@@ -257,8 +262,8 @@ def run_growth_margin_sensitivity(dcf_result: DCFResult) -> GrowthMarginSensitiv
             row.append(result.fair_value_per_share)
         grid.append(row)
 
-    base_growth_idx = growth_values.index(base_growth)
-    base_margin_idx = margin_values.index(base_margin)
+    base_growth_idx = growth_values.index(round(base_growth, 6))
+    base_margin_idx = margin_values.index(round(base_margin, 6))
 
     return GrowthMarginSensitivityResult(
         growth_values=growth_values,

@@ -57,10 +57,6 @@ export const TAB_REGISTRY = [
       if (ctx.sections.investment_thesis) {
         return <MarkdownSection content={ctx.sections.investment_thesis.content || 'No content available'} />
       }
-      // Before investment_thesis is generated, show just the recommendation section
-      if (ctx.sections.recommendation) {
-        return <MarkdownSection content={ctx.sections.recommendation.content || 'No content available'} />
-      }
       return renderEmpty()
     },
   },

@@ -61,7 +61,7 @@ FORMULA_FONT = Font(name="Calibri", size=11, color="000000")      # Black: same-
 LINK_FONT = Font(name="Calibri", size=11, color="008000")         # Green: cross-sheet reference
 LABEL_GRAY_FONT = Font(name="Calibri", size=11, color="808080")   # Gray: row labels
 RATIONALE_FONT = Font(name="Calibri", size=9, italic=True, color="808080")  # Gray italic: rationale text
-INPUT_FILL = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+ITALIC_LABEL_FONT = Font(name="Calibri", italic=True, size=11)             # Italic: derived ratios
 
 THIN_BORDER = Border(bottom=Side(style="thin", color="D0D0D0"))
 SUBTOTAL_BORDER = Border(bottom=Side(style="thin", color="000000"))
@@ -111,14 +111,20 @@ class NamedRangeRegistry:
 
     def define(self, wb: Workbook, name: str, sheet_title: str, cell_ref: str) -> str:
         """Create a workbook-scoped named range and store the mapping."""
-        abs_ref = cell_ref if "$" in cell_ref else f"${cell_ref[0]}${cell_ref[1:]}"
+        if "$" in cell_ref:
+            abs_ref = cell_ref
+        else:
+            # Split letters (column) from digits (row) to handle multi-letter columns
+            col_part = "".join(c for c in cell_ref if c.isalpha())
+            row_part = "".join(c for c in cell_ref if c.isdigit())
+            abs_ref = f"${col_part}${row_part}"
         self._names[name] = (sheet_title, abs_ref)
         formula_ref = f"'{sheet_title}'!{abs_ref}"
         try:
             defn = DefinedName(name, attr_text=formula_ref)
             wb.defined_names.add(defn)
         except Exception:
-            logger.debug("Could not define name %s (may already exist)", name)
+            logger.warning("Could not define named range %s (may already exist)", name)
         return name
 
     def ref(self, name: str) -> str:
@@ -166,10 +172,9 @@ def _write_label_value(
 
 
 def _write_input_cell(ws, row: int, col: int, value, fmt: Optional[str] = None) -> None:
-    """Write an editable blue input cell with light yellow background."""
+    """Write an editable blue input cell."""
     cell = ws.cell(row=row, column=col, value=value)
     cell.font = INPUT_FONT
-    cell.fill = INPUT_FILL
     cell.protection = UNLOCKED
     cell.alignment = Alignment(horizontal="right")
     cell.border = THIN_BORDER
@@ -192,13 +197,20 @@ def _write_formula_cell(
         cell.number_format = fmt
 
 
-def _auto_width(ws, min_width: int = 10, max_width: int = 40) -> None:
-    """Auto-fit column widths based on content."""
+def _auto_width(ws, min_width: int = 10, max_width: int = 45) -> None:
+    """Auto-fit column widths based on content, wrapping text that exceeds max_width."""
     for col_cells in ws.columns:
         length = min_width
         for cell in col_cells:
             if cell.value is not None:
-                length = max(length, min(len(str(cell.value)) + 3, max_width))
+                content_len = len(str(cell.value)) + 3
+                if content_len > max_width:
+                    cell.alignment = Alignment(
+                        wrap_text=True,
+                        horizontal=cell.alignment.horizontal or "left",
+                        vertical=cell.alignment.vertical or "top",
+                    )
+                length = max(length, min(content_len, max_width))
         ws.column_dimensions[get_column_letter(col_cells[0].column)].width = length
 
 
@@ -246,7 +258,7 @@ def _deduplicate_fiscal_years(statements: List[Dict]) -> List[Dict]:
 
 
 def _format_scenario_assumptions(assumptions) -> str:
-    """Format scenario assumptions dict into readable text for Excel."""
+    """Format scenario assumptions dict into readable prose for Excel."""
     if not assumptions:
         return ""
     if isinstance(assumptions, str):
@@ -254,31 +266,54 @@ def _format_scenario_assumptions(assumptions) -> str:
     if not isinstance(assumptions, dict):
         return str(assumptions)[:500]
 
-    parts = []
+    sentences = []
+
+    # Lead with any explicit rationale from the LLM
     for key in ("revenue_growth_rationale", "fcf_margin_rationale", "margin_rationale"):
         rationale = assumptions.get(key, "")
         if rationale and "Conservative defaults" not in rationale:
-            parts.append(rationale)
+            sentences.append(rationale.rstrip(".") + ".")
             break
 
+    # Revenue growth trajectory
     rates = assumptions.get("revenue_growth_rates", [])
     if rates:
-        formatted = " -> ".join(f"{r * 100:.1f}%" for r in rates)
-        parts.append(f"Rev growth: {formatted}")
+        first = rates[0] * 100
+        last = rates[-1] * 100
+        if len(rates) == 1:
+            sentences.append(f"Revenue growth assumed at {first:.1f}%.")
+        elif first > last:
+            sentences.append(
+                f"Revenue growth decelerates from {first:.1f}% to {last:.1f}% "
+                f"over the {len(rates)}-year projection horizon."
+            )
+        elif first < last:
+            sentences.append(
+                f"Revenue growth accelerates from {first:.1f}% to {last:.1f}% "
+                f"over the {len(rates)}-year projection horizon."
+            )
+        else:
+            sentences.append(f"Revenue growth held constant at {first:.1f}%.")
 
+    # WACC and TGR as a combined sentence
     wacc = assumptions.get("wacc")
-    if wacc is not None:
-        parts.append(f"WACC: {wacc * 100:.1f}%")
-
     tgr = assumptions.get("terminal_growth_rate")
-    if tgr is not None:
-        parts.append(f"TGR: {tgr * 100:.1f}%")
+    if wacc is not None and tgr is not None:
+        sentences.append(
+            f"Discounted at a {wacc * 100:.1f}% WACC with a "
+            f"{tgr * 100:.1f}% terminal growth rate."
+        )
+    elif wacc is not None:
+        sentences.append(f"Discounted at a {wacc * 100:.1f}% WACC.")
+    elif tgr is not None:
+        sentences.append(f"Terminal growth rate of {tgr * 100:.1f}%.")
 
+    # FCF margin if present
     fcf_margin = assumptions.get("fcf_margin")
     if fcf_margin is not None:
-        parts.append(f"FCF margin: {fcf_margin * 100:.1f}%")
+        sentences.append(f"FCF margin assumed at {fcf_margin * 100:.1f}%.")
 
-    return "; ".join(parts)[:500]
+    return " ".join(sentences)[:500]
 
 
 def _col_letter(col: int) -> str:
@@ -344,7 +379,7 @@ def _write_statement_section(
             num_row = item_rows.get(numerator_key)
             denom_row = item_rows.get(denominator_key)
             if num_row and denom_row:
-                ws.cell(row=row, column=1, value=label).font = LABEL_FONT
+                ws.cell(row=row, column=1, value=label).font = ITALIC_LABEL_FONT
                 ws.cell(row=row, column=1).border = THIN_BORDER
                 for j in range(n_stmts):
                     col = _col_letter(2 + j)
@@ -640,6 +675,13 @@ def _build_assumptions_sheet(
         rationale_map[row] = (3, tgr_rationale)
     row += 1
 
+    # Mid-year convention toggle (1 = on, 0 = off)
+    ws.cell(row=row, column=1, value="Mid-Year Convention").font = LABEL_FONT
+    ws.cell(row=row, column=1).border = THIN_BORDER
+    _write_input_cell(ws, row, 2, 0, fmt="0")
+    registry.define(wb, "MidYearConvention", sheet, f"B{row}")
+    row += 1
+
     row += 1
 
     # --- Projection Assumptions (year-by-year) ---
@@ -839,13 +881,13 @@ def _build_dcf_sheet(
         row = da_addback_row + 1
 
         capex_row = _write_projected_row(ws, row, "(-) CapEx", n_years,
-            lambda i, col: f"=-{col}{rev_row}*{registry.sheet_ref(f'CapExPctY{i+1}')}",
+            lambda i, col: f"={col}{rev_row}*{registry.sheet_ref(f'CapExPctY{i+1}')}",
             fmt=FMT_BILLIONS, font=LINK_FONT)
         row = capex_row + 1
 
         nwc_row = _write_projected_row(ws, row, "(-) NWC Change", n_years,
             lambda i, col: (
-                f"=-({col}{rev_row}-{_col_letter(2 + i)}{rev_row})"
+                f"=({col}{rev_row}-{_col_letter(2 + i)}{rev_row})"
                 f"*{registry.sheet_ref(f'NWCPctY{i+1}')}"
             ),
             fmt=FMT_BILLIONS, font=LINK_FONT)
@@ -859,7 +901,7 @@ def _build_dcf_sheet(
         fcf_row = _write_projected_row(ws, row, "Free Cash Flow", n_years,
             lambda i, col: (
                 f"={col}{nopat_row}+{col}{da_addback_row}"
-                f"+{col}{capex_row}+{col}{nwc_row}+{col}{sbc_row}"
+                f"-{col}{capex_row}-{col}{nwc_row}+{col}{sbc_row}"
             ),
             fmt=FMT_BILLIONS, border=TOTAL_BORDER,
             label_font=Font(name="Calibri", bold=True, size=11),
@@ -886,7 +928,7 @@ def _build_dcf_sheet(
     # --- Discount Factor & PV of FCF ---
     wacc_ref = registry.sheet_ref("WACC")
     df_row = _write_projected_row(ws, row, "Discount Factor", n_years,
-        lambda i, col: f"=1/(1+{wacc_ref})^{i + 1}",
+        lambda i, col: f"=1/(1+{wacc_ref})^({i + 1}-0.5*MidYearConvention)",
         fmt="0.0000", font=LINK_FONT)
     row = df_row + 1
 
@@ -926,7 +968,7 @@ def _build_dcf_sheet(
     row += 2
 
     # --- EV-to-Equity Bridge ---
-    ws.cell(row=row, column=1, value="Valuation Bridge").font = SUBTITLE_FONT
+    ws.cell(row=row, column=1, value="Enterprise Value to Equity Bridge").font = SUBTITLE_FONT
     row += 1
 
     # PV of FCFs = SUM
@@ -1177,7 +1219,7 @@ def _build_financial_statements_sheet(wb: Workbook, financials: Dict) -> None:
         )
 
         if fcf_row_pos:
-            ws.cell(row=row, column=1, value="FCF Margin").font = LABEL_FONT
+            ws.cell(row=row, column=1, value="FCF Margin").font = ITALIC_LABEL_FONT
             ws.cell(row=row, column=1).border = THIN_BORDER
             for j in range(n_cfs):
                 col = _col_letter(2 + j)
@@ -1208,7 +1250,7 @@ def _build_sensitivity_sheet(
 ) -> None:
     ws = wb.create_sheet("Sensitivity")
     ws.cell(row=1, column=1, value="Sensitivity Analysis").font = TITLE_FONT
-    ws.cell(row=2, column=1, value="Pre-computed at generation time").font = LABEL_GRAY_FONT
+    ws.cell(row=2, column=1, value="(Fair Value per Share in USD)").font = LABEL_GRAY_FONT
 
     row = 4
 
@@ -1231,8 +1273,8 @@ def _build_sensitivity_sheet(
             growth_margin.get("growth_values", growth_margin.get("row_values", [])),
             growth_margin.get("margin_values", growth_margin.get("col_values", [])),
             growth_margin.get("fair_value_grid", []),
-            growth_margin.get("base_row_idx"),
-            growth_margin.get("base_col_idx"),
+            growth_margin.get("base_growth_idx", growth_margin.get("base_row_idx")),
+            growth_margin.get("base_margin_idx", growth_margin.get("base_col_idx")),
             row_label="Growth", col_label="Margin",
             current_price=current_price,
         )
@@ -1251,7 +1293,7 @@ def _write_sensitivity_grid(
     ws.cell(row=start_row, column=1, value=title).font = SUBTITLE_FONT
     row = start_row + 1
 
-    ws.cell(row=row, column=1, value=f"{row_label} \\ {col_label}").font = HEADER_FONT
+    ws.cell(row=row, column=1, value=f"FV/Share \\ {col_label}").font = HEADER_FONT
     ws.cell(row=row, column=1).fill = HEADER_FILL
     for j, cv in enumerate(col_values):
         cell = ws.cell(row=row, column=2 + j, value=_safe_float(cv))
@@ -1292,6 +1334,50 @@ def _write_sensitivity_grid(
                     cell.fill = above_price_fill if fval >= current_price else below_price_fill
         row += 1
 
+    # Implied Upside / Downside companion grid
+    if current_price and current_price > 0:
+        row += 1
+        ws.cell(row=row, column=1, value=f"{title} — Implied Upside / Downside").font = SUBTITLE_FONT
+        row += 1
+
+        ws.cell(row=row, column=1, value=f"{row_label} \\ {col_label}").font = HEADER_FONT
+        ws.cell(row=row, column=1).fill = HEADER_FILL
+        for j, cv in enumerate(col_values):
+            cell = ws.cell(row=row, column=2 + j, value=_safe_float(cv))
+            cell.font = HEADER_FONT
+            cell.fill = HEADER_FILL
+            cell.alignment = Alignment(horizontal="center")
+            cell.number_format = FMT_PCT
+        row += 1
+
+        for i, rv in enumerate(row_values):
+            rh = ws.cell(row=row, column=1, value=_safe_float(rv))
+            rh.font = LABEL_FONT
+            rh.fill = PatternFill(start_color="F0F0F0", end_color="F0F0F0", fill_type="solid")
+            rh.number_format = FMT_PCT
+
+            grid_row = grid[i] if i < len(grid) else []
+            for j, val in enumerate(grid_row):
+                fval = _safe_float(val)
+                if fval is not None and fval > 0:
+                    upside = (fval - current_price) / current_price
+                    cell = ws.cell(row=row, column=2 + j, value=upside)
+                    cell.number_format = FMT_PCT
+                    cell.alignment = Alignment(horizontal="center")
+
+                    is_base = (base_row_idx is not None and base_col_idx is not None
+                               and i == base_row_idx and j == base_col_idx)
+                    if is_base:
+                        cell.fill = highlight_fill
+                        cell.font = highlight_font
+                    elif upside >= 0:
+                        cell.fill = above_price_fill
+                    else:
+                        cell.fill = below_price_fill
+                else:
+                    ws.cell(row=row, column=2 + j, value="N/A").alignment = Alignment(horizontal="center")
+            row += 1
+
     return row
 
 
@@ -1328,10 +1414,9 @@ def _build_scenarios_sheet(
         scenario_rows[label] = {"row": row}
 
         if prob is not None:
-            c = ws.cell(row=row, column=prob_col, value=prob / 100 if prob > 1 else prob)
-            c.number_format = FMT_PCT
+            _write_input_cell(ws, row, prob_col, prob / 100 if prob > 1 else prob, fmt=FMT_PCT)
         if fv is not None:
-            ws.cell(row=row, column=fv_col, value=fv).number_format = FMT_USD_INNER
+            _write_input_cell(ws, row, fv_col, fv, fmt=FMT_USD_INNER)
 
         # Upside as formula when possible
         if has_price and fv is not None:
@@ -1346,7 +1431,9 @@ def _build_scenarios_sheet(
                 ws.cell(row=row, column=upside_col, value=upside).number_format = FMT_PCT_DISPLAY
 
         assumptions_text = _format_scenario_assumptions(s.get("assumptions", ""))
-        ws.cell(row=row, column=5, value=assumptions_text).font = VALUE_FONT
+        cell = ws.cell(row=row, column=5, value=assumptions_text)
+        cell.font = RATIONALE_FONT
+        cell.alignment = Alignment(wrap_text=True, vertical="top")
 
         for c in range(1, 6):
             ws.cell(row=row, column=c).border = THIN_BORDER
@@ -1376,6 +1463,7 @@ def _build_scenarios_sheet(
             ws.cell(row=row, column=3).font = Font(name="Calibri", bold=True, size=12, color=HEADER_COLOR)
 
     _auto_width(ws)
+    ws.column_dimensions["E"].width = 60
 
 
 # =============================================================================
@@ -1420,7 +1508,7 @@ def _build_earnings_sheet(wb: Workbook, earnings: Dict) -> None:
         rev_cell = ws.cell(row=row, column=2, value=rev)
         rev_cell.font = VALUE_FONT
         rev_cell.border = THIN_BORDER
-        rev_cell.number_format = FMT_NUMBER
+        rev_cell.number_format = FMT_BILLIONS
         if fill:
             rev_cell.fill = fill
 
@@ -1430,10 +1518,11 @@ def _build_earnings_sheet(wb: Workbook, earnings: Dict) -> None:
             _write_formula_cell(ws, row, 3, formula, fmt=FMT_PCT)
         else:
             growth = _safe_float(item.get("revenue_growth"))
-            cell3 = ws.cell(row=row, column=3, value=growth)
-            cell3.font = VALUE_FONT
-            cell3.border = THIN_BORDER
-            cell3.number_format = FMT_PCT
+            if growth is not None:
+                cell3 = ws.cell(row=row, column=3, value=growth)
+                cell3.font = VALUE_FONT
+                cell3.border = THIN_BORDER
+                cell3.number_format = FMT_PCT
         if fill:
             ws.cell(row=row, column=3).fill = fill
 
@@ -1442,7 +1531,7 @@ def _build_earnings_sheet(wb: Workbook, earnings: Dict) -> None:
         cell4 = ws.cell(row=row, column=4, value=ebitda)
         cell4.font = VALUE_FONT
         cell4.border = THIN_BORDER
-        cell4.number_format = FMT_NUMBER
+        cell4.number_format = FMT_BILLIONS
         if fill:
             cell4.fill = fill
 
@@ -1484,7 +1573,7 @@ def _build_earnings_sheet(wb: Workbook, earnings: Dict) -> None:
 # COMPARABLE COMPANIES SHEET
 # =============================================================================
 
-def _build_comp_sheet(wb: Workbook, comp_data: Dict) -> None:
+def _build_comp_sheet(wb: Workbook, comp_data: Dict, registry: Optional[NamedRangeRegistry] = None) -> None:
     ws = wb.create_sheet("Comparable Companies")
     ws.cell(row=1, column=1, value="Comparable Company Analysis").font = TITLE_FONT
 
@@ -1590,20 +1679,28 @@ def _build_comp_sheet(wb: Workbook, comp_data: Dict) -> None:
 
         # Formula-driven implied share prices: Median Multiple * Target Metric
         # Uses median_row from the comp table above when available
+        # P/E multiples give price directly; EV multiples need bridge to equity
+        # is_ev: True means Multiple*Metric = EV, need (EV - NetDebt)/Shares
         implied_items = [
-            ("P/E Implied", "pe_implied", 4, "eps"),
-            ("Fwd P/E Implied", "forward_pe_implied", 5, "forward_eps"),
-            ("EV/Revenue Implied", "ev_revenue_implied", 7, "revenue"),
-            ("EV/EBITDA Implied", "ev_ebitda_implied", 6, "ebitda"),
+            ("P/E Implied", "pe_implied", 4, "eps", False),
+            ("Fwd P/E Implied", "forward_pe_implied", 5, "forward_eps", False),
+            ("EV/Revenue Implied", "ev_revenue_implied", 7, "revenue", True),
+            ("EV/EBITDA Implied", "ev_ebitda_implied", 6, "ebitda", True),
         ]
-        for label, fallback_key, median_col, metric_key in implied_items:
+        has_bridge = registry is not None and registry.has("NetDebt") and registry.has("SharesOutstanding")
+        for label, fallback_key, median_col, metric_key, is_ev in implied_items:
             if median_row is not None and metric_key in metric_rows:
-                # Formula: =MedianMultiple * TargetMetric
                 med_cell = f"{_col_letter(median_col)}{median_row}"
                 met_cell = f"B{metric_rows[metric_key]}"
                 ws.cell(row=row, column=1, value=label).font = LABEL_FONT
                 ws.cell(row=row, column=1).border = THIN_BORDER
-                _write_formula_cell(ws, row, 2, f"={med_cell}*{met_cell}", fmt=FMT_USD_INNER)
+                if is_ev and has_bridge:
+                    net_debt_ref = registry.sheet_ref("NetDebt")
+                    shares_ref = registry.sheet_ref("SharesOutstanding")
+                    formula = f"=({med_cell}*{met_cell}-{net_debt_ref})/{shares_ref}"
+                else:
+                    formula = f"={med_cell}*{met_cell}"
+                _write_formula_cell(ws, row, 2, formula, fmt=FMT_USD_INNER)
                 row += 1
             else:
                 val = _safe_float(implied.get(fallback_key))
@@ -1673,7 +1770,7 @@ def _build_precedent_sheet(wb: Workbook, precedent: Dict) -> None:
             (4, "deal_value_usd", FMT_NUMBER),
             (5, "ev_to_revenue", FMT_RATIO),
             (6, "ev_to_ebitda", FMT_RATIO),
-            (7, "premium_pct", FMT_PCT_DISPLAY),
+            (7, "premium_pct", FMT_PCT),
         ]:
             val = _safe_float(deal.get(key))
             if val is not None:
@@ -1693,7 +1790,7 @@ def _build_precedent_sheet(wb: Workbook, precedent: Dict) -> None:
     median_pairs = [
         ("Median EV/Revenue", 5, FMT_RATIO),
         ("Median EV/EBITDA", 6, FMT_RATIO),
-        ("Median Premium", 7, FMT_PCT_DISPLAY),
+        ("Median Premium", 7, FMT_PCT),
     ]
     for label, src_col, fmt in median_pairs:
         ws.cell(row=row, column=1, value=label).font = LABEL_FONT
@@ -1702,6 +1799,9 @@ def _build_precedent_sheet(wb: Workbook, precedent: Dict) -> None:
             col_l = _col_letter(src_col)
             formula = f"=MEDIAN({col_l}{first_deal_row}:{col_l}{last_deal_row})"
             _write_formula_cell(ws, row, 2, formula, fmt=fmt)
+            count_formula = f'=COUNT({col_l}{first_deal_row}:{col_l}{last_deal_row})&" deals"'
+            ws.cell(row=row, column=3, value=count_formula).font = LABEL_GRAY_FONT
+            ws.cell(row=row, column=3).border = THIN_BORDER
         else:
             # Fallback for the static key names
             fallback_keys = {5: "median_ev_to_revenue", 6: "median_ev_to_ebitda", 7: "median_premium"}
@@ -1755,13 +1855,16 @@ def _build_conviction_sheet(wb: Workbook, conviction: Dict) -> None:
             evidence = cat.get("evidence", "")
             if isinstance(evidence, list):
                 evidence = "; ".join(str(e) for e in evidence)
-            ws.cell(row=row, column=3, value=str(evidence)[:500]).font = VALUE_FONT
+            cell = ws.cell(row=row, column=3, value=str(evidence)[:500])
+            cell.font = VALUE_FONT
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
 
             for c in range(1, 4):
                 ws.cell(row=row, column=c).border = THIN_BORDER
             row += 1
 
     _auto_width(ws)
+    ws.column_dimensions["C"].width = 70
 
 
 # =============================================================================
@@ -1770,6 +1873,7 @@ def _build_conviction_sheet(wb: Workbook, conviction: Dict) -> None:
 
 def _build_cover_sheet(
     wb: Workbook, ticker: str, company_name: str, rating: str,
+    data_as_of: Optional[str] = None,
 ) -> None:
     """Build a Cover/TOC sheet with hyperlinks to every sheet in the workbook.
 
@@ -1787,9 +1891,13 @@ def _build_cover_sheet(
     ws.cell(row=4, column=1, value=f"Rating: {rating}").font = LABEL_FONT
     ws.cell(row=5, column=1,
             value=f"Generated: {datetime.now().strftime('%d %B %Y')}").font = VALUE_FONT
-    ws.cell(row=6, column=1, value="George Research LTD").font = LABEL_GRAY_FONT
+    if data_as_of:
+        ws.cell(row=6, column=1, value=f"Market Data As Of: {data_as_of}").font = VALUE_FONT
+        ws.cell(row=7, column=1, value="George Research LTD").font = LABEL_GRAY_FONT
+    else:
+        ws.cell(row=6, column=1, value="George Research LTD").font = LABEL_GRAY_FONT
 
-    row = 8
+    row = 8 if not data_as_of else 9
     ws.cell(row=row, column=1, value="Table of Contents").font = SUBTITLE_FONT
     row += 1
 
@@ -1857,8 +1965,8 @@ def _build_instructions_sheet(wb: Workbook) -> None:
     row += 1
 
     color_legend = [
-        ("Blue font, yellow background", "Editable input / assumption",
-         INPUT_FONT, INPUT_FILL),
+        ("Blue font", "Editable input / assumption",
+         INPUT_FONT, None),
         ("Black font", "Formula referencing cells on the same sheet",
          FORMULA_FONT, None),
         ("Green font", "Cross-sheet reference (links to another tab)",
@@ -1924,6 +2032,33 @@ def _build_instructions_sheet(wb: Workbook) -> None:
         ws.cell(row=row, column=1).border = THIN_BORDER
         row += 1
 
+    row += 1
+    ws.cell(row=row, column=1, value="Data Sources").font = SUBTITLE_FONT
+    row += 1
+    sources = [
+        ("Financial Statements",
+         "Historical data sourced from SEC EDGAR filings and market data providers. "
+         "Figures are reported as filed; no manual adjustments."),
+        ("Valuation Assumptions",
+         "Generated by the George Research analysis engine. "
+         "All assumptions are editable on the Assumptions tab."),
+        ("Market Data",
+         "Share price, market capitalization, and peer multiples reflect data "
+         "as of the model generation date."),
+        ("Comparable Companies",
+         "Peer set selected based on sector, market cap, and business model similarity. "
+         "Multiples sourced from market data providers."),
+        ("Precedent Transactions",
+         "Historical M&A transactions sourced from public deal databases and filings."),
+    ]
+    for label, desc in sources:
+        ws.cell(row=row, column=1, value=label).font = LABEL_FONT
+        ws.cell(row=row, column=1).border = THIN_BORDER
+        ws.cell(row=row, column=2, value=desc).font = VALUE_FONT
+        ws.cell(row=row, column=2).border = THIN_BORDER
+        ws.cell(row=row, column=2).alignment = Alignment(wrap_text=True)
+        row += 1
+
     _auto_width(ws)
 
 
@@ -1980,13 +2115,17 @@ def _build_summary_sheet(
             row += 1
             ws.cell(row=row, column=1, value="Valuation Ranges").font = SUBTITLE_FONT
             row += 1
-            _apply_header_row(ws, row, ["Method", "Low", "Mid", "High"])
+            _apply_header_row(ws, row, ["Method", "Low", "Mid", "High", "Note"])
             row += 1
             for r in ranges:
                 ws.cell(row=row, column=1, value=r.get("method", "")).font = VALUE_FONT
                 ws.cell(row=row, column=2, value=_safe_float(r.get("low"))).number_format = FMT_USD_INNER
                 ws.cell(row=row, column=3, value=_safe_float(r.get("mid"))).number_format = FMT_USD_INNER
                 ws.cell(row=row, column=4, value=_safe_float(r.get("high"))).number_format = FMT_USD_INNER
+                source = r.get("source", "")
+                if source:
+                    ws.cell(row=row, column=5, value=source).font = LABEL_GRAY_FONT
+                    ws.cell(row=row, column=5).border = THIN_BORDER
                 for c in range(1, 5):
                     ws.cell(row=row, column=c).border = THIN_BORDER
                 row += 1
@@ -2000,6 +2139,29 @@ def _build_summary_sheet(
 
 _LANDSCAPE_SHEETS = {"DCF Model", "Financials", "Comparable Companies",
                      "Precedent Transactions", "Sensitivity", "Earnings Model"}
+
+# Per-sheet freeze panes: freeze below the header/year row so labels and
+# headers stay visible when scrolling.  Sheets not listed default to B2.
+_FREEZE_PANES = {
+    "Cover": None,
+    "Instructions": None,
+    "DCF Model": "C4",       # Freeze label column + base column, below Y1..Yn headers
+    "Financials": "B3",      # Below title rows, before first year column
+    "Sensitivity": "B4",     # Below title and subtitle
+    "Comparable Companies": "B4",
+    "Precedent Transactions": "B4",
+    "Earnings Model": "B4",
+    "Scenarios": "B4",
+}
+
+_PRINT_TITLE_ROWS = {
+    "DCF Model": "1:3",
+    "Financials": "1:2",
+    "Comparable Companies": "1:3",
+    "Precedent Transactions": "1:3",
+    "Earnings Model": "1:3",
+    "Scenarios": "1:3",
+}
 
 
 def _apply_print_setup(ws, company_name: str, ticker: str) -> None:
@@ -2019,8 +2181,10 @@ def _apply_print_setup(ws, company_name: str, ticker: str) -> None:
     ws.oddFooter.left.text = "Confidential"
     ws.oddFooter.right.text = "Page &P of &N"
 
-    ws.print_title_rows = "1:1"
-    ws.freeze_panes = "B2"
+    ws.print_title_rows = _PRINT_TITLE_ROWS.get(ws.title, "1:1")
+    freeze = _FREEZE_PANES.get(ws.title, "B2")
+    if freeze:
+        ws.freeze_panes = freeze
 
 
 def _apply_sheet_protection(ws) -> None:
@@ -2100,7 +2264,7 @@ def generate_excel(
         _build_earnings_sheet(wb, earnings)
 
     if comp_table:
-        _build_comp_sheet(wb, comp_table)
+        _build_comp_sheet(wb, comp_table, registry=registry)
 
     if precedent:
         _build_precedent_sheet(wb, precedent)
@@ -2116,10 +2280,12 @@ def generate_excel(
     # Cover (with TOC) and Instructions must be built last so all sheet
     # titles are available for hyperlinks; they insert at positions 0-1.
     _build_instructions_sheet(wb)
-    _build_cover_sheet(wb, ticker, company_name, rating)
+    data_as_of = session_metadata.get("data_as_of") or session_metadata.get("market_data_date")
+    _build_cover_sheet(wb, ticker, company_name, rating, data_as_of=data_as_of)
 
-    # Apply print setup and freeze panes to all sheets
+    # Apply print setup, freeze panes, and remove gridlines from all sheets
     for ws in wb.worksheets:
+        ws.sheet_view.showGridLines = False
         _apply_print_setup(ws, company_name, ticker)
         if protect_sheets:
             _apply_sheet_protection(ws)

@@ -27,8 +27,10 @@ from .branding_config import ReportBrandingConfig, get_default_config
 from .pdf_formatting import (
     extract_highlights,
     extract_recommendation,
-    get_exchange_name,
     format_number,
+    format_percent,
+    get_exchange_name,
+    strip_markup,
 )
 from .valuation_display import build_valuation_display
 
@@ -621,7 +623,8 @@ def _add_sensitivity_grid_table(doc: Document, grid_data: Dict,
     for j, cv in enumerate(col_vals):
         cell = table.rows[0].cells[j + 1]
         cell.text = ""
-        _add_run(cell.paragraphs[0], f"{cv}", bold=True, size=_FONT_SIZE_SMALL, color=_COLOR_WHITE)
+        cv_display = format_percent(cv) if isinstance(cv, (int, float)) else f"{cv}"
+        _add_run(cell.paragraphs[0], cv_display, bold=True, size=_FONT_SIZE_SMALL, color=_COLOR_WHITE)
         cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
         _set_cell_shading(cell, hex_brand)
 
@@ -630,7 +633,8 @@ def _add_sensitivity_grid_table(doc: Document, grid_data: Dict,
         # Row header
         row_header = table.rows[i + 1].cells[0]
         row_header.text = ""
-        _add_run(row_header.paragraphs[0], f"{rv}", bold=True, size=_FONT_SIZE_SMALL, color=brand_color)
+        rv_display = format_percent(rv) if isinstance(rv, (int, float)) else f"{rv}"
+        _add_run(row_header.paragraphs[0], rv_display, bold=True, size=_FONT_SIZE_SMALL, color=brand_color)
 
         for j, val in enumerate(grid[i] if i < len(grid) else []):
             cell = table.rows[i + 1].cells[j + 1]
@@ -772,7 +776,7 @@ def _add_earnings_table(doc: Document, earnings_data: Dict,
             if v is None:
                 row.append("N/A")
             elif k in ("revenue_growth", "ebitda_margin"):
-                row.append(f"{v:.1f}%")
+                row.append(format_percent(v))
             elif k == "eps":
                 row.append(f"${v:.2f}")
             elif isinstance(v, (int, float)):
@@ -803,11 +807,11 @@ def _add_dcf_summary_table(doc: Document, dcf_summary: Dict,
 
     wacc = dcf_summary.get("wacc")
     if wacc:
-        items.append({"label": "WACC", "value": f"{wacc:.1%}" if isinstance(wacc, float) and wacc < 1 else f"{wacc}%"})
+        items.append({"label": "WACC", "value": format_percent(wacc)})
 
     tgr = dcf_summary.get("terminal_growth_rate")
     if tgr:
-        items.append({"label": "Terminal Growth Rate", "value": f"{tgr:.1%}" if isinstance(tgr, float) and tgr < 1 else f"{tgr}%"})
+        items.append({"label": "Terminal Growth Rate", "value": format_percent(tgr)})
 
     ev = dcf_summary.get("enterprise_value")
     if ev:
@@ -1364,7 +1368,7 @@ def generate_docx(
             for cat in conviction_categories:
                 rows.append([
                     cat.get("name", ""),
-                    f"{cat['score']:.1f}/10" if cat.get("score") is not None else "N/A",
+                    f"{cat['score']:.1f}/100" if cat.get("score") is not None else "N/A",
                     cat.get("evidence", ""),
                 ])
             _add_data_table(doc, headers, rows, brand_color)

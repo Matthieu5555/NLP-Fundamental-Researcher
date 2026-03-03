@@ -92,7 +92,6 @@ class TestPDFReadsOrchestatorKeys:
         "football_field",
         "industry",
         "investment_thesis",
-        "recommendation",
         "bull_case",
         "bear_case",
         "strategy",
@@ -189,8 +188,10 @@ class TestInvestmentThesisTabFallback:
         render_body = all_tab_match.group(1)
         assert "renderGenericSections" not in render_body, (
             "Investment Thesis tab still falls back to renderGenericSections, "
-            "which dumps ALL sections. It should show only 'recommendation'."
+            "which dumps ALL sections."
         )
-        assert "recommendation" in render_body, (
-            "Investment Thesis tab fallback should reference 'recommendation' section"
+        # The producer (synthesize_investment_thesis) guarantees investment_thesis
+        # always exists, so the tab should reference only that section.
+        assert "investment_thesis" in render_body, (
+            "Investment Thesis tab should reference 'investment_thesis' section"
         )

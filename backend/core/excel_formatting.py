@@ -138,6 +138,11 @@ def _apply_data_validation(wb: Workbook) -> None:
             formula1="-0.30", formula2="0.30",
             allow_blank=True,
         ),
+        "Mid-Year Convention": DataValidation(
+            type="whole", operator="between",
+            formula1="0", formula2="1",
+            allow_blank=False,
+        ),
     }
 
     for label, dv in label_validations.items():
@@ -348,7 +353,7 @@ def _build_checks_sheet(wb: Workbook, model_audit: Dict[str, Any]) -> None:
             ws.cell(row=row, column=1, value="Growth rates decelerating").font = CHECK_FONT
             ws.cell(row=row, column=1).border = THIN_BORDER
             pairs = [f"{growth_names[i]}>={growth_names[i+1]}" for i in range(len(growth_names) - 1)]
-            formula = '=IF(AND(' + ','.join(pairs) + '),"OK","WARNING: Growth not decelerating")'
+            formula = '=IF(AND(' + ','.join(pairs) + '),"OK","INFO: Growth not decelerating")'
             ws.cell(row=row, column=2, value=formula).font = CHECK_FONT
             ws.cell(row=row, column=2).border = THIN_BORDER
             ws.cell(row=row, column=3, value="Revenue growth typically decelerates as the company matures").font = CHECK_FONT
@@ -381,6 +386,10 @@ def _build_checks_sheet(wb: Workbook, model_audit: Dict[str, Any]) -> None:
     ws.conditional_formatting.add(
         status_range,
         FormulaRule(formula=[f'LEFT(B{header_row + 1},7)="WARNING"'], fill=YELLOW_FILL),
+    )
+    ws.conditional_formatting.add(
+        status_range,
+        FormulaRule(formula=[f'LEFT(B{header_row + 1},4)="INFO"'], fill=BLUE_FILL),
     )
 
     # Master status formula: count ERRORs across all check cells

@@ -39,6 +39,55 @@ EXCHANGE_NAMES = {
 }
 
 
+def format_percent(value, sign: bool = False, decimals: int = 1) -> str:
+    """Format a value as a percentage string, auto-detecting decimal vs scaled form.
+
+    This is the single entry point for all percentage display across DOCX, PPTX,
+    and PDF generators. It owns the decimal-detection heuristic so callers never
+    need to know whether upstream data arrives as 0.067 or 6.7.
+
+    The heuristic: abs(value) < 1 means the value is a raw decimal (e.g. 0.067
+    for 6.7%) and gets multiplied by 100. Values >= 1 are assumed already in
+    percentage form. This is safe for the fields that use it (WACC 3-20%, TGR
+    0-5%, margins 5-90%, probabilities 0.1-1.0, premiums 0.1-0.6) because none
+    of these are legitimately between -1% and +1% in display form.
+
+    Args:
+        value: The numeric value. None or non-numeric returns "N/A".
+        sign: If True, prefix positive values with "+".
+        decimals: Decimal places in output (default 1).
+    """
+    if value is None:
+        return "N/A"
+    try:
+        v = float(value)
+    except (ValueError, TypeError):
+        return str(value)
+    if abs(v) < 1:
+        v = v * 100
+    prefix = "+" if sign and v > 0 else ""
+    return f"{prefix}{v:.{decimals}f}%"
+
+
+def strip_markup(text: str) -> str:
+    """Remove HTML tags and markdown formatting from prose text.
+
+    Single implementation for all generators (DOCX, PPTX, PDF). LLM-generated
+    text often contains **bold**, _italic_, ### headers, or <p>/<strong> tags
+    that should not appear verbatim in rendered documents.
+    """
+    if not text:
+        return text
+    # HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    # Markdown bold/italic (*** / ** / * and ___ / __ / _)
+    text = re.sub(r'\*{1,3}(.+?)\*{1,3}', r'\1', text)
+    text = re.sub(r'_{1,3}(.+?)_{1,3}', r'\1', text)
+    # Markdown headers
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    return text.strip()
+
+
 def get_exchange_name(exchange_code: str) -> str:
     """Convert exchange code to readable name."""
     if not exchange_code:

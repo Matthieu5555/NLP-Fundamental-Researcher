@@ -18,6 +18,7 @@ Re-exports:
     load_config          - Load config from environment
     StockInfo            - Stock information dataclass
     CostBreakdown        - Per-API cost tracking
+    synthesize_investment_thesis - Single entry point for thesis generation
 """
 
 import logging
@@ -46,6 +47,180 @@ load_config = cfg.load_config
 generate_full_report = anlys.generate_full_report
 AnalysisContext = anlys.AnalysisContext
 StockInfo = sd.StockInfo
+
+
+def _format_conviction_summary(conviction_data: dict) -> str:
+    """Format conviction data as a one-line summary for the investment thesis LLM context."""
+    if not conviction_data:
+        return ""
+    score = conviction_data.get("overall_score", "")
+    rec = conviction_data.get("recommendation", "")
+    conf = conviction_data.get("confidence", "")
+    summary = conviction_data.get("summary", "")
+    parts = []
+    if rec:
+        parts.append(f"Rating: {rec}")
+    if score:
+        parts.append(f"Conviction: {score}/100")
+    if conf:
+        parts.append(f"Confidence: {conf}%")
+    if summary:
+        parts.append(summary)
+    return " | ".join(parts)
+
+
+def synthesize_investment_thesis(
+    report_state: Any,
+    session_metadata: dict,
+    ticker: str,
+    analyst_notes: list | None = None,
+    analyst_sources: list | None = None,
+) -> float:
+    """Synthesize investment thesis from completed analysis sections.
+
+    Reads all narrative sections from report_state, calls generate_full_report(),
+    and stores the result back. Returns LLM cost in USD.
+
+    On failure, populates investment_thesis with recommendation content so the
+    contract (thesis always exists) holds. Callers never need fallback logic.
+    """
+    import os
+    from backend.core.report_builder import SectionType
+
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
+
+    if not api_key:
+        logger.warning("No OPENROUTER_API_KEY set; falling back to recommendation for thesis")
+        _fallback_thesis_from_recommendation(report_state)
+        return 0.0
+
+    sections = report_state.sections
+
+    def get_content(section_id: str) -> str:
+        s = sections.get(section_id)
+        if s is None:
+            return ""
+        if hasattr(s, "content"):
+            return s.content or ""
+        return str(s.get("content", ""))
+
+    # Build minimal StockInfo for the context
+    minimal_stock_info = StockInfo(
+        symbol=ticker,
+        name=session_metadata.get("company_name", ticker),
+        sector=session_metadata.get("stock_info", {}).get("sector", ""),
+        industry=session_metadata.get("stock_info", {}).get("industry", ""),
+        country="",
+        business_summary="",
+        current_price=None,
+        market_cap=None,
+        pe_ratio=None,
+        forward_pe=None,
+        peg_ratio=None,
+        price_to_book=None,
+        profit_margin=None,
+        operating_margin=None,
+        roe=None,
+        roa=None,
+        revenue_growth=None,
+        earnings_growth=None,
+        debt_to_equity=None,
+        current_ratio=None,
+        dividend_yield=None,
+        beta=None,
+        fifty_two_week_high=None,
+        fifty_two_week_low=None,
+        analyst_target_price=None,
+        analyst_recommendation=None,
+    )
+
+    context = AnalysisContext(
+        api_key=api_key,
+        model=model,
+        stock_info=minimal_stock_info,
+        fundamentals_analysis=get_content("fundamentals"),
+        technicals_analysis=get_content("technicals"),
+        strategy_analysis=get_content("strategy"),
+        moat_analysis=get_content("moat"),
+        sentiment_report="",
+        bull_thesis=get_content("bull_case"),
+        bear_thesis=get_content("bear_case"),
+    )
+
+    # Build analyst notes list if sources provided
+    formatted_notes = None
+    analyst_citations = ""
+    if analyst_notes:
+        formatted_notes = analyst_notes
+    elif analyst_sources:
+        formatted_notes = [
+            {"content": src.belief_content, "section": src.section, "confidence": 0.8}
+            for src in analyst_sources
+        ]
+
+    if analyst_sources:
+        analyst_citations = "\n\nANALYST BELIEFS (cite as [A1], [A2], etc.):\n"
+        for src in analyst_sources:
+            analyst_citations += f"[{src.id}] {src.belief_content}\n"
+
+    conviction_data = session_metadata.get("conviction", {})
+    conviction_summary = _format_conviction_summary(conviction_data)
+
+    try:
+        result = generate_full_report(
+            context=context,
+            analyst_notes=formatted_notes,
+            analyst_citations=analyst_citations,
+            conviction_summary=conviction_summary,
+        )
+    except Exception as e:
+        logger.warning("Investment thesis LLM call failed: %s", e)
+        _fallback_thesis_from_recommendation(report_state)
+        return 0.0
+
+    if not result.success:
+        logger.warning("Investment thesis generation unsuccessful: %s", result.error)
+        _fallback_thesis_from_recommendation(report_state)
+        return 0.0
+
+    report_state.add_section(
+        "investment_thesis", "Investment Thesis", result.content,
+        SectionType.INVESTMENT_THESIS,
+    )
+
+    # Pre-generate headline (non-blocking: failure leaves headline unset)
+    try:
+        from backend.core.pdf_formatting import extract_highlights, extract_recommendation
+        from backend.core.pdf_generator_v2 import generate_report_headline
+
+        company_name = session_metadata.get("company_name", ticker)
+        rating = extract_recommendation(report_state)
+        highlights = extract_highlights(result.content)
+        headline = generate_report_headline(company_name, rating, result.content, highlights)
+        report_state.metadata["headline"] = headline
+    except Exception as e:
+        logger.warning("Failed to pre-generate headline: %s", e)
+
+    return result.cost_usd
+
+
+def _fallback_thesis_from_recommendation(report_state: Any) -> None:
+    """Populate investment_thesis with recommendation content as degraded fallback."""
+    from backend.core.report_builder import SectionType
+
+    rec = report_state.sections.get("recommendation")
+    if rec and hasattr(rec, "content") and rec.content:
+        report_state.add_section(
+            "investment_thesis", "Investment Thesis", rec.content,
+            SectionType.INVESTMENT_THESIS,
+        )
+    else:
+        report_state.add_section(
+            "investment_thesis", "Investment Thesis",
+            "Investment thesis could not be generated.",
+            SectionType.INVESTMENT_THESIS,
+        )
 
 
 def run_full_analysis(
@@ -177,6 +352,15 @@ def run_full_analysis(
                     logger.warning("Model audit failed (non-blocking): %s", e)
                     session.metadata["model_audit"] = {}
 
+                # Synthesize investment thesis (guarantees section always exists)
+                if progress_callback:
+                    from src_george_researcher.analysis.pipeline_config import USStep
+                    wrapped_progress("Synthesizing investment thesis...", USStep.INVESTMENT_THESIS)
+                thesis_cost = synthesize_investment_thesis(
+                    session.report_state, session.metadata, ticker,
+                )
+                session.metadata["total_cost_usd"] += thesis_cost
+
         # Include fair value in result for async watchlist update by the worker
         if result.dcf_result:
             analysis_dict["_fair_value_per_share"] = result.dcf_result.fair_value_per_share
@@ -247,6 +431,12 @@ def run_full_analysis(
                 except Exception as e:
                     logger.warning("Model audit failed (non-blocking): %s", e)
                     session.metadata["model_audit"] = {}
+
+                # Synthesize investment thesis (guarantees section always exists)
+                thesis_cost = synthesize_investment_thesis(
+                    session.report_state, session.metadata, ticker,
+                )
+                session.metadata["total_cost_usd"] += thesis_cost
 
         return analysis_dict
 

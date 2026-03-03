@@ -30,7 +30,7 @@ from backend.core.belief_classifier import (
     ExtractedBelief,
     InsightType,
 )
-from backend.core.report_builder import SectionType
+
 from backend.agents.llm_wrapper import call_llm
 
 logger = logging.getLogger(__name__)
@@ -41,23 +41,14 @@ DEFAULT_SESSION_LIMIT = 50
 
 
 def _format_conviction_summary(conviction_data: dict) -> str:
-    """Format conviction data as a one-line summary for the investment thesis LLM context."""
-    if not conviction_data:
-        return ""
-    score = conviction_data.get("overall_score", "")
-    rec = conviction_data.get("recommendation", "")
-    conf = conviction_data.get("confidence", "")
-    summary = conviction_data.get("summary", "")
-    parts = []
-    if rec:
-        parts.append(f"Rating: {rec}")
-    if score:
-        parts.append(f"Conviction: {score}/100")
-    if conf:
-        parts.append(f"Confidence: {conf}%")
-    if summary:
-        parts.append(summary)
-    return " | ".join(parts)
+    """Format conviction data as a one-line summary for the investment thesis LLM context.
+
+    Canonical implementation lives in orchestrator_wrapper._format_conviction_summary.
+    This wrapper avoids a circular import at module load time (sessions -> orchestrator_wrapper
+    -> session_manager -> sessions).
+    """
+    from backend.agents.orchestrator_wrapper import _format_conviction_summary as _impl
+    return _impl(conviction_data)
 
 
 @router.get("/")
@@ -251,133 +242,37 @@ async def regenerate_report(
     if not content_sections:
         raise HTTPException(status_code=400, detail="Report has no content. Run analysis first.")
 
+    from backend.agents.orchestrator_wrapper import synthesize_investment_thesis
+
     ticker = session.ticker
     beliefs = session.belief_graph.get_all_beliefs()
     analyst_sources = session.analyst_sources.copy() if session.analyst_sources else []
 
-    fundamentals = sections.get("fundamentals", {})
-    technicals = sections.get("technicals", {})
-    bull_case = sections.get("bull_case", {})
-    bear_case = sections.get("bear_case", {})
-    moat_analysis = sections.get("moat", {})
-    strategy = sections.get("strategy", {})
-
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    model = os.getenv("OPENROUTER_MODEL", "moonshotai/kimi-k2.5")
-
-    if not api_key:
-        raise HTTPException(status_code=500, detail="LLM API key not configured")
-
-    from backend.agents.orchestrator_wrapper import generate_full_report, AnalysisContext, StockInfo
-
-    analyst_notes = []
-    for belief in beliefs:
-        analyst_notes.append(
-            {
-                "content": belief.content,
-                "section": (
-                    belief.source.split(":", 1)[1] if belief.source.startswith("chat:") else "general"
-                ),
-                "confidence": belief.confidence,
-            }
-        )
-
-    analyst_citations = ""
-    if analyst_sources:
-        analyst_citations = "\n\nANALYST BELIEFS (cite as [A1], [A2], etc.):\n"
-        for src in analyst_sources:
-            analyst_citations += f"[{src.id}] {src.belief_content}\n"
-
-    def get_content(section):
-        if hasattr(section, "content"):
-            return section.content
-        return str(section.get("content", ""))
-
-    minimal_stock_info = StockInfo(
-        symbol=ticker,
-        name=ticker,
-        sector="",
-        industry="",
-        country="",
-        business_summary="",
-        current_price=None,
-        market_cap=None,
-        pe_ratio=None,
-        forward_pe=None,
-        peg_ratio=None,
-        price_to_book=None,
-        profit_margin=None,
-        operating_margin=None,
-        roe=None,
-        roa=None,
-        revenue_growth=None,
-        earnings_growth=None,
-        debt_to_equity=None,
-        current_ratio=None,
-        dividend_yield=None,
-        beta=None,
-        fifty_two_week_high=None,
-        fifty_two_week_low=None,
-        analyst_target_price=None,
-        analyst_recommendation=None,
-    )
-
-    report_context = AnalysisContext(
-        api_key=api_key,
-        model=model,
-        stock_info=minimal_stock_info,
-        fundamentals_analysis=get_content(fundamentals),
-        technicals_analysis=get_content(technicals),
-        strategy_analysis=get_content(strategy),
-        moat_analysis=get_content(moat_analysis),
-        sentiment_report="",
-        bull_thesis=get_content(bull_case),
-        bear_thesis=get_content(bear_case),
-    )
-
-    conviction_data = session.metadata.get("conviction", {})
-    conviction_summary = _format_conviction_summary(conviction_data)
-
-    result = generate_full_report(
-        context=report_context,
-        analyst_notes=analyst_notes,
-        analyst_citations=analyst_citations,
-        conviction_summary=conviction_summary,
-    )
-
-    if not result.success:
-        raise HTTPException(status_code=500, detail=f"Report generation failed: {result.error}")
+    analyst_notes = [
+        {
+            "content": belief.content,
+            "section": belief.source.split(":", 1)[1] if belief.source.startswith("chat:") else "general",
+            "confidence": belief.confidence,
+        }
+        for belief in beliefs
+    ]
 
     with session_manager.session_context(session.session_id) as sess:
         if not sess or not sess.report_state:
             raise HTTPException(status_code=404, detail="Session expired")
 
-        sess.report_state.add_section(
-            "investment_thesis", "Investment Thesis", result.content, SectionType.INVESTMENT_THESIS
+        thesis_cost = synthesize_investment_thesis(
+            sess.report_state, sess.metadata, ticker,
+            analyst_notes=analyst_notes,
+            analyst_sources=analyst_sources,
         )
-
-        try:
-            from backend.core.pdf_formatting import (
-                extract_highlights,
-                extract_recommendation,
-            )
-            from backend.core.pdf_generator_v2 import generate_report_headline
-
-            company_name = sess.metadata.get("company_name", ticker)
-            rating = extract_recommendation(sess.report_state)
-            highlights = extract_highlights(result.content)
-            headline = generate_report_headline(company_name, rating, result.content, highlights)
-            sess.report_state.metadata["headline"] = headline
-        except Exception as e:
-            logger.warning(f"Failed to pre-generate headline: {e}")
-
         prev_cost = sess.metadata.get("total_cost_usd", 0.0)
-        sess.metadata["total_cost_usd"] = prev_cost + result.cost_usd
+        sess.metadata["total_cost_usd"] = prev_cost + thesis_cost
 
     return {
         "success": True,
         "message": f"Report regenerated with {len(analyst_notes)} analyst notes",
-        "cost_usd": round(result.cost_usd, 4),
+        "cost_usd": round(thesis_cost, 4),
     }
 
 
@@ -712,59 +607,21 @@ async def update_analysis(
             yield emit("stage", {"stage": "contradictions", "message": "Refreshing contradictions..."})
             await asyncio.sleep(0)
 
-            # --- Step 8: Regenerate narrative report ---
-            yield emit("stage", {"stage": "narrative", "message": "Regenerating narrative report..."})
+            # --- Step 8: Persist sections, then regenerate narrative ---
+            yield emit("stage", {"stage": "saving", "message": "Saving updated sections..."})
             await asyncio.sleep(0)
-
-            from backend.agents.orchestrator_wrapper import generate_full_report, AnalysisContext
 
             analyst_notes = [
                 {"content": src.belief_content, "section": src.section, "confidence": 0.8}
                 for src in analyst_sources
             ]
 
-            analyst_citations = ""
-            if analyst_sources:
-                analyst_citations = "\n\nANALYST BELIEFS (cite as [A1], [A2], etc.):\n"
-                for src in analyst_sources:
-                    analyst_citations += f"[{src.id}] {src.belief_content}\n"
-
-            report_context = AnalysisContext(
-                api_key=api_key,
-                model=model,
-                stock_info=stock_info,
-                fundamentals_analysis=get_content("fundamentals"),
-                technicals_analysis=get_content("technicals"),
-                strategy_analysis=strategy_content,
-                moat_analysis=moat_content,
-                bull_thesis=bull_content,
-                bear_thesis=bear_content,
-                analyst_directives=overrides.qualitative_directives,
-            )
-
-            update_conviction_data = conviction_result.to_dict() if conviction_result else session.metadata.get("conviction", {})
-            update_conviction_summary = _format_conviction_summary(update_conviction_data)
-
-            report_result = await asyncio.to_thread(
-                generate_full_report,
-                context=report_context,
-                analyst_notes=analyst_notes,
-                analyst_citations=analyst_citations,
-                conviction_summary=update_conviction_summary,
-            )
-            if report_result.success:
-                total_cost += report_result.cost_usd
-
-            # --- Step 9: Persist all updates ---
-            yield emit("stage", {"stage": "saving", "message": "Saving updated analysis..."})
-            await asyncio.sleep(0)
-
             with session_manager.session_context(session.session_id) as sess:
                 if not sess or not sess.report_state:
                     yield emit("error", {"message": "Session expired during update"})
                     return
 
-                # Update sections
+                # Update sections in report_state before thesis synthesis
                 if "strategy" in stages_updated:
                     sess.report_state.update_section("strategy", strategy_content)
                 if "strategic_assessment" in stages_updated:
@@ -777,12 +634,6 @@ async def update_analysis(
                 if "recommendation" in stages_updated:
                     sess.report_state.update_section("recommendation", recommendation_content)
 
-                if report_result.success:
-                    sess.report_state.add_section(
-                        "investment_thesis", "Investment Thesis", report_result.content,
-                        SectionType.INVESTMENT_THESIS,
-                    )
-
                 # Update structured valuation data (from repropagation)
                 if reprop_outcome:
                     sess.metadata.update(reprop_outcome.metadata_updates)
@@ -791,6 +642,18 @@ async def update_analysis(
                     sess.metadata["conviction"] = conviction_result.to_dict()
                     if conviction_analysis.success:
                         sess.report_state.update_section("conviction", conviction_analysis.content)
+
+                # Synthesize thesis from updated sections (reads report_state + metadata)
+                yield emit("stage", {"stage": "narrative", "message": "Regenerating narrative report..."})
+
+                from backend.agents.orchestrator_wrapper import synthesize_investment_thesis
+                thesis_cost = await asyncio.to_thread(
+                    synthesize_investment_thesis,
+                    sess.report_state, sess.metadata, session.ticker,
+                    analyst_notes=analyst_notes,
+                    analyst_sources=analyst_sources,
+                )
+                total_cost += thesis_cost
 
                 # Update cost
                 prev_cost = sess.metadata.get("total_cost_usd", 0.0)

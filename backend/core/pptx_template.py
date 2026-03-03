@@ -20,6 +20,7 @@ from pptx.slide import Slide
 from pptx.util import Emu, Inches, Pt
 
 from backend.core.colors import PALETTE
+from backend.core.pdf_formatting import strip_markup
 
 # =============================================================================
 # SLIDE DIMENSIONS (16:9)
@@ -309,6 +310,9 @@ def add_bullet_card(
     The accent bar is slightly thicker than the original (matching the PDF's
     2.5pt border-left) and the text has more left padding for breathing room.
     """
+    # Strip markdown/HTML that LLM-generated text may contain
+    text = strip_markup(text)
+
     # Accent bar (thicker, matching PDF's 2.5pt border-left)
     bar_width = Inches(0.07)
     bar = slide.shapes.add_shape(1, left, top, bar_width, height)

@@ -138,9 +138,10 @@ def _build_audit_prompt(
         lines.append("--- Scenarios ---")
         for case_name in ("bull", "base", "bear"):
             case = scenarios.get(case_name, {})
-            result = case.get("result", {})
-            lines.append(f"  {case_name.title()}: ${result.get('fair_value_per_share', 0):.2f} "
-                         f"(prob {case.get('probability', 0) * 100:.0f}%)")
+            fv = case.get("fair_value", 0) or case.get("result", {}).get("fair_value_per_share", 0)
+            prob = case.get("probability", 0)
+            prob_display = prob * 100 if prob <= 1 else prob
+            lines.append(f"  {case_name.title()}: ${fv:.2f} (prob {prob_display:.0f}%)")
         lines.append(f"Weighted Fair Value: ${scenarios.get('weighted_fair_value', 0):.2f}")
         cp = ctx.get("current_price", 0)
         wfv = scenarios.get("weighted_fair_value", 0)
